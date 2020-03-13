@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/locationItem"
+        android:title="Get My Location"
+        app:showAsAction="collapseActionView" />
+    <item
+        android:id="@+id/mapItem"
+        android:title="Open Map"
+        app:showAsAction="collapseActionView" />
+    <item
+        android:id="@+id/cameraItem"
+        android:title="Open Camera"
+        app:showAsAction="collapseActionView" />
+    <item
+        android:id="@+id/logoutItem"
+        android:title="Logout"
+        app:showAsAction="collapseActionView" />
+</menu>
