@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/ui_recording/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui_recording/.idea/runConfigurations.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/TraceActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_trace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/androidTest/java/edu/illinois/finalproject/ExampleInstrumentedTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/androidTest/java/edu/illinois/recordingservice/ExampleInstrumentedTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/ChatroomActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/LoginActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/MainActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/RegisterActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_chatroom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_login.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_register.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/chatroom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/trace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/test/java/edu/illinois/finalproject/ExampleUnitTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/test/java/edu/illinois/recordingservice/ExampleUnitTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MyAccessibilityService.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="90">
+              <caret line="25" column="13" lean-forward="true" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/ui_recording" />
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="y" value="23" />
+    <option name="width" value="1440" />
+    <option name="height" value="797" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="edu" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="edu" type="462c0819:PsiDirectoryNode" />
+              <item name="illinois" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="edu" type="462c0819:PsiDirectoryNode" />
+              <item name="illinois" type="462c0819:PsiDirectoryNode" />
+              <item name="recordingservice" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="res" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
+              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="AndroidSdkUpdater" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="" />
+      <created>1584235018203</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1584235018203</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="23" width="1440" height="797" extended-state="0" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" visible="true" weight="0.32980973" />
+      <window_info id="Structure" side_tool="true" />
+      <window_info id="Image Layers" />
+      <window_info id="Designer" />
+      <window_info id="Resources Explorer" />
+      <window_info id="Capture Tool" />
+      <window_info id="Favorites" side_tool="true" />
+      <window_info id="Captures" order="0" weight="0.25" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="TODO" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="right" id="Capture Analysis" />
+      <window_info anchor="right" id="Theme Preview" />
+      <window_info anchor="right" id="Palette&#9;" />
+    </layout>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MyAccessibilityService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="25" column="13" lean-forward="true" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

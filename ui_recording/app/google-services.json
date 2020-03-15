@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:1088153729423:android:d3c190f37d1163ae",
         "android_client_info": {
-          "package_name": "edu.illinois.finalproject"
+          "package_name": "edu.illinois.recordingservice"
         }
       },
       "oauth_client": [
@@ -18,7 +18,7 @@
           "client_id": "1088153729423-q1lg36h33fphjmu6ukelhlqr1sqert52.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "edu.illinois.finalproject",
+            "package_name": "edu.illinois.recordingservice",
             "certificate_hash": "b97a4a3e48c2090151deb9983af9c03928d2f14c"
           }
         },
