@@ -16,16 +16,28 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import static android.view.accessibility.AccessibilityEvent.eventTypeToString;
 
 public class MyAccessibilityService extends AccessibilityService {
 
+    private String last_package_name;
+
+    private static ArrayList<String> package_list = new ArrayList<>();
+    private static Set<String> package_set = new HashSet<String>();
+
+    private static Layer package_layer = new Layer();
+
     @Override
     protected void onServiceConnected() {
-        // Create an overlay and display the action bar
+        // Create the service
         System.out.println("onServiceConnected");
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED;
@@ -34,93 +46,140 @@ public class MyAccessibilityService extends AccessibilityService {
         info.notificationTimeout = 100;
         info.packageNames = null;
         setServiceInfo(info);
-
-
     }
 
-//    Consumer<Bitmap> innerConsumer = new Consumer<Bitmap>() {
-//        @Override
-//        public void accept(Bitmap bitmap) {
-//
-//            Log.i("Hello", bitmap.toString());
-//
-//        }
-//    };
-
-//    private void takeScreenshot(Window window) {
-//        Date now = new Date();
-//        android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
-//
-//        try {
-//            // image naming and path  to include sd card  appending name you choose for file
-//            String mPath = Environment.getExternalStorageDirectory().toString() + "/" + now + ".jpg";
-//
-//            // create bitmap screen capture
-//            View v1 = window.getDecorView().getRootView();
-//            v1.setDrawingCacheEnabled(true);
-//            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
-//            v1.setDrawingCacheEnabled(false);
-//
-//            File imageFile = new File(mPath);
-//
-//            FileOutputStream outputStream = new FileOutputStream(imageFile);
-//            int quality = 100;
-//            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
-//            outputStream.flush();
-//            outputStream.close();
-//
-//            openScreenshot(imageFile);
-//        } catch (Throwable e) {
-//            // Several error may come out with file handling or DOM
-//            e.printStackTrace();
-//        }
-//    }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event != null && event.getPackageName() != null) {
 
-            //MainActivity.add_content(packageName);
+        if (event == null || event.getPackageName() == null) {
+            return;
+        }
 
-//            if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
-//                    event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-//            }
+        String packageName = event.getPackageName().toString();
+        if (packageName == null || event.getPackageName().equals("edu.illinois.recordingservice")) {
+            return;
+        }
 
-            //Window window =
-            String packageName = event.getPackageName().toString();
-            if (packageName != null && !event.getPackageName().equals("edu.illinois.finalproject") &&
-                    ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)   ||
-                    (event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)   ||
-                    (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SELECTED)  ||
-                    (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)  ||
-                    (event.getEventType()== AccessibilityEvent.TYPE_VIEW_FOCUSED))  ) {
-                Date date = new Date(event.getEventTime());
-                SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-                String dateFormatted = formatter.format(date);
+        boolean isNewTrace = false;
 
-                String eventTime = "Event Time: " + dateFormatted;
-                String eventType = "Event Type: " + eventTypeToString(event.getEventType());
-                Log.i("Time + Type", eventTime + "; " + eventType);
-                Log.i("Package Name: ", packageName);
+        if (last_package_name == null || !packageName.equals(last_package_name)) {
+            isNewTrace = true;
+        }
 
-                AccessibilityNodeInfo nodeInfo = event.getSource();
-                if (nodeInfo != null) {
-                    Log.i("View Hierachy:", nodeInfo.toString());
-                }
+        if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)   ||
+                (event.getEventType()== AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)   ||
+                (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SELECTED)  ||
+                (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED) ) {
 
-                if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-                    performGlobalAction(9);
-                }
+            // Parse event description
+            Date date = new Date(event.getEventTime());
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
+            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+            String dateFormatted = formatter.format(date);
 
-                MainActivity.add_package(packageName);
+            String eventTime = "Event Time: " + dateFormatted;
+            String eventType = "Event Type: " + eventTypeToString(event.getEventType());
 
-                MainActivity.add_event(packageName, eventTime + "; " + eventType);
-            }
+            String eventDescription =  eventTime + "; " + eventType;
 
+            // Parse view hierarchy
+           AccessibilityNodeInfo node = event.getSource();
+
+           if (node == null) {
+               return;
+           }
+
+           String vh = node.toString();
+
+            add_event(packageName, isNewTrace, eventDescription, vh);
+
+            last_package_name = packageName;
         }
 
     }
+
+
+    public static void add_event(String packageName, boolean isNewTrace, String eventDescription, String viewHierachy) {
+
+        // add the package
+        HashMap<String, Layer> package_map = package_layer.getMap();
+        if (!package_map.containsKey(packageName)) {
+            // this is a new package
+            package_set.add(packageName);
+            package_list.clear();
+            package_list.addAll(package_set);
+            package_layer.setList(package_list);
+
+            package_map.put(packageName, new Layer());
+            package_layer.setMap(package_map);
+        }
+
+        // add the trace
+        String traceName;
+        Layer trace_layer = package_map.get(packageName);
+        if (trace_layer == null) {
+            return;
+        }
+        HashMap<String, Layer> trace_map = trace_layer.getMap();
+        ArrayList<String> trace_list = trace_layer.getList();
+        if (isNewTrace) {
+            // this is a new trace
+            traceName = "Trace " + (trace_list.size() + 1);
+            trace_list.add(traceName);
+            trace_layer.setList(trace_list);
+            trace_map.put(traceName, new Layer());
+            trace_layer.setMap(trace_map);
+        } else {
+            traceName = "Trace " + trace_list.size();
+        }
+
+
+        // add the event
+        Layer event_layer = trace_map.get(traceName);
+        if (event_layer == null) {
+            return;
+        }
+        ArrayList<String> event_list = event_layer.getList();
+        event_list.add(eventDescription);
+        event_layer.setList(event_list);
+
+        HashMap<String, Layer> event_map = event_layer.getMap();
+        event_map.put(eventDescription, new Layer());
+        event_layer.setMap(event_map);
+
+        Log.i("Oppps", event_layer.getList().get(0));
+        Log.i("Oppps", Boolean.toString(event_layer.getMap().containsKey(eventDescription)));
+
+        // add the view hierarchy
+        Layer view_hierarchy_layer = event_map.get(eventDescription);
+        if (view_hierarchy_layer == null) {
+            return;
+        }
+        ArrayList<String> view_hierarchy_list = new ArrayList<String>();
+        view_hierarchy_list.add(viewHierachy);
+        view_hierarchy_layer.setList(view_hierarchy_list);
+
+    }
+
+    public static ArrayList<String> get_packages() {
+        return package_list;
+    }
+
+    public static ArrayList<String> get_traces(String package_name) {
+        return package_layer.getMap().get(package_name).getList();
+    }
+
+    public static ArrayList<String> get_events(String package_name, String trace_name) {
+        return package_layer.getMap().get(package_name).getMap().get(trace_name).getList();
+    }
+
+    public static ArrayList<String> get_vh(String package_name, String trace_name, String event_name) {
+        return package_layer.getMap().get(package_name).getMap().get(trace_name).getMap().get(event_name).getList();
+    }
+
+
+
 
     @Override
     public void onInterrupt() {

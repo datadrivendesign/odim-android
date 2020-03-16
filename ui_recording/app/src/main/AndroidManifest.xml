@@ -37,6 +37,8 @@
             </intent-filter>
         </activity>
         <activity android:name="edu.illinois.recordingservice.TraceActivity" />
+        <activity android:name="edu.illinois.recordingservice.EventActivity" />
+        <activity android:name="edu.illinois.recordingservice.ViewHierarchyActivity" />
     </application>
 
 </manifest>
