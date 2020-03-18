@@ -124,8 +124,9 @@ public class MyAccessibilityService extends AccessibilityService {
                 vh = vh + node.toString() + "\n" + "\n";
                 Log.i("Oppps", String.valueOf(node.getChildCount()));
                 for (int i = 0; i < node.getChildCount(); i++) {
-                    if (deque != null) {
-                        deque.addLast(node.getChild(i));
+                    AccessibilityNodeInfo current_node = node.getChild(i);
+                    if (current_node != null) {
+                        deque.addLast(current_node);
                     }
                 }
             }

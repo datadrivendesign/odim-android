@@ -24,7 +24,7 @@ public class TraceActivity extends AppCompatActivity {
 
         package_name = getIntent().getExtras().get("package_name").toString();
 
-        setTitle(" Package Name: " + package_name);
+        setTitle(package_name);
 
         listView = (ListView) findViewById(R.id.traceListView);
 
