@@ -47,4 +47,10 @@ public class EventActivity extends AppCompatActivity {
 
     }
 
+    public static void notifyEventAdapter() {
+        if (arrayAdapter != null) {
+            arrayAdapter.notifyDataSetChanged();
+        }
+    }
+
 }

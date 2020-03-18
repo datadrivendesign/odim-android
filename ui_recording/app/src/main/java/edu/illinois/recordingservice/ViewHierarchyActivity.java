@@ -34,4 +34,10 @@ public class ViewHierarchyActivity extends AppCompatActivity {
         listView.setAdapter(arrayAdapter);
 
     }
+
+    public static void notifyVHAdapter() {
+        if (arrayAdapter != null) {
+            arrayAdapter.notifyDataSetChanged();
+        }
+    }
 }

@@ -46,4 +46,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public static void notifyPackageAdapter() {
+        if (arrayAdapter != null) {
+            arrayAdapter.notifyDataSetChanged();
+        }
+    }
+
 }

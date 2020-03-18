@@ -45,4 +45,13 @@ public class TraceActivity extends AppCompatActivity {
 
     }
 
+    public static void notifyTraceAdapter() {
+
+        if (arrayAdapter != null) {
+            arrayAdapter.notifyDataSetChanged();
+        }
+
+    }
+
+
 }

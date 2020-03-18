@@ -115,6 +115,8 @@ public class MyAccessibilityService extends AccessibilityService {
             package_layer.setMap(package_map);
         }
 
+        MainActivity.notifyPackageAdapter();
+
         // add the trace
         String traceName;
         Layer trace_layer = package_map.get(packageName);
@@ -134,6 +136,8 @@ public class MyAccessibilityService extends AccessibilityService {
             traceName = "Trace " + trace_list.size();
         }
 
+        TraceActivity.notifyTraceAdapter();
+
 
         // add the event
         Layer event_layer = trace_map.get(traceName);
@@ -151,6 +155,8 @@ public class MyAccessibilityService extends AccessibilityService {
         Log.i("Oppps", event_layer.getList().get(0));
         Log.i("Oppps", Boolean.toString(event_layer.getMap().containsKey(eventDescription)));
 
+        EventActivity.notifyEventAdapter();
+
         // add the view hierarchy
         Layer view_hierarchy_layer = event_map.get(eventDescription);
         if (view_hierarchy_layer == null) {
@@ -159,6 +165,8 @@ public class MyAccessibilityService extends AccessibilityService {
         ArrayList<String> view_hierarchy_list = new ArrayList<String>();
         view_hierarchy_list.add(viewHierachy);
         view_hierarchy_layer.setList(view_hierarchy_list);
+
+        ViewHierarchyActivity.notifyVHAdapter();
 
     }
 
