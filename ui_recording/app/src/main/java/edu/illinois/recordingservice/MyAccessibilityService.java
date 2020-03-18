@@ -4,7 +4,9 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import android.view.View;
@@ -16,8 +18,10 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,6 +53,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
 
@@ -83,20 +88,49 @@ public class MyAccessibilityService extends AccessibilityService {
 
             String eventDescription =  eventTime + "; " + eventType;
 
-            // Parse view hierarchy
-           AccessibilityNodeInfo node = event.getSource();
-
-           if (node == null) {
+            // parse view hierarchy
+            // current node
+            AccessibilityNodeInfo node = event.getSource();
+            if (node == null) {
                return;
-           }
+            }
+            String vh_currentnode = "Current Node: " + "\n" + node.toString() + "\n";
 
-           String vh = node.toString();
+            // all nodes
+            AccessibilityNodeInfo rootInActiveWindow = getRootInActiveWindow();
+            String vh_allnode = "";
+            if (rootInActiveWindow != null) {
+                vh_allnode = "All Nodes: " + "\n" + parseAllNodeVH(rootInActiveWindow);
+            }
 
+            String vh = vh_currentnode + "\n" +  vh_allnode;
+
+
+            // add the event
             add_event(packageName, isNewTrace, eventDescription, vh);
-
             last_package_name = packageName;
         }
 
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private String parseAllNodeVH(AccessibilityNodeInfo root) {
+        String vh = "";
+        Deque<AccessibilityNodeInfo> deque = new ArrayDeque<>();
+        deque.add(root);
+        while (deque != null && !deque.isEmpty()) {
+            AccessibilityNodeInfo node = deque.removeFirst();
+            if (node != null) {
+                vh = vh + node.toString() + "\n" + "\n";
+                Log.i("Oppps", String.valueOf(node.getChildCount()));
+                for (int i = 0; i < node.getChildCount(); i++) {
+                    if (deque != null) {
+                        deque.addLast(node.getChild(i));
+                    }
+                }
+            }
+        }
+        return vh;
     }
 
 
