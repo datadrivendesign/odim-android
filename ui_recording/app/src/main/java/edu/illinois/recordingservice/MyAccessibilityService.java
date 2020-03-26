@@ -96,37 +96,7 @@ public class MyAccessibilityService extends AccessibilityService {
                return;
             }
 
-            Map<String,String> map = new HashMap<>();
-
-            map.put("package_name", node.getPackageName().toString());
-            map.put("class_name", node.getClassName().toString());
-
-            map.put("scrollable", String.valueOf(node.isScrollable()));
-            map.put("parent", node.getParent().getClassName().toString());
-            map.put("clickable", String.valueOf(node.isClickable()));
-            map.put("focusable", String.valueOf(node.isFocusable()));
-            map.put("long-clickable", String.valueOf(node.isLongClickable()));
-            map.put("enabled", String.valueOf(node.isEnabled()));
-
-            Rect outbounds = new Rect();
-            node.getBoundsInScreen(outbounds);
-            map.put("bounds_in_screen", outbounds.toString());
-
-            map.put("visibility", String.valueOf(node.isVisibleToUser()));
-            map.put("content-desc", node.getContentDescription().toString());
-
-            node.getBoundsInParent(outbounds);
-            map.put("bounds_in_parent", outbounds.toString());
-
-            map.put("focused", String.valueOf(node.isFocused()));
-            map.put("selected", String.valueOf(node.isSelected()));
-
-            map.put("children_count", String.valueOf(node.getChildCount()));
-
-            //map.put("to_string", node.toString());
-
-            Gson gson = new Gson();
-            String json = gson.toJson(map);
+            String json = parse_vh_to_json(node);
 
             String vh_currentnode = "Current Node: " + "\n" + json + "\n";
 
@@ -145,6 +115,48 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
     }
+
+    private String parse_vh_to_json(AccessibilityNodeInfo node) {
+        Map<String,String> map = new HashMap<>();
+
+        map.put("package_name", node.getPackageName().toString());
+        map.put("class_name", node.getClassName().toString());
+
+        map.put("scrollable", String.valueOf(node.isScrollable()));
+        map.put("parent", node.getParent().getClassName().toString());
+        map.put("clickable", String.valueOf(node.isClickable()));
+        map.put("focusable", String.valueOf(node.isFocusable()));
+        map.put("long-clickable", String.valueOf(node.isLongClickable()));
+        map.put("enabled", String.valueOf(node.isEnabled()));
+
+        Rect outbounds = new Rect();
+        node.getBoundsInScreen(outbounds);
+        map.put("bounds_in_screen", outbounds.toString());
+
+        map.put("visibility", String.valueOf(node.isVisibleToUser()));
+        if (node.getContentDescription() != null) {
+            map.put("content-desc", node.getContentDescription().toString());
+        } else {
+            map.put("content-desc", "node");
+        }
+
+        node.getBoundsInParent(outbounds);
+        map.put("bounds_in_parent", outbounds.toString());
+
+        map.put("focused", String.valueOf(node.isFocused()));
+        map.put("selected", String.valueOf(node.isSelected()));
+
+        map.put("children_count", String.valueOf(node.getChildCount()));
+        map.put( "checkable", String.valueOf(node.isCheckable()));
+
+        //map.put("to_string", node.toString());
+
+        Gson gson = new Gson();
+        String json = gson.toJson(map);
+
+        return json;
+    }
+
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private String parseAllNodeVH(AccessibilityNodeInfo root) {
