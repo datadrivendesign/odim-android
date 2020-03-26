@@ -123,7 +123,11 @@ public class MyAccessibilityService extends AccessibilityService {
         map.put("class_name", node.getClassName().toString());
 
         map.put("scrollable", String.valueOf(node.isScrollable()));
-        map.put("parent", node.getParent().getClassName().toString());
+        if (node.getParent() != null) {
+            map.put("parent", node.getParent().getClassName().toString());
+        } else {
+            map.put("parent", "none");
+        }
         map.put("clickable", String.valueOf(node.isClickable()));
         map.put("focusable", String.valueOf(node.isFocusable()));
         map.put("long-clickable", String.valueOf(node.isLongClickable()));
@@ -137,7 +141,7 @@ public class MyAccessibilityService extends AccessibilityService {
         if (node.getContentDescription() != null) {
             map.put("content-desc", node.getContentDescription().toString());
         } else {
-            map.put("content-desc", "node");
+            map.put("content-desc", "none");
         }
 
         node.getBoundsInParent(outbounds);
@@ -166,7 +170,7 @@ public class MyAccessibilityService extends AccessibilityService {
         while (deque != null && !deque.isEmpty()) {
             AccessibilityNodeInfo node = deque.removeFirst();
             if (node != null) {
-                vh = vh + node.toString() + "\n" + "\n";
+                vh = vh + parse_vh_to_json(node) + "\n" + "\n";
                 Log.i("Oppps", String.valueOf(node.getChildCount()));
                 for (int i = 0; i < node.getChildCount(); i++) {
                     AccessibilityNodeInfo current_node = node.getChild(i);
