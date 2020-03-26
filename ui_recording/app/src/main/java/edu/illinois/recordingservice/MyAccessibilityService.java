@@ -2,21 +2,22 @@ package edu.illinois.recordingservice;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
-
-import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.os.Build;
-import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
-
-import android.view.View;
-import android.view.Window;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 
-import java.io.File;
-import java.io.FileOutputStream;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -94,7 +95,40 @@ public class MyAccessibilityService extends AccessibilityService {
             if (node == null) {
                return;
             }
-            String vh_currentnode = "Current Node: " + "\n" + node.toString() + "\n";
+
+            Map<String,String> map = new HashMap<>();
+
+            map.put("package_name", node.getPackageName().toString());
+            map.put("class_name", node.getClassName().toString());
+
+            map.put("scrollable", String.valueOf(node.isScrollable()));
+            map.put("parent", node.getParent().getClassName().toString());
+            map.put("clickable", String.valueOf(node.isClickable()));
+            map.put("focusable", String.valueOf(node.isFocusable()));
+            map.put("long-clickable", String.valueOf(node.isLongClickable()));
+            map.put("enabled", String.valueOf(node.isEnabled()));
+
+            Rect outbounds = new Rect();
+            node.getBoundsInScreen(outbounds);
+            map.put("bounds_in_screen", outbounds.toString());
+
+            map.put("visibility", String.valueOf(node.isVisibleToUser()));
+            map.put("content-desc", node.getContentDescription().toString());
+
+            node.getBoundsInParent(outbounds);
+            map.put("bounds_in_parent", outbounds.toString());
+
+            map.put("focused", String.valueOf(node.isFocused()));
+            map.put("selected", String.valueOf(node.isSelected()));
+
+            map.put("children_count", String.valueOf(node.getChildCount()));
+
+            //map.put("to_string", node.toString());
+
+            Gson gson = new Gson();
+            String json = gson.toJson(map);
+
+            String vh_currentnode = "Current Node: " + "\n" + json + "\n";
 
             // all nodes
             AccessibilityNodeInfo rootInActiveWindow = getRootInActiveWindow();
@@ -104,7 +138,6 @@ public class MyAccessibilityService extends AccessibilityService {
             }
 
             String vh = vh_currentnode + "\n" +  vh_allnode;
-
 
             // add the event
             add_event(packageName, isNewTrace, eventDescription, vh);
