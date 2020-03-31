@@ -36,7 +36,7 @@ public class EventActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(getApplicationContext(),ViewHierarchyActivity.class);
+                Intent intent = new Intent(getApplicationContext(),ScreenShotActivity.class);
                 String event_name = ((TextView)view).getText().toString();
                 intent.putExtra("package_name", package_name);
                 intent.putExtra("trace_name", trace_name);

@@ -1,5 +1,7 @@
 package edu.illinois.recordingservice;
 
+import android.graphics.Bitmap;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -7,6 +9,8 @@ class Layer {
 
     private ArrayList<String> list;
     private HashMap<String, Layer> map;
+
+    private Bitmap bitmap;
 
     public Layer() {
         list = new ArrayList<String>();
@@ -27,5 +31,13 @@ class Layer {
 
     public void setMap(HashMap<String, Layer> map) {
         this.map = map;
+    }
+
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
     }
 }

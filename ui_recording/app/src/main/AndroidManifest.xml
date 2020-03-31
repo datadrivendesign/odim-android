@@ -39,6 +39,7 @@
         <activity android:name="edu.illinois.recordingservice.TraceActivity" />
         <activity android:name="edu.illinois.recordingservice.EventActivity" />
         <activity android:name="edu.illinois.recordingservice.ViewHierarchyActivity" />
+        <activity android:name="edu.illinois.recordingservice.ScreenShotActivity" />
     </application>
 
 </manifest>

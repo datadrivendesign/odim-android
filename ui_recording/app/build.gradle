@@ -1,16 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "28.0.3"
+    compileSdkVersion 'android-R'
+    buildToolsVersion "30-rc2"
     defaultConfig {
         applicationId "edu.illinois.recordingservice"
-        minSdkVersion 19
-        targetSdkVersion 28
+        minSdkVersion 'R'
+        targetSdkVersion 'R'
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
         release {
             minifyEnabled false
