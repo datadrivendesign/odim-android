@@ -156,6 +156,11 @@ public class MyAccessibilityService extends AccessibilityService {
         node.getBoundsInScreen(outbounds);
         map.put("bounds_in_screen", outbounds.toString());
 
+        map.put("top", String.valueOf(outbounds.top));
+        map.put("bottom", String.valueOf(outbounds.bottom));
+        map.put("left", String.valueOf(outbounds.left));
+        map.put("right", String.valueOf(outbounds.right));
+
         map.put("visibility", String.valueOf(node.isVisibleToUser()));
         if (node.getContentDescription() != null) {
             map.put("content-desc", node.getContentDescription().toString());

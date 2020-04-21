@@ -2,6 +2,9 @@ package edu.illinois.recordingservice;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -11,11 +14,14 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import static android.graphics.Bitmap.Config.ARGB_8888;
+
 public class ScreenShotActivity extends AppCompatActivity {
     private ImageView imageView;
     private String package_name;
     private String trace_name;
     private String event_name;
+    private Canvas canvas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +38,16 @@ public class ScreenShotActivity extends AppCompatActivity {
 
         Bitmap screenshot = MyAccessibilityService.get_screenshot(package_name, trace_name, event_name);
         if (screenshot != null) {
-            imageView.setImageBitmap(screenshot);
+
+            Bitmap myBit = screenshot.copy(ARGB_8888, true);
+
+            canvas = new Canvas(myBit);
+
+            Paint paint = new Paint();
+
+            canvas.drawRect(270, 1643, 540, 1794, paint);
+
+            imageView.setImageBitmap(myBit);
 
 //        imageView.setOnClickListener(new ImageView.OnClickListener() {
 //            @Override
