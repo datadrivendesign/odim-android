@@ -10,7 +10,7 @@ class Layer {
     private ArrayList<String> list;
     private HashMap<String, Layer> map;
 
-    private Bitmap bitmap;
+    private ScreenShot screenShot;
 
     public Layer() {
         list = new ArrayList<String>();
@@ -33,11 +33,19 @@ class Layer {
         this.map = map;
     }
 
-    public Bitmap getBitmap() {
-        return bitmap;
+//    public Bitmap getBitmap() {
+//        return bitmap;
+//    }
+//
+//    public void setBitmap(Bitmap bitmap) {
+//        this.bitmap = bitmap;
+//    }
+
+    public ScreenShot getScreenShot() {
+        return screenShot;
     }
 
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
+    public void setScreenShot(ScreenShot screenShot) {
+        this.screenShot = screenShot;
     }
 }

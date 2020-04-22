@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -36,18 +35,20 @@ public class ScreenShotActivity extends AppCompatActivity {
 
         imageView = (ImageView) findViewById(R.id.screenshot);
 
-        Bitmap screenshot = MyAccessibilityService.get_screenshot(package_name, trace_name, event_name);
+        ScreenShot screenshot = MyAccessibilityService.get_screenshot(package_name, trace_name, event_name);
         if (screenshot != null) {
 
-            Bitmap myBit = screenshot.copy(ARGB_8888, true);
+            Bitmap myBit = screenshot.getBitmap().copy(ARGB_8888, true);
 
             canvas = new Canvas(myBit);
 
             Paint paint = new Paint();
 
-            canvas.drawRect(270, 1643, 540, 1794, paint);
+            canvas.drawRect(screenshot.getRect(), paint);
 
             imageView.setImageBitmap(myBit);
+
+//            imageView.setImageBitmap(screenshot.getBitmap());
 
 //        imageView.setOnClickListener(new ImageView.OnClickListener() {
 //            @Override

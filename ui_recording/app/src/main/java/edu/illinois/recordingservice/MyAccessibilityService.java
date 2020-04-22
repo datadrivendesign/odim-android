@@ -34,6 +34,8 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static android.graphics.Bitmap.wrapHardwareBuffer;
+import static android.os.AsyncTask.SERIAL_EXECUTOR;
+import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static android.view.Display.DEFAULT_DISPLAY;
 import static android.view.accessibility.AccessibilityEvent.eventTypeToString;
 
@@ -47,6 +49,8 @@ public class MyAccessibilityService extends AccessibilityService {
     private static Layer package_layer = new Layer();
 
     private Bitmap current_bitmap;
+
+    private ScreenShot current_screenshot;
 
     @Override
     protected void onServiceConnected() {
@@ -80,8 +84,6 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)   ||
-                (event.getEventType()== AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)   ||
-                (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SELECTED)  ||
                 (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED) ) {
 
             // Parse event description
@@ -95,12 +97,22 @@ public class MyAccessibilityService extends AccessibilityService {
 
             String eventDescription =  eventTime + "; " + eventType;
 
+
+            int action_type;
+            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+                action_type = ScreenShot.TYPE_CLICK;
+            } else {
+                action_type = ScreenShot.TYPE_SCROLL;
+            }
+
+
             Consumer<ScreenshotResult> consumer = new Consumer<ScreenshotResult>() {
                 @Override
                 public void accept(ScreenshotResult screenshotResult) {
                     current_bitmap = wrapHardwareBuffer(screenshotResult.getHardwareBuffer(), screenshotResult.getColorSpace());
                 }
             };
+
             Boolean hasTakenScreenShot = takeScreenshot(DEFAULT_DISPLAY, getMainExecutor(), consumer);
             Log.i("Screenshot", String.valueOf(hasTakenScreenShot));
 
@@ -110,6 +122,10 @@ public class MyAccessibilityService extends AccessibilityService {
             if (node == null) {
                return;
             }
+
+            Rect outbounds = new Rect();
+            node.getBoundsInScreen(outbounds);
+            current_screenshot = new ScreenShot(current_bitmap, outbounds, action_type);
 
             String json = parse_vh_to_json(node);
 
@@ -125,7 +141,7 @@ public class MyAccessibilityService extends AccessibilityService {
             String vh = vh_currentnode + "\n" +  vh_allnode;
 
             // add the event
-            add_event(packageName, isNewTrace, eventDescription, current_bitmap, vh);
+            add_event(packageName, isNewTrace, eventDescription, current_screenshot, vh);
             last_package_name = packageName;
 
         }
@@ -155,11 +171,6 @@ public class MyAccessibilityService extends AccessibilityService {
         Rect outbounds = new Rect();
         node.getBoundsInScreen(outbounds);
         map.put("bounds_in_screen", outbounds.toString());
-
-        map.put("top", String.valueOf(outbounds.top));
-        map.put("bottom", String.valueOf(outbounds.bottom));
-        map.put("left", String.valueOf(outbounds.left));
-        map.put("right", String.valueOf(outbounds.right));
 
         map.put("visibility", String.valueOf(node.isVisibleToUser()));
         if (node.getContentDescription() != null) {
@@ -210,7 +221,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
 
-    public static void add_event(String packageName, boolean isNewTrace, String eventDescription, Bitmap currentBitmap,String viewHierachy) {
+    public static void add_event(String packageName, boolean isNewTrace, String eventDescription, ScreenShot currentScreenShot, String viewHierachy) {
 
         // add the package
         HashMap<String, Layer> package_map = package_layer.getMap();
@@ -273,7 +284,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
-        screenshot_layer.setBitmap(currentBitmap);
+        screenshot_layer.setScreenShot(currentScreenShot);
 
         HashMap<String, Layer> screenshot_map = screenshot_layer.getMap();
         screenshot_map.put(eventDescription, new Layer());
@@ -304,8 +315,8 @@ public class MyAccessibilityService extends AccessibilityService {
         return package_layer.getMap().get(package_name).getMap().get(trace_name).getList();
     }
 
-    public static Bitmap get_screenshot(String package_name, String trace_name, String event_name) {
-        return package_layer.getMap().get(package_name).getMap().get(trace_name).getMap().get(event_name).getBitmap();
+    public static ScreenShot get_screenshot(String package_name, String trace_name, String event_name) {
+        return package_layer.getMap().get(package_name).getMap().get(trace_name).getMap().get(event_name).getScreenShot();
     }
 
     public static ArrayList<String> get_vh(String package_name, String trace_name, String event_name) {
