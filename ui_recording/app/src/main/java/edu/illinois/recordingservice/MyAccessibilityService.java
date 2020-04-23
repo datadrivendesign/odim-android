@@ -34,7 +34,6 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static android.graphics.Bitmap.wrapHardwareBuffer;
-import static android.os.AsyncTask.SERIAL_EXECUTOR;
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static android.view.Display.DEFAULT_DISPLAY;
 import static android.view.accessibility.AccessibilityEvent.eventTypeToString;
@@ -51,6 +50,9 @@ public class MyAccessibilityService extends AccessibilityService {
     private Bitmap current_bitmap;
 
     private ScreenShot current_screenshot;
+
+    private int forward = 0;
+    private int next = 0;
 
     @Override
     protected void onServiceConnected() {
@@ -97,6 +99,8 @@ public class MyAccessibilityService extends AccessibilityService {
 
             String eventDescription =  eventTime + "; " + eventType;
 
+            Log.i("KKK", eventType);
+
 
             int action_type;
             if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
@@ -105,16 +109,27 @@ public class MyAccessibilityService extends AccessibilityService {
                 action_type = ScreenShot.TYPE_SCROLL;
             }
 
+            while (forward != next) {
+                Log.i("AAA", String.valueOf(forward) + "!!!" + String.valueOf(next));
+            }
+            Log.i("AAA", "Finally out!!! Yeah!!!");
+            forward++;
 
             Consumer<ScreenshotResult> consumer = new Consumer<ScreenshotResult>() {
                 @Override
                 public void accept(ScreenshotResult screenshotResult) {
                     current_bitmap = wrapHardwareBuffer(screenshotResult.getHardwareBuffer(), screenshotResult.getColorSpace());
+                    next++;
                 }
             };
 
-            Boolean hasTakenScreenShot = takeScreenshot(DEFAULT_DISPLAY, getMainExecutor(), consumer);
+            Boolean hasTakenScreenShot = takeScreenshot(DEFAULT_DISPLAY, THREAD_POOL_EXECUTOR, consumer);
             Log.i("Screenshot", String.valueOf(hasTakenScreenShot));
+
+            while (forward != next) {
+                Log.i("BBB", String.valueOf(forward) + "!!!" + String.valueOf(next));
+            }
+            Log.i("BBB", "Finally out!!! Yeah!!!");
 
             // parse view hierarchy
             // current node
