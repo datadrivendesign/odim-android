@@ -10,12 +10,15 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import java.util.ArrayList;
 
 import static android.graphics.Bitmap.Config.ARGB_8888;
 
@@ -53,6 +56,7 @@ public class ScreenShotActivity extends AppCompatActivity {
                 paint.setColor(Color.rgb(255, 165, 0));
                 paint.setAlpha(100);
                 canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
+
             } else if (screenshot.getAction_type() == ScreenShot.TYPE_SCROLL) {
                 Paint paint = new Paint();
                 paint.setColor(Color.rgb(255, 165, 0));
@@ -63,6 +67,20 @@ public class ScreenShotActivity extends AppCompatActivity {
                 paint.setColor(Color.rgb(0, 165, 255));
                 paint.setAlpha(100);
                 canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
+            }
+
+//            Paint rect_paint = new Paint();
+////            rect_paint.setColor(Color.rgb(0, 0, 255));
+////            rect_paint.setAlpha(100);
+////            canvas.drawRect(rect, rect_paint);
+
+            ArrayList<Rect> boxes = screenshot.getVh();
+            Log.i("Box size", String.valueOf(boxes.size()));
+            for (int i = 0; i < boxes.size(); i++) {
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(0, 0, 255));
+                paint.setAlpha(30);
+                canvas.drawRect(boxes.get(i), paint);
             }
 
 

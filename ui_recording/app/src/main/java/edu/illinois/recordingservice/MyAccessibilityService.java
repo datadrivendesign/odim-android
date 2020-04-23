@@ -147,7 +147,15 @@ public class MyAccessibilityService extends AccessibilityService {
 
             Rect outbounds = new Rect();
             node.getBoundsInScreen(outbounds);
-            current_screenshot = new ScreenShot(current_bitmap, outbounds, action_type);
+
+            AccessibilityNodeInfo root = getRootInActiveWindow();
+            ArrayList<Rect> boxes = new ArrayList<Rect>();
+
+            if (root != null) {
+                boxes.addAll(get_boxes(root));
+            }
+
+            current_screenshot = new ScreenShot(current_bitmap, outbounds, action_type, boxes);
 
 
             // VH
@@ -169,6 +177,22 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
     }
+
+    private ArrayList<Rect> get_boxes(AccessibilityNodeInfo node) {
+        ArrayList<Rect> boxes = new ArrayList<Rect>();
+        Rect rect = new Rect();
+        node.getBoundsInScreen(rect);
+        boxes.add(rect);
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo current_node = node.getChild(i);
+            if (current_node != null) {
+                boxes.addAll(get_boxes(current_node));
+            }
+        }
+        Log.i("Box size", String.valueOf(boxes.size()));
+        return boxes;
+    }
+
 
     private String parse_vh_to_json(AccessibilityNodeInfo node) {
         Map<String,String> map = new HashMap<>();
@@ -216,7 +240,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo current_node = node.getChild(i);
-            if (node != null) {
+            if (current_node != null) {
                 children_vh += parse_vh_to_json(current_node) + ",";
             }
 
