@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -52,7 +53,13 @@ public class ScreenShotActivity extends AppCompatActivity {
                 paint.setColor(Color.rgb(255, 165, 0));
                 paint.setAlpha(100);
                 canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
+            } else if (screenshot.getAction_type() == ScreenShot.TYPE_SCROLL) {
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(255, 165, 0));
+                paint.setAlpha(100);
+                canvas.drawOval(rect.centerX()-50, rect.centerY()-100, rect.centerX()+50, rect.centerY()+100, paint);
             }
+
 
             imageView.setImageBitmap(myBit);
 

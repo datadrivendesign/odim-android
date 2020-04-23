@@ -85,7 +85,9 @@ public class MyAccessibilityService extends AccessibilityService {
             isNewTrace = true;
         }
 
-        if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED) ) {
+        if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)
+                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
+        ) {
 
 //            || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
 
