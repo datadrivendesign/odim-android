@@ -87,6 +87,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)
                 || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
+                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
         ) {
 
 //            || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
@@ -105,11 +106,14 @@ public class MyAccessibilityService extends AccessibilityService {
             Log.i("KKK", eventType);
 
 
+            // Screenshot
             int action_type;
             if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
                 action_type = ScreenShot.TYPE_CLICK;
-            } else {
+            } else if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
                 action_type = ScreenShot.TYPE_SCROLL;
+            } else {
+                action_type = ScreenShot.TYPE_LONG_CLICK;
             }
 
             while (forward != next) {
@@ -145,18 +149,18 @@ public class MyAccessibilityService extends AccessibilityService {
             node.getBoundsInScreen(outbounds);
             current_screenshot = new ScreenShot(current_bitmap, outbounds, action_type);
 
-            String json = parse_vh_to_json(node);
 
-            String vh_currentnode = "Current Node: " + "\n" + json + "\n";
+            // VH
+//            String json = parse_vh_to_json(node);
+//
+//            String vh_currentnode = "Current Node: " + "\n" + json + "\n";
 
             // all nodes
             AccessibilityNodeInfo rootInActiveWindow = getRootInActiveWindow();
-            String vh_allnode = "";
+            String vh = "";
             if (rootInActiveWindow != null) {
-                vh_allnode = "All Nodes: " + "\n" + parseAllNodeVH(rootInActiveWindow);
+                vh = parse_vh_to_json(rootInActiveWindow);
             }
-
-            String vh = vh_currentnode + "\n" +  vh_allnode;
 
             // add the event
             add_event(packageName, isNewTrace, eventDescription, current_screenshot, vh);
@@ -208,35 +212,55 @@ public class MyAccessibilityService extends AccessibilityService {
         map.put( "checkable", String.valueOf(node.isCheckable()));
         map.put( "checked", String.valueOf(node.isChecked()));
 
+        String children_vh = "[";
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo current_node = node.getChild(i);
+            if (node != null) {
+                children_vh += parse_vh_to_json(current_node) + ",";
+            }
+
+        }
+        children_vh += "]";
+
+
+        Log.i("VH!!!!!!!", children_vh);
+
+
+
+        map.put("children", children_vh);
+
         //map.put("to_string", node.toString());
 
         Gson gson = new Gson();
         String json = gson.toJson(map);
 
+        json = json.replaceAll("\\\\","");
+
         return json;
     }
 
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private String parseAllNodeVH(AccessibilityNodeInfo root) {
-        String vh = "";
-        Deque<AccessibilityNodeInfo> deque = new ArrayDeque<>();
-        deque.add(root);
-        while (deque != null && !deque.isEmpty()) {
-            AccessibilityNodeInfo node = deque.removeFirst();
-            if (node != null) {
-                vh = vh + parse_vh_to_json(node) + "\n" + "\n";
-//                Log.i("Oppps", String.valueOf(node.getChildCount()));
-                for (int i = 0; i < node.getChildCount(); i++) {
-                    AccessibilityNodeInfo current_node = node.getChild(i);
-                    if (current_node != null) {
-                        deque.addLast(current_node);
-                    }
-                }
-            }
-        }
-        return vh;
-    }
+//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//    private String parseAllNodeVH(AccessibilityNodeInfo root) {
+//        String vh = "";
+//        Deque<AccessibilityNodeInfo> deque = new ArrayDeque<>();
+//        deque.add(root);
+//        while (deque != null && !deque.isEmpty()) {
+//            AccessibilityNodeInfo node = deque.removeFirst();
+//            if (node != null) {
+//                vh = vh + parse_vh_to_json(node) + "\n" + "\n";
+////                Log.i("Oppps", String.valueOf(node.getChildCount()));
+//                for (int i = 0; i < node.getChildCount(); i++) {
+//                    AccessibilityNodeInfo current_node = node.getChild(i);
+//                    if (current_node != null) {
+//                        deque.addLast(current_node);
+//                    }
+//                }
+//            }
+//        }
+//        return vh;
+//    }
 
 
     public static void add_event(String packageName, boolean isNewTrace, String eventDescription, ScreenShot currentScreenShot, String viewHierachy) {

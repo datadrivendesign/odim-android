@@ -6,6 +6,7 @@ import android.graphics.Rect;
 public class ScreenShot {
     public static final int TYPE_CLICK = 0;
     public static final int TYPE_SCROLL = 1;
+    public static final int TYPE_LONG_CLICK = 2;
 
     private Bitmap bitmap;
     private Rect rect;

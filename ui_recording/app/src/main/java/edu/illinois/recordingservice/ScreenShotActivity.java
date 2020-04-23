@@ -58,6 +58,11 @@ public class ScreenShotActivity extends AppCompatActivity {
                 paint.setColor(Color.rgb(255, 165, 0));
                 paint.setAlpha(100);
                 canvas.drawOval(rect.centerX()-50, rect.centerY()-100, rect.centerX()+50, rect.centerY()+100, paint);
+            }  else if (screenshot.getAction_type() == ScreenShot.TYPE_LONG_CLICK) {
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(0, 165, 255));
+                paint.setAlpha(100);
+                canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
             }
 
 
