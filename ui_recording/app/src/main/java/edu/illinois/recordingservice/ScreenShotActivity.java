@@ -3,8 +3,11 @@ package edu.illinois.recordingservice;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
@@ -42,9 +45,14 @@ public class ScreenShotActivity extends AppCompatActivity {
 
             canvas = new Canvas(myBit);
 
-            Paint paint = new Paint();
+            Rect rect = screenshot.getRect();
 
-            canvas.drawRect(screenshot.getRect(), paint);
+            if (screenshot.getAction_type() == ScreenShot.TYPE_CLICK) {
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(255, 165, 0));
+                paint.setAlpha(100);
+                canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
+            }
 
             imageView.setImageBitmap(myBit);
 

@@ -85,8 +85,9 @@ public class MyAccessibilityService extends AccessibilityService {
             isNewTrace = true;
         }
 
-        if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)   ||
-                (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED) ) {
+        if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED) ) {
+
+//            || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
 
             // Parse event description
             Date date = new Date(event.getEventTime());
