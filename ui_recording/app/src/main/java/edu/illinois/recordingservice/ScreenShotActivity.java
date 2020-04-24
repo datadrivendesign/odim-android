@@ -79,7 +79,7 @@ public class ScreenShotActivity extends AppCompatActivity {
             for (int i = 0; i < boxes.size(); i++) {
                 Paint paint = new Paint();
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setColor(Color.rgb(0, 0, 255));
+                paint.setColor(Color.rgb(255, 0, 0));
 //                paint.setAlpha(30);
                 canvas.drawRect(boxes.get(i), paint);
             }
