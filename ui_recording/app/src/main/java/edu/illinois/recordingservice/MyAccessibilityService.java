@@ -86,8 +86,9 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if ((event.getEventType()== AccessibilityEvent.TYPE_VIEW_CLICKED)
-                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
-                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
+//                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
+//                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
+//                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SELECTED)
         ) {
 
 //            || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
@@ -112,8 +113,10 @@ public class MyAccessibilityService extends AccessibilityService {
                 action_type = ScreenShot.TYPE_CLICK;
             } else if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
                 action_type = ScreenShot.TYPE_SCROLL;
-            } else {
+            } else if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
                 action_type = ScreenShot.TYPE_LONG_CLICK;
+            } else {
+                action_type = ScreenShot.TYPE_SELECT;
             }
 
             while (forward != next) {
@@ -131,6 +134,11 @@ public class MyAccessibilityService extends AccessibilityService {
             };
 
             Boolean hasTakenScreenShot = takeScreenshot(DEFAULT_DISPLAY, THREAD_POOL_EXECUTOR, consumer);
+//            try {
+//                THREAD_POOL_EXECUTOR.wait();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
             Log.i("Screenshot", String.valueOf(hasTakenScreenShot));
 
             while (forward != next) {

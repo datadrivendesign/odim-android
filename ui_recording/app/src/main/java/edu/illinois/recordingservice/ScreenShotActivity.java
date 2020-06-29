@@ -56,7 +56,6 @@ public class ScreenShotActivity extends AppCompatActivity {
                 paint.setColor(Color.rgb(255, 165, 0));
                 paint.setAlpha(100);
                 canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
-
             } else if (screenshot.getAction_type() == ScreenShot.TYPE_SCROLL) {
                 Paint paint = new Paint();
                 paint.setColor(Color.rgb(255, 165, 0));
@@ -65,6 +64,11 @@ public class ScreenShotActivity extends AppCompatActivity {
             }  else if (screenshot.getAction_type() == ScreenShot.TYPE_LONG_CLICK) {
                 Paint paint = new Paint();
                 paint.setColor(Color.rgb(0, 165, 255));
+                paint.setAlpha(100);
+                canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
+            } else if (screenshot.getAction_type() == ScreenShot.TYPE_SELECT) {
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(165, 0, 255));
                 paint.setAlpha(100);
                 canvas.drawCircle(rect.centerX(), rect.centerY(), (float) ((rect.height() + rect.width()) * 0.25), paint);
             }

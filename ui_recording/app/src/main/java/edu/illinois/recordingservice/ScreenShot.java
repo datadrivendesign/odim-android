@@ -9,6 +9,7 @@ public class ScreenShot {
     public static final int TYPE_CLICK = 0;
     public static final int TYPE_SCROLL = 1;
     public static final int TYPE_LONG_CLICK = 2;
+    public static final int TYPE_SELECT = 3;
 
     private Bitmap bitmap;
     private Rect rect;
