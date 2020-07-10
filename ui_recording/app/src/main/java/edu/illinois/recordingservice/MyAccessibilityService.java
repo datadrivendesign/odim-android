@@ -211,7 +211,9 @@ public class MyAccessibilityService extends AccessibilityService {
 
         // upload VH
         File vhFile = new File(getApplicationContext().getFilesDir(), "vh");
-        String vh_location = packageId + "/" + traceId + "/" + gestureId + "/" + "view_hierarchy";
+        String user_id = "test_user04";
+        String base_location = user_id + "/" + packageId + "/" + traceId + "/" + gestureId + "/";
+        String vh_location = base_location + "view_hierarchy";
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(vhFile));
@@ -230,7 +232,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         // upload screenshot
         File screenshotFile = new File(getApplicationContext().getFilesDir(), "screenshot");
-        String screenshot_location = packageId + "/" + traceId + "/" + gestureId + "/" + "screenshot";
+        String screenshot_location = base_location + "screenshot";
 
         try (FileOutputStream out = new FileOutputStream(screenshotFile)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
@@ -248,7 +250,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         // upload gesture description
         File gestureFile = new File(getApplicationContext().getFilesDir(), "vh");
-        String gesture_location = packageId + "/" + traceId + "/" + gestureId + "/" + "gesture_description";
+        String gesture_location = base_location + "gesture_description";
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(gestureFile));
@@ -289,11 +291,6 @@ public class MyAccessibilityService extends AccessibilityService {
         map.put("package_name", node.getPackageName().toString());
         map.put("class_name", node.getClassName().toString());
 
-        CharSequence text = node.getText();
-        if (text != null) {
-            map.put("text", text.toString());
-        }
-
         map.put("scrollable", String.valueOf(node.isScrollable()));
         if (node.getParent() != null) {
             CharSequence cs = node.getParent().getClassName();
@@ -329,6 +326,11 @@ public class MyAccessibilityService extends AccessibilityService {
 
         map.put( "checkable", String.valueOf(node.isCheckable()));
         map.put( "checked", String.valueOf(node.isChecked()));
+
+        CharSequence text = node.getText();
+        if (text != null) {
+            map.put("text_field", text.toString());
+        }
 
         String children_vh = "[";
 
