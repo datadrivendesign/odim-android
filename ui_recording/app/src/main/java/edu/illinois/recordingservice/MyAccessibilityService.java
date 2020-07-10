@@ -211,7 +211,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         // upload VH
         File vhFile = new File(getApplicationContext().getFilesDir(), "vh");
-        String user_id = "test_user04";
+        String user_id = "test_user08";
         String base_location = user_id + "/" + packageId + "/" + traceId + "/" + gestureId + "/";
         String vh_location = base_location + "view_hierarchy";
 
@@ -329,7 +329,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
         CharSequence text = node.getText();
         if (text != null) {
-            map.put("text_field", text.toString());
+            String text_field = text.toString();
+            if (!text_field.equals("")) {
+                map.put("text_field", text.toString());
+            }
         }
 
         String children_vh = "[";
