@@ -291,9 +291,8 @@ public class MyAccessibilityService extends AccessibilityService {
 
         CharSequence text = node.getText();
         if (text != null) {
-            Log.i("Text: ", text.toString());
+            map.put("text", text.toString());
         }
-
 
         map.put("scrollable", String.valueOf(node.isScrollable()));
         if (node.getParent() != null) {
