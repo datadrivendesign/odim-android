@@ -18,6 +18,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
 }
 
 dependencies {
@@ -32,6 +38,35 @@ dependencies {
     compile 'com.google.firebase:firebase-auth:10.0.1'
     implementation 'com.google.code.gson:gson:2.8.5'
     testCompile 'junit:junit:4.12'
+
+    implementation 'com.amplifyframework:core:1.0.0'
+
+    implementation 'com.amplifyframework:aws-storage-s3:1.0.0'
+    implementation 'com.amplifyframework:aws-auth-cognito:1.0.0'
+}
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+
+        // Add this line into `repositories` in `buildscript`
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.0.0'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+
+        // Add this line into `repositories` in `allprojects`
+        mavenCentral()
+    }
 }
 
 apply plugin: 'com.google.gms.google-services'

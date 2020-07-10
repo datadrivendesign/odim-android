@@ -8,8 +8,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
+//import android.support.v4.content.ContextCompat;
+//import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,7 +17,15 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
 
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import static android.graphics.Bitmap.Config.ARGB_8888;
@@ -91,6 +99,7 @@ public class ScreenShotActivity extends AppCompatActivity {
 
             imageView.setImageBitmap(myBit);
 
+
 //            imageView.setImageBitmap(screenshot.getBitmap());
 
 //        imageView.setOnClickListener(new ImageView.OnClickListener() {
@@ -114,6 +123,7 @@ public class ScreenShotActivity extends AppCompatActivity {
         }
 
     }
+
 
 }
 

@@ -1,0 +1,20 @@
+{
+    "dev": {
+        "awscloudformation": {
+            "AuthRoleName": "amplify-uirecording-dev-224953-authRole",
+            "UnauthRoleArn": "arn:aws:iam::405994590832:role/amplify-uirecording-dev-224953-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::405994590832:role/amplify-uirecording-dev-224953-authRole",
+            "Region": "us-east-2",
+            "DeploymentBucketName": "amplify-uirecording-dev-224953-deployment",
+            "UnauthRoleName": "amplify-uirecording-dev-224953-unauthRole",
+            "StackName": "amplify-uirecording-dev-224953",
+            "StackId": "arn:aws:cloudformation:us-east-2:405994590832:stack/amplify-uirecording-dev-224953/402b8d80-c197-11ea-b5c8-021a782363a8",
+            "AmplifyAppId": "dncskbqubsaz6"
+        },
+        "categories": {
+            "auth": {
+                "uirecording93031f02": {}
+            }
+        }
+    }
+}

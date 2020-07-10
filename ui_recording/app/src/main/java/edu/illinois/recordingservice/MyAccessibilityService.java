@@ -7,12 +7,16 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+//import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 
+import com.amplifyframework.AmplifyException;
+import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin;
+import com.amplifyframework.core.Amplify;
+import com.amplifyframework.storage.s3.AWSS3StoragePlugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -21,6 +25,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -65,6 +74,18 @@ public class MyAccessibilityService extends AccessibilityService {
         info.notificationTimeout = 100;
         info.packageNames = null;
         setServiceInfo(info);
+
+        try {
+            // Add these lines to add the AWSCognitoAuthPlugin and AWSS3StoragePlugin plugins
+            Amplify.addPlugin(new AWSCognitoAuthPlugin());
+            Amplify.addPlugin(new AWSS3StoragePlugin());
+            Amplify.configure(getApplicationContext());
+
+            Log.i("MyAmplifyApp", "Initialized Amplify");
+        } catch (AmplifyException error) {
+            Log.e("MyAmplifyApp", "Could not initialize Amplify", error);
+        }
+
     }
 
     @Override
@@ -186,6 +207,66 @@ public class MyAccessibilityService extends AccessibilityService {
 
     }
 
+    private void uploadFile(String packageId, String traceId, String gestureId, String gestureDescription, String vh_content, Bitmap bitmap) {
+
+        // upload VH
+        File vhFile = new File(getApplicationContext().getFilesDir(), "vh");
+        String vh_location = packageId + "/" + traceId + "/" + gestureId + "/" + "view_hierarchy";
+
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(vhFile));
+            writer.append(vh_content);
+            writer.close();
+        } catch (Exception exception) {
+            Log.e("MyAmplifyApp", "Upload failed", exception);
+        }
+
+        Amplify.Storage.uploadFile(
+                vh_location,
+                vhFile,
+                result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()),
+                storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
+        );
+
+        // upload screenshot
+        File screenshotFile = new File(getApplicationContext().getFilesDir(), "screenshot");
+        String screenshot_location = packageId + "/" + traceId + "/" + gestureId + "/" + "screenshot";
+
+        try (FileOutputStream out = new FileOutputStream(screenshotFile)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+            // PNG is a lossless format, the compression factor (100) is ignored
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Amplify.Storage.uploadFile(
+                screenshot_location,
+                screenshotFile,
+                result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()),
+                storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
+        );
+
+        // upload gesture description
+        File gestureFile = new File(getApplicationContext().getFilesDir(), "vh");
+        String gesture_location = packageId + "/" + traceId + "/" + gestureId + "/" + "gesture_description";
+
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(gestureFile));
+            writer.append(gestureDescription);
+            writer.close();
+        } catch (Exception exception) {
+            Log.e("MyAmplifyApp", "Upload failed", exception);
+        }
+
+        Amplify.Storage.uploadFile(
+                gesture_location,
+                gestureFile,
+                result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()),
+                storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
+        );
+    }
+
+
     private ArrayList<Rect> get_boxes(AccessibilityNodeInfo node) {
         ArrayList<Rect> boxes = new ArrayList<Rect>();
         Rect rect = new Rect();
@@ -207,6 +288,12 @@ public class MyAccessibilityService extends AccessibilityService {
 
         map.put("package_name", node.getPackageName().toString());
         map.put("class_name", node.getClassName().toString());
+
+        CharSequence text = node.getText();
+        if (text != null) {
+            Log.i("Text: ", text.toString());
+        }
+
 
         map.put("scrollable", String.valueOf(node.isScrollable()));
         if (node.getParent() != null) {
@@ -295,7 +382,7 @@ public class MyAccessibilityService extends AccessibilityService {
 //    }
 
 
-    public static void add_event(String packageName, boolean isNewTrace, String eventDescription, ScreenShot currentScreenShot, String viewHierachy) {
+    private void add_event(String packageName, boolean isNewTrace, String eventDescription, ScreenShot currentScreenShot, String viewHierachy) {
 
         // add the package
         HashMap<String, Layer> package_map = package_layer.getMap();
@@ -374,6 +461,8 @@ public class MyAccessibilityService extends AccessibilityService {
         view_hierarchy_layer.setList(view_hierarchy_list);
 
         ViewHierarchyActivity.notifyVHAdapter();
+
+        uploadFile(packageName, traceName, eventDescription, eventDescription, viewHierachy, currentScreenShot.getBitmap());
 
     }
 

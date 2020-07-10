@@ -1,0 +1,15 @@
+{
+	"auth": {
+		"uirecording93031f02": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation",
+			"dependsOn": []
+		}
+	},
+	"storage": {
+		"odim01": {
+			"service": "S3",
+			"providerPlugin": "awscloudformation"
+		}
+	}
+}
