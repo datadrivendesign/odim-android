@@ -6,6 +6,9 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.os.Build;
 //import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -90,6 +93,28 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+
+        String DEBUG_TAG = "NetworkStatusExample";
+
+        ConnectivityManager connMgr =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        boolean isWifiConn = false;
+        boolean isMobileConn = false;
+        for (Network network : connMgr.getAllNetworks()) {
+            NetworkInfo networkInfo = connMgr.getNetworkInfo(network);
+            if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                isWifiConn |= networkInfo.isConnected();
+            }
+            if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
+                isMobileConn |= networkInfo.isConnected();
+            }
+        }
+        Log.d(DEBUG_TAG, "Wifi connected: " + isWifiConn);
+        Log.d(DEBUG_TAG, "Mobile connected: " + isMobileConn);
+
+        if (!isWifiConn) {
+            return;
+        }
 
         if (event == null || event.getPackageName() == null) {
             return;
