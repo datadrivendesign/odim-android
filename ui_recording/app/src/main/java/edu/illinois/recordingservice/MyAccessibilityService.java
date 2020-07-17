@@ -66,6 +66,10 @@ public class MyAccessibilityService extends AccessibilityService {
     private int forward = 0;
     private int next = 0;
 
+    private HashMap<String, String> gestures_map;
+
+    private String user_id = "test_user12";
+
     @Override
     protected void onServiceConnected() {
         // Create the service
@@ -89,6 +93,7 @@ public class MyAccessibilityService extends AccessibilityService {
             Log.e("MyAmplifyApp", "Could not initialize Amplify", error);
         }
 
+        gestures_map = new HashMap<String, String>();
     }
 
     @Override
@@ -225,20 +230,19 @@ public class MyAccessibilityService extends AccessibilityService {
             }
 
             // add the event
-            add_event(packageName, isNewTrace, eventDescription, current_screenshot, vh);
+            add_event(node, packageName, isNewTrace, eventDescription, current_screenshot, vh);
             last_package_name = packageName;
 
         }
 
     }
 
-    private void uploadFile(String packageId, String traceId, String gestureId, String gestureDescription, String vh_content, Bitmap bitmap) {
+    private void uploadFile(String packageId, String trace_number, String action_number, String gestureDescription, String vh_content, Bitmap bitmap) {
 
         // upload VH
         File vhFile = new File(getApplicationContext().getFilesDir(), "vh");
-        String user_id = "test_user08";
-        String base_location = user_id + "/" + packageId + "/" + traceId + "/" + gestureId + "/";
-        String vh_location = base_location + "view_hierarchy";
+        String base_location = user_id + "/" + packageId + "/" + trace_number + "/";
+        String vh_location = base_location + "view_hierarchies" + "/" + action_number;
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(vhFile));
@@ -257,7 +261,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         // upload screenshot
         File screenshotFile = new File(getApplicationContext().getFilesDir(), "screenshot");
-        String screenshot_location = base_location + "screenshot";
+        String screenshot_location = base_location + "screenshots" + "/" + action_number;;
 
         try (FileOutputStream out = new FileOutputStream(screenshotFile)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
@@ -273,13 +277,18 @@ public class MyAccessibilityService extends AccessibilityService {
                 storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
         );
 
-        // upload gesture description
+        // upload gestures
+        Gson gson = new Gson();
+        String json = gson.toJson(gestures_map);
+
+        json = json.replaceAll("\\\\","");
+
         File gestureFile = new File(getApplicationContext().getFilesDir(), "vh");
-        String gesture_location = base_location + "gesture_description";
+        String gesture_location = base_location + "gestures";
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(gestureFile));
-            writer.append(gestureDescription);
+            writer.append(json);
             writer.close();
         } catch (Exception exception) {
             Log.e("MyAmplifyApp", "Upload failed", exception);
@@ -411,7 +420,7 @@ public class MyAccessibilityService extends AccessibilityService {
 //    }
 
 
-    private void add_event(String packageName, boolean isNewTrace, String eventDescription, ScreenShot currentScreenShot, String viewHierachy) {
+    private void add_event(AccessibilityNodeInfo node, String packageName, boolean isNewTrace, String eventDescription, ScreenShot currentScreenShot, String viewHierachy) {
 
         // add the package
         HashMap<String, Layer> package_map = package_layer.getMap();
@@ -438,24 +447,26 @@ public class MyAccessibilityService extends AccessibilityService {
         ArrayList<String> trace_list = trace_layer.getList();
         if (isNewTrace) {
             // this is a new trace
-            traceName = "Trace " + (trace_list.size() + 1);
+            traceName = "trace_" + (trace_list.size() + 1);
             trace_list.add(traceName);
             trace_layer.setList(trace_list);
             trace_map.put(traceName, new Layer());
             trace_layer.setMap(trace_map);
         } else {
-            traceName = "Trace " + trace_list.size();
+            traceName = "trace_" + trace_list.size();
         }
 
         TraceActivity.notifyTraceAdapter();
 
 
         // add the event
+        String event_name;
         Layer event_layer = trace_map.get(traceName);
         if (event_layer == null) {
             return;
         }
         ArrayList<String> event_list = event_layer.getList();
+        event_name = String.valueOf(event_list.size() + 1);
         event_list.add(eventDescription);
         event_layer.setList(event_list);
 
@@ -467,6 +478,12 @@ public class MyAccessibilityService extends AccessibilityService {
 //        Log.i("Oppps", Boolean.toString(event_layer.getMap().containsKey(eventDescription)));
 
         EventActivity.notifyEventAdapter();
+
+        // update gesture map
+        Rect outbounds = new Rect();
+        node.getBoundsInScreen(outbounds);
+        String coordinates = "[" + "[" + outbounds.centerX() + "," + outbounds.centerY() + "]" +"]";
+        gestures_map.put(event_name, coordinates);
 
         // add the screenshot
         Layer screenshot_layer = event_map.get(eventDescription);
@@ -491,7 +508,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         ViewHierarchyActivity.notifyVHAdapter();
 
-        uploadFile(packageName, traceName, eventDescription, eventDescription, viewHierachy, currentScreenShot.getBitmap());
+        uploadFile(packageName, traceName, event_name, eventDescription, viewHierachy, currentScreenShot.getBitmap());
 
     }
 
