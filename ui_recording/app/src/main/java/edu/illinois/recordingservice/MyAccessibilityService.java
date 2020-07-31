@@ -17,8 +17,13 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 
 import com.amplifyframework.AmplifyException;
+import com.amplifyframework.auth.AuthUserAttributeKey;
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin;
+import com.amplifyframework.auth.options.AuthSignUpOptions;
 import com.amplifyframework.core.Amplify;
+import com.amplifyframework.storage.StorageAccessLevel;
+import com.amplifyframework.storage.options.StorageDownloadFileOptions;
+import com.amplifyframework.storage.options.StorageUploadFileOptions;
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -68,7 +73,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private HashMap<String, String> gestures_map;
 
-    private String user_id = "test_user12";
+    private String user_id = "test_user15";
 
     @Override
     protected void onServiceConnected() {
@@ -94,6 +99,27 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         gestures_map = new HashMap<String, String>();
+
+//        Amplify.Auth.signUp(
+//                "zhilin",
+//                "Password123",
+//                AuthSignUpOptions.builder().userAttribute(AuthUserAttributeKey.email(), "zhilinz2@illinois.edu").build(),
+//                result -> Log.i("AuthQuickStart", "Result: " + result.toString()),
+//                error -> Log.e("AuthQuickStart", "Sign up failed", error)
+//        );
+
+//        Amplify.Auth.confirmSignUp(
+//                "zhilin",
+//                "061319",
+//                result -> Log.i("AuthQuickstart", result.isSignUpComplete() ? "Confirm signUp succeeded" : "Confirm sign up not complete"),
+//                error -> Log.e("AuthQuickstart", error.toString())
+//        );
+        Amplify.Auth.signIn(
+                "zhilin",
+                "Password123",
+                result -> Log.i("AuthQuickstart", result.isSignInComplete() ? "Sign in succeeded" : "Sign in not complete"),
+                error -> Log.e("AuthQuickstart", error.toString())
+        );
     }
 
     @Override
@@ -239,6 +265,11 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void uploadFile(String packageId, String trace_number, String action_number, String gestureDescription, String vh_content, Bitmap bitmap) {
 
+        StorageUploadFileOptions options =
+                StorageUploadFileOptions.builder()
+                        .accessLevel(StorageAccessLevel.PRIVATE)
+                        .build();
+
         // upload VH
         File vhFile = new File(getApplicationContext().getFilesDir(), "vh");
         String base_location = user_id + "/" + packageId + "/" + trace_number + "/";
@@ -255,6 +286,7 @@ public class MyAccessibilityService extends AccessibilityService {
         Amplify.Storage.uploadFile(
                 vh_location,
                 vhFile,
+                options,
                 result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()),
                 storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
         );
@@ -270,9 +302,18 @@ public class MyAccessibilityService extends AccessibilityService {
             e.printStackTrace();
         }
 
+//        Amplify.Storage.uploadFile(
+//                key,
+//                file,
+//                options,
+//                result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + key,
+//                        error -> Log.e("MyAmplifyApp", "Upload failed", error)
+//                );
+
         Amplify.Storage.uploadFile(
                 screenshot_location,
                 screenshotFile,
+                options,
                 result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()),
                 storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
         );
@@ -297,9 +338,12 @@ public class MyAccessibilityService extends AccessibilityService {
         Amplify.Storage.uploadFile(
                 gesture_location,
                 gestureFile,
+                options,
                 result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()),
                 storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure)
         );
+
+
     }
 
 
