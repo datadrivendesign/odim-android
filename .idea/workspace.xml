@@ -10,78 +10,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/deploymentTargetDropDown.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/mobile-odim.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/caches/build_file_checksums.ser" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/caches/gradle_models.ser" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/codeStyles/Project.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/compiler.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/copyright/profiles_settings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/encodings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/gradle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/jarRepositories.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/runConfigurations.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/.config/project-config.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/auth/uirecording93031f02/parameters.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/auth/uirecording93031f02/uirecording93031f02-cloudformation-template.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/backend-config.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/storage/odim01/parameters.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/storage/odim01/s3-cloudformation-template.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/storage/odim01/storage-params.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/team-provider-info.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/google-services.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/proguard-rules.pro" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/androidTest/java/edu/illinois/recordingservice/ExampleInstrumentedTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/EventActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/Layer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MyAccessibilityService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/ScreenShot.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/ScreenShotActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/TraceActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/ViewHierarchyActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_event.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_main.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_screenshot.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_trace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_view_hierarchy.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/main.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/trace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-hdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-hdpi/ic_launcher_round.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-mdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-mdpi/ic_launcher_round.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xhdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/colors.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/strings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/styles.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/xml/recording_service.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/test/java/edu/illinois/recordingservice/ExampleUnitTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/gradle.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/gradlew" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/gradlew.bat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/settings.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -110,6 +42,13 @@
         </projects_view>
       </state>
     </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
