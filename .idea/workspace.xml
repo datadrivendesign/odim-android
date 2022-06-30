@@ -1,192 +1,336 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/ui_recording/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui_recording/.idea/runConfigurations.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/TraceActivity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_trace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/androidTest/java/edu/illinois/finalproject/ExampleInstrumentedTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/androidTest/java/edu/illinois/recordingservice/ExampleInstrumentedTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/ChatroomActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/LoginActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/MainActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/finalproject/RegisterActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_chatroom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_login.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_main.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_register.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/chatroom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/trace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/strings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/test/java/edu/illinois/finalproject/ExampleUnitTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/app/src/test/java/edu/illinois/recordingservice/ExampleUnitTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/deploymentTargetDropDown.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/mobile-odim.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/caches/build_file_checksums.ser" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/caches/gradle_models.ser" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/codeStyles/Project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/copyright/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/gradle.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/jarRepositories.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/runConfigurations.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/.config/project-config.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/auth/uirecording93031f02/parameters.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/auth/uirecording93031f02/uirecording93031f02-cloudformation-template.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/backend-config.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/storage/odim01/parameters.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/storage/odim01/s3-cloudformation-template.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/backend/storage/odim01/storage-params.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/amplify/team-provider-info.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/build.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/google-services.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/proguard-rules.pro" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/androidTest/java/edu/illinois/recordingservice/ExampleInstrumentedTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/EventActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/Layer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MyAccessibilityService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/ScreenShot.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/ScreenShotActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/TraceActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/ViewHierarchyActivity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_event.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_main.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_screenshot.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_trace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/layout/activity_view_hierarchy.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/main.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/menu/trace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-hdpi/ic_launcher.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-hdpi/ic_launcher_round.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-mdpi/ic_launcher.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-mdpi/ic_launcher_round.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xhdpi/ic_launcher.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/colors.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/dimens.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/strings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/values/styles.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/main/res/xml/recording_service.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/app/src/test/java/edu/illinois/recordingservice/ExampleUnitTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/build.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/gradle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/gradlew" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/gradlew.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui_recording/settings.gradle" beforeDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MyAccessibilityService.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="25" column="13" lean-forward="true" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[/Users/rizky/.android/avd/Pixel_3a_API_31.avd]" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="ODIM" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/ui_recording" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="y" value="23" />
-    <option name="width" value="1440" />
-    <option name="height" value="797" />
-  </component>
+  <component name="ProjectId" id="2A2KAdyuVngVdLZd0KFdh8Vfe89" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
-  <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
-      <foldersAlwaysOnTop value="true" />
-    </navigator>
-    <panes>
-      <pane id="PackagesPane" />
-      <pane id="Scope" />
-      <pane id="ProjectPane">
-        <subPane>
-          <expand>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="edu" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="edu" type="462c0819:PsiDirectoryNode" />
-              <item name="illinois" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="edu" type="462c0819:PsiDirectoryNode" />
-              <item name="illinois" type="462c0819:PsiDirectoryNode" />
-              <item name="recordingservice" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="res" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mobile-odim" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mobile-odim" type="462c0819:PsiDirectoryNode" />
-              <item name="ui_recording" type="462c0819:PsiDirectoryNode" />
-              <item name="app" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="462c0819:PsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-    </panes>
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
+    <property name="cidr.known.project.marker" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="AndroidSdkUpdater" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
+  <component name="RunManager" selected="Android App.app">
+    <configuration name="Unnamed" type="AndroidRunConfigurationType" factoryName="Android App" nameIsGenerated="true">
+      <module name="mobile-odim" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="INSPECTION_WITHOUT_ACTIVITY_RESTART" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="SHOW_DIALOG" />
+      <option name="SELECTED_CLOUD_MATRIX_CONFIGURATION_ID" value="-1" />
+      <option name="SELECTED_CLOUD_MATRIX_PROJECT_ID" value="" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Hybrid>
+      <Java />
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
+      <module name="ODIM.app" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="INSPECTION_WITHOUT_ACTIVITY_RESTART" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
+      <option name="SELECTED_CLOUD_MATRIX_CONFIGURATION_ID" value="-1" />
+      <option name="SELECTED_CLOUD_MATRIX_PROJECT_ID" value="" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Hybrid>
+      <Java />
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="/Users/rizky/Documents/mobile-odim/ui_recording/app/build.gradle" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/ui_recording/app/build.gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list />
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="/Users/rizky/Documents/mobile-odim/ui_recording/build.gradle (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/ui_recording/build.gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list />
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="/Users/rizky/Documents/mobile-odim/ui_recording/build.gradle" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/ui_recording/build.gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list />
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="mobile-odim" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="mobile-odim" />
+      <option name="filePath" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Android App.Unnamed" />
+      <item itemvalue="Gradle./Users/rizky/Documents/mobile-odim/ui_recording/build.gradle" />
+      <item itemvalue="Gradle./Users/rizky/Documents/mobile-odim/ui_recording/build.gradle (1)" />
+      <item itemvalue="Gradle./Users/rizky/Documents/mobile-odim/ui_recording/app/build.gradle" />
+      <item itemvalue="Android App.app" />
+    </list>
+    <recent_temporary>
       <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
+        <item itemvalue="Gradle./Users/rizky/Documents/mobile-odim/ui_recording/app/build.gradle" />
+        <item itemvalue="Gradle./Users/rizky/Documents/mobile-odim/ui_recording/build.gradle (1)" />
+        <item itemvalue="Gradle./Users/rizky/Documents/mobile-odim/ui_recording/build.gradle" />
       </list>
-    </option>
+    </recent_temporary>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -200,39 +344,10 @@
     </task>
     <servers />
   </component>
-  <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1440" height="797" extended-state="0" />
-    <layout>
-      <window_info active="true" content_ui="combo" id="Project" visible="true" weight="0.32980973" />
-      <window_info id="Structure" side_tool="true" />
-      <window_info id="Image Layers" />
-      <window_info id="Designer" />
-      <window_info id="Resources Explorer" />
-      <window_info id="Capture Tool" />
-      <window_info id="Favorites" side_tool="true" />
-      <window_info id="Captures" order="0" weight="0.25" />
-      <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="TODO" />
-      <window_info anchor="bottom" id="Terminal" />
-      <window_info anchor="bottom" id="Event Log" side_tool="true" />
-      <window_info anchor="right" id="Capture Analysis" />
-      <window_info anchor="right" id="Theme Preview" />
-      <window_info anchor="right" id="Palette&#9;" />
-    </layout>
-  </component>
-  <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/AndroidManifest.xml">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MainActivity.java">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ui_recording/app/src/main/java/edu/illinois/recordingservice/MyAccessibilityService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="25" column="13" lean-forward="true" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$" />
+      <path value="$PROJECT_DIR$/ui_recording" />
+    </ignored-roots>
   </component>
 </project>
