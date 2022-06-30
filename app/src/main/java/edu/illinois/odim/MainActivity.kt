@@ -14,6 +14,10 @@ class MainActivity : AppCompatActivity() {
 
         val recyclerView = findViewById<RecyclerView>(R.id.packageRecyclerView)
 
-        val arrayAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, )
+        val arrayAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, get_packages()!!)
+
+        recyclerView.adapter =
+
+        recyclerView
     }
 }
