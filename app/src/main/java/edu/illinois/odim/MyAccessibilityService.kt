@@ -50,7 +50,7 @@ fun get_vh(
     return MyAccessibilityService.package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
 }
 
-class MyAccessibilityService : AccessibilityService{
+class MyAccessibilityService : AccessibilityService() {
 
     private var last_package_name: String? = null
 
@@ -129,12 +129,12 @@ class MyAccessibilityService : AccessibilityService{
         var isWifiConn = false
         var isMobileConn = false
         for (network in connMgr.getAllNetworks()) {
-            val networkInfo: NetworkInfo = connMgr.getNetworkInfo(network)
+            val networkInfo: NetworkInfo? = connMgr.getNetworkInfo(network)
             if (networkInfo.getType() === ConnectivityManager.TYPE_WIFI) {
-                isWifiConn = isWifiConn or networkInfo.isConnected()
+                isWifiConn = isWifiConn or networkInfo!!.isConnected()
             }
             if (networkInfo.getType() === ConnectivityManager.TYPE_MOBILE) {
-                isMobileConn = isMobileConn or networkInfo.isConnected()
+                isMobileConn = isMobileConn or networkInfo!!.isConnected()
             }
         }
         Log.d(DEBUG_TAG, "Wifi connected: $isWifiConn")
@@ -454,7 +454,7 @@ class MyAccessibilityService : AccessibilityService{
             package_map[packageName] = Layer()
             package_layer.map = package_map
         }
-        MainActivity.notifyPackageAdapter()
+        notifyPackageAdapter()
 
         // add the trace
         val traceName: String
@@ -463,13 +463,13 @@ class MyAccessibilityService : AccessibilityService{
         val trace_list = trace_layer.list
         if (isNewTrace) {
             // this is a new trace
-            traceName = "trace_" + (trace_list.size() + 1)
+            traceName = "trace_" + (trace_list.size + 1)
             trace_list.add(traceName)
             trace_layer.list = trace_list
             trace_map[traceName] = Layer()
             trace_layer.map = trace_map
         } else {
-            traceName = "trace_" + trace_list.size()
+            traceName = "trace_" + trace_list.size
         }
         TraceActivity.notifyTraceAdapter()
 
