@@ -17,19 +17,19 @@ class ScreenShot {
             this.bitmap = bitmap
         }
 
-    private var rect: Rect?
+    var rect: Rect?
         get() = this.rect
         set(rect : Rect?) {
             this.rect = rect
         }
 
-    private var action_type : Int
+    var action_type : Int
         get() = this.action_type
         set(action_type : Int) {
             this.action_type = action_type
         }
 
-    private var vh: ArrayList<Rect>?
+    var vh: ArrayList<Rect>?
         get() = this.vh
         set(vh : ArrayList<Rect>?) {
             this.vh = vh

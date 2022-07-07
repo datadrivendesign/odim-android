@@ -7,8 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.R
 
 
-class CustomAdapter(context: Context, packageList: ArrayList<String>) :
-    RecyclerView.Adapter<MyViewHolder>() {
+class CustomAdapter(context: Context, packageList: ArrayList<String>) : RecyclerView.Adapter<MyViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context);
     private var packageList = packageList;
 
