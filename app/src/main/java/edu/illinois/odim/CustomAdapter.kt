@@ -9,7 +9,7 @@ import edu.illinois.odim.R
 
 class CustomAdapter(context: Context, packageList: ArrayList<String>) : RecyclerView.Adapter<MyViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context);
-    private var packageList = packageList;
+    private var packageList : ArrayList<String> = packageList;
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         val view = inflater.inflate(R.layout.recycler_view_row, parent, false);
