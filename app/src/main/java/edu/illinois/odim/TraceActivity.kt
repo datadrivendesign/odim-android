@@ -1,11 +1,11 @@
 package edu.illinois.odim
 
-import CustomAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 // these were static in java
@@ -24,6 +24,7 @@ class TraceActivity : AppCompatActivity(){
         package_name = intent.extras!!["package_name"].toString()
         title = package_name
         recyclerView = findViewById<View>(R.id.traceRecyclerView) as RecyclerView
+        recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         recyclerAdapter = CustomAdapter(
             this,
             getTraces(package_name)

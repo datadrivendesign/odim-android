@@ -1,11 +1,11 @@
 package edu.illinois.odim
 
-import CustomAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 // this should be static
@@ -26,15 +26,17 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById<RecyclerView>(R.id.packageRecyclerView)
 
-        recyclerAdapter = CustomAdapter(this, getPackages()!!)
+        recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+
+        recyclerAdapter = CustomAdapter(this, getPackages())
 
         recyclerView?.adapter = recyclerAdapter
 
         recyclerAdapter!!.setOnItemClickListener(object: CustomAdapter.OnItemClickListener {
             override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
-                val package_name: String = (view as TextView).getText().toString()
-                intent.putExtra("package_name", package_name)
+                val clickedPackageName: String = (view as TextView).getText().toString()
+                intent.putExtra("package_name", clickedPackageName)
                 startActivity(intent)
             }
         })

@@ -30,7 +30,7 @@ class ScreenShotActivity : AppCompatActivity() {
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)
             val rect: Rect? = screenshot.rect
-            if (screenshot.action_type == ScreenShot.TYPE_CLICK) {
+            if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
                 val paint = Paint()
                 paint.setColor(Color.rgb(255, 165, 0))
                 paint.setAlpha(100)
@@ -42,7 +42,7 @@ class ScreenShotActivity : AppCompatActivity() {
                         paint
                     )
                 }
-            } else if (screenshot.action_type == ScreenShot.TYPE_SCROLL) {
+            } else if (screenshot.actionType == ScreenShot.TYPE_SCROLL) {
                 val paint = Paint()
                 paint.setColor(Color.rgb(255, 165, 0))
                 paint.setAlpha(100)
@@ -55,7 +55,7 @@ class ScreenShotActivity : AppCompatActivity() {
                         paint
                     )
                 }
-            } else if (screenshot.action_type == ScreenShot.TYPE_LONG_CLICK) {
+            } else if (screenshot.actionType == ScreenShot.TYPE_LONG_CLICK) {
                 val paint = Paint()
                 paint.setColor(Color.rgb(0, 165, 255))
                 paint.setAlpha(100)
@@ -67,7 +67,7 @@ class ScreenShotActivity : AppCompatActivity() {
                         paint
                     )
                 }
-            } else if (screenshot.action_type == ScreenShot.TYPE_SELECT) {
+            } else if (screenshot.actionType == ScreenShot.TYPE_SELECT) {
                 val paint = Paint()
                 paint.setColor(Color.rgb(165, 0, 255))
                 paint.setAlpha(100)

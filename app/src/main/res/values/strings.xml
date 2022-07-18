@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ODIM</string>
+    <string name="accessibility_service_label">ODIM Service</string>
+    <string name="accessibility_service_description">ODIM records your gestures, screens, traces</string>
 </resources>

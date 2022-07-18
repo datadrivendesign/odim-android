@@ -12,6 +12,7 @@
         <entry key="app/src/main/res/layout/activity_trace.xml" value="0.28125" />
         <entry key="app/src/main/res/layout/activity_view_hierarchy.xml" value="0.28125" />
         <entry key="app/src/main/res/layout/recycler_view_row.xml" value="0.28229166666666666" />
+        <entry key="app/src/main/res/xml/accessiblity_service_config.xml" value="0.1" />
       </map>
     </option>
   </component>

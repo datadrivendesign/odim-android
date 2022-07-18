@@ -1,26 +1,10 @@
 package edu.illinois.odim
 
 class Layer() {
-    var list: ArrayList<String>
-        get() = this.list
-        set(list: ArrayList<String>) {
-            this.list = list
-        }
+    var list: ArrayList<String> = ArrayList<String>()
 
-    var map: HashMap<String, Layer>
-        get() = this.map
-        set(map: HashMap<String, Layer>){
-            this.map = map
-        }
+    var map: HashMap<String, Layer> = HashMap<String, Layer>()
 
-    var screenShot: ScreenShot
-        get() = this.screenShot
-        set(screenShot: ScreenShot) {
-            this.screenShot = screenShot
-        }
+    lateinit var screenShot: ScreenShot
 
-    init {
-        this.list = ArrayList<String>()
-        this.map = HashMap<String, Layer>()
-    }
 }

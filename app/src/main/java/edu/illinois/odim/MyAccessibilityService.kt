@@ -8,9 +8,6 @@ import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.NetworkInfo
-import android.os.AsyncTask.THREAD_POOL_EXECUTOR
-import android.os.Build
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
 import android.view.accessibility.AccessibilityEvent
@@ -26,23 +23,22 @@ import com.google.gson.Gson
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.function.Consumer
 
-val package_list: ArrayList<String> = ArrayList()
-val package_set: MutableSet<String> = HashSet()
+val packageList: ArrayList<String> = ArrayList()
+val packageSet: MutableSet<String> = HashSet()
 
-val package_layer = Layer()
+val packageLayer = Layer()
 
 fun getPackages(): ArrayList<String> {
-    return package_list
+    return packageList
 }
 
 fun getTraces(package_name: String?): ArrayList<String> {
-    return package_layer.map[package_name]!!.list
+    return packageLayer.map[package_name]!!.list
 }
 
 fun getEvents(package_name: String?, trace_name: String?): ArrayList<String> {
-    return package_layer.map[package_name]!!.map[trace_name]!!.list
+    return packageLayer.map[package_name]!!.map[trace_name]!!.list
 }
 
 fun getScreenshot(
@@ -50,7 +46,7 @@ fun getScreenshot(
     trace_name: String?,
     event_name: String?
 ): ScreenShot {
-    return package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.screenShot
+    return packageLayer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.screenShot
 }
 
 fun getVh(
@@ -58,7 +54,7 @@ fun getVh(
     trace_name: String?,
     event_name: String?
 ): ArrayList<String> {
-    return package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
+    return packageLayer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
 }
 
 class MyAccessibilityService : AccessibilityService() {
@@ -85,7 +81,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         // Create the service
-        println("onServiceConnected")
+        Log.i("onServiceConnected", "Accessibility Service Connected")
         val info = AccessibilityServiceInfo()
         info.apply {
             // TODO: why are we adding both? Isn't TYPES_ALL_MASK include the other?
@@ -468,15 +464,15 @@ class MyAccessibilityService : AccessibilityService() {
     ) {
 
         // add the package
-        val packageMap = package_layer.map
+        val packageMap = packageLayer.map
         if (!packageMap.containsKey(packageName)) {
             // this is a new package
-            package_set.add(packageName)
-            package_list.clear()
-            package_list.addAll(package_set)
-            package_layer.list = package_list
+            packageSet.add(packageName)
+            packageList.clear()
+            packageList.addAll(packageSet)
+            packageLayer.list = packageList
             packageMap[packageName] = Layer()
-            package_layer.map = packageMap
+            packageLayer.map = packageMap
         }
         notifyPackageAdapter()
 
