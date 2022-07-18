@@ -9,12 +9,20 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="">
+    <list default="true" id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="Ports all surrounding Activities to Kotlin and got rid of errors in each of them. RecyclerView replaces previous ListView.">
+      <change beforePath="$PROJECT_DIR$/.gradle/7.3.3/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/7.3.3/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/7.3.3/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/7.3.3/checksums/md5-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/7.3.3/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/7.3.3/checksums/sha1-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/7.3.3/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/7.3.3/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/CustomAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/CustomAdapter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/EventActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/EventActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/Layer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/Layer.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/MainActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/MyAccessibilityService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/MyAccessibilityService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScreenShotActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScreenShotActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/TraceActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/TraceActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ViewHierarchyActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ViewHierarchyActivity.kt" afterDir="false" />
     </list>
@@ -56,6 +64,14 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
   </component>
   <component name="ProjectId" id="2A2KAdyuVngVdLZd0KFdh8Vfe89" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -285,6 +301,14 @@
       <option name="presentableId" value="Default" />
       <updated>1584235018203</updated>
     </task>
+    <task id="LOCAL-00001" summary="Ports all surrounding Activities to Kotlin and got rid of errors in each of them. RecyclerView replaces previous ListView.">
+      <created>1658171710195</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1658171710195</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -304,5 +328,7 @@
       <path value="$PROJECT_DIR$" />
       <path value="$PROJECT_DIR$/ui_recording" />
     </ignored-roots>
+    <MESSAGE value="Ports all surrounding Activities to Kotlin and got rid of errors in each of them. RecyclerView replaces previous ListView." />
+    <option name="LAST_COMMIT_MESSAGE" value="Ports all surrounding Activities to Kotlin and got rid of errors in each of them. RecyclerView replaces previous ListView." />
   </component>
 </project>

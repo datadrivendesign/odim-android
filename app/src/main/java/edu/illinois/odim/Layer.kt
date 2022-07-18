@@ -1,6 +1,6 @@
 package edu.illinois.odim
 
-class Layer {
+class Layer() {
     var list: ArrayList<String>
         get() = this.list
         set(list: ArrayList<String>) {
@@ -19,7 +19,7 @@ class Layer {
             this.screenShot = screenShot
         }
 
-    constructor() {
+    init {
         this.list = ArrayList<String>()
         this.map = HashMap<String, Layer>()
     }

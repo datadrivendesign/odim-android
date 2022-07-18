@@ -26,7 +26,7 @@ class TraceActivity : AppCompatActivity(){
         recyclerView = findViewById<View>(R.id.traceRecyclerView) as RecyclerView
         recyclerAdapter = CustomAdapter(
             this,
-            get_traces(package_name)
+            getTraces(package_name)
         )
         recyclerView!!.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {

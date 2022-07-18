@@ -25,7 +25,7 @@ class ScreenShotActivity : AppCompatActivity() {
         title = "ScreenShot (Click Image for VH)"
         imageView = findViewById<View>(R.id.screenshot) as ImageView
         val screenshot: ScreenShot? =
-            get_screenshot(package_name, trace_name, event_name)
+            getScreenshot(package_name, trace_name, event_name)
         if (screenshot != null) {
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)

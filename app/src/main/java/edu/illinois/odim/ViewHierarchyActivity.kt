@@ -29,7 +29,7 @@ class ViewHierarchyActivity : AppCompatActivity() {
         // TODO: Should view hierarchy be a string? It should be a tree right?
         recyclerAdapter = CustomAdapter(
             this,
-            get_vh(package_name, trace_name, event_name)
+            getVh(package_name, trace_name, event_name)
         )
         recyclerView?.adapter = recyclerAdapter
     }

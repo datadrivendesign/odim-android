@@ -14,6 +14,11 @@ import android.view.Display.DEFAULT_DISPLAY
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
+import com.amplifyframework.AmplifyException
+import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
+import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.s3.AWSS3StoragePlugin
+import com.google.gson.Gson
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -22,49 +27,51 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-fun get_packages(): ArrayList<String>? {
-    return MyAccessibilityService.package_list
+val package_list: ArrayList<String> = ArrayList()
+val package_set: MutableSet<String> = HashSet()
+
+val package_layer = Layer()
+
+fun getPackages(): ArrayList<String> {
+    return package_list
 }
 
-fun get_traces(package_name: String?): ArrayList<String> {
-    return MyAccessibilityService.package_layer.map[package_name]!!.list
+fun getTraces(package_name: String?): ArrayList<String> {
+    return package_layer.map[package_name]!!.list
 }
 
-fun get_events(package_name: String?, trace_name: String?): ArrayList<String> {
-    return MyAccessibilityService.package_layer.map[package_name]!!.map[trace_name]!!.list
+fun getEvents(package_name: String?, trace_name: String?): ArrayList<String> {
+    return package_layer.map[package_name]!!.map[trace_name]!!.list
 }
 
-fun get_screenshot(
+fun getScreenshot(
     package_name: String?,
     trace_name: String?,
     event_name: String?
-): ScreenShot? {
-    return MyAccessibilityService.package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.screenShot
+): ScreenShot {
+    return package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.screenShot
 }
 
-fun get_vh(
+fun getVh(
     package_name: String?,
     trace_name: String?,
     event_name: String?
 ): ArrayList<String> {
-    return MyAccessibilityService.package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
+    return package_layer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
 }
 
 class MyAccessibilityService : AccessibilityService() {
 
-    private var last_package_name: String? = null
+    private var lastPackageName: String? = null
 
     companion object {
-        val package_list: ArrayList<String> = ArrayList()
-        val package_set: MutableSet<String> = HashSet()
 
-        val package_layer = Layer()
     }
 
 
-    private var current_bitmap: Bitmap? = null
+    private var currentBitmap: Bitmap? = null
 
-    private var current_screenshot: ScreenShot? = null
+    private var currentScreenshot: ScreenShot? = null
 
     private var forward = 0
     private var next = 0
@@ -128,15 +135,16 @@ class MyAccessibilityService : AccessibilityService() {
             getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         var isWifiConn = false
         var isMobileConn = false
+
         for (network in connMgr.getAllNetworks()) {
             val networkInfo: NetworkInfo? = connMgr.getNetworkInfo(network)
             if (networkInfo != null) {
-                if (networkInfo.getType() === ConnectivityManager.TYPE_WIFI) {
+                if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
                     isWifiConn = isWifiConn or networkInfo!!.isConnected()
                 }
             }
             if (networkInfo != null) {
-                if (networkInfo.getType() === ConnectivityManager.TYPE_MOBILE) {
+                if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
                     isMobileConn = isMobileConn or networkInfo!!.isConnected()
                 }
             }
@@ -154,7 +162,7 @@ class MyAccessibilityService : AccessibilityService() {
             return
         }
         var isNewTrace = false
-        if (last_package_name == null || packageName != last_package_name) {
+        if (lastPackageName == null || packageName != lastPackageName) {
             isNewTrace = true
         }
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED //                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
@@ -193,7 +201,7 @@ class MyAccessibilityService : AccessibilityService() {
             forward++
             val consumer: Consumer<ScreenshotResult> = object : Consumer<ScreenshotResult?>() {
                 fun accept(screenshotResult: ScreenshotResult) {
-                    current_bitmap = wrapHardwareBuffer(
+                    currentBitmap = wrapHardwareBuffer(
                         screenshotResult.hardwareBuffer,
                         screenshotResult.colorSpace
                     )
@@ -223,7 +231,7 @@ class MyAccessibilityService : AccessibilityService() {
             if (root != null) {
                 boxes.addAll(get_boxes(root)!!)
             }
-            current_screenshot = ScreenShot(current_bitmap, outbounds, action_type, boxes)
+            currentScreenshot = ScreenShot(currentBitmap, outbounds, action_type, boxes)
 
 
             // VH
@@ -239,8 +247,8 @@ class MyAccessibilityService : AccessibilityService() {
             }
 
             // add the event
-            add_event(node, packageName, isNewTrace, eventDescription, current_screenshot!!, vh)
-            last_package_name = packageName
+            add_event(node, packageName, isNewTrace, eventDescription, currentScreenshot!!, vh)
+            lastPackageName = packageName
         }
     }
 
@@ -481,7 +489,7 @@ class MyAccessibilityService : AccessibilityService() {
         val event_name: String
         val event_layer = trace_map[traceName] ?: return
         val event_list = event_layer.list
-        event_name = java.lang.String.valueOf(event_list.size() + 1)
+        event_name = java.lang.String.valueOf(event_list.size + 1)
         event_list.add(eventDescription)
         event_layer.list = event_list
         val event_map = event_layer.map
@@ -494,7 +502,7 @@ class MyAccessibilityService : AccessibilityService() {
 
         // update gesture map
         val outbounds = Rect()
-        node.getBoundsInScreen(outbounds)
+        node?.getBoundsInScreen(outbounds)
         val coordinates = "[" + "[" + outbounds.centerX() + "," + outbounds.centerY() + "]" + "]"
         gestures_map!![event_name] = coordinates
 

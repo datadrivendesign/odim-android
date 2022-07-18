@@ -26,7 +26,7 @@ class EventActivity : AppCompatActivity() {
         setTitle("$package_name: $trace_name")
         // change the way we do this with recyclerview
         recyclerView = findViewById(R.id.eventRecyclerView) as RecyclerView?
-        recyclerAdapter = CustomAdapter(this, get_events(package_name, trace_name))
+        recyclerAdapter = CustomAdapter(this, getEvents(package_name, trace_name))
         recyclerView?.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
             override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {

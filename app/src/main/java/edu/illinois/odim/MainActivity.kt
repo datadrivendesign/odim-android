@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById<RecyclerView>(R.id.packageRecyclerView)
 
-        recyclerAdapter = CustomAdapter(this, get_packages()!!)
+        recyclerAdapter = CustomAdapter(this, getPackages()!!)
 
         recyclerView?.adapter = recyclerAdapter
 
