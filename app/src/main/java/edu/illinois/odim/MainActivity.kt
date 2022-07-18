@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 // this should be static
 private var recyclerAdapter : CustomAdapter? = null
 fun notifyPackageAdapter() {
-    recyclerAdapter?.notifyDataSetChanged();
+    recyclerAdapter?.notifyDataSetChanged()
 }
 
 class MainActivity : AppCompatActivity() {
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
 
         title = " Packages"
 
-        recyclerView = findViewById<RecyclerView>(R.id.packageRecyclerView)
+        recyclerView = findViewById(R.id.packageRecyclerView)
 
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
 
@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         recyclerAdapter!!.setOnItemClickListener(object: CustomAdapter.OnItemClickListener {
             override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
-                val clickedPackageName: String = (view as TextView).getText().toString()
+                val clickedPackageName: String = (view as TextView).text.toString()
                 intent.putExtra("package_name", clickedPackageName)
                 startActivity(intent)
             }

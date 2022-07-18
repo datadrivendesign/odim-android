@@ -11,29 +11,29 @@ import androidx.appcompat.app.AppCompatActivity
 class ScreenShotActivity : AppCompatActivity() {
 
     private var imageView: ImageView? = null
-    private var package_name: String? = null
-    private var trace_name: String? = null
-    private var event_name: String? = null
+    private var chosenPackageName: String? = null
+    private var chosenTraceName: String? = null
+    private var chosenEventName: String? = null
     private var canvas: Canvas? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_screenshot)
-        package_name = intent.extras!!["package_name"].toString()
-        trace_name = intent.extras!!["trace_name"].toString()
-        event_name = intent.extras!!["event_name"].toString()
+        chosenPackageName = intent.extras!!["package_name"].toString()
+        chosenTraceName = intent.extras!!["trace_name"].toString()
+        chosenEventName = intent.extras!!["event_name"].toString()
         title = "ScreenShot (Click Image for VH)"
         imageView = findViewById<View>(R.id.screenshot) as ImageView
         val screenshot: ScreenShot? =
-            getScreenshot(package_name, trace_name, event_name)
+            getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
         if (screenshot != null) {
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)
             val rect: Rect? = screenshot.rect
             if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
                 val paint = Paint()
-                paint.setColor(Color.rgb(255, 165, 0))
-                paint.setAlpha(100)
+                paint.color = Color.rgb(255, 165, 0)
+                paint.alpha = 100
                 if (rect != null) {
                     canvas!!.drawCircle(
                         rect.centerX().toFloat(),
@@ -44,8 +44,8 @@ class ScreenShotActivity : AppCompatActivity() {
                 }
             } else if (screenshot.actionType == ScreenShot.TYPE_SCROLL) {
                 val paint = Paint()
-                paint.setColor(Color.rgb(255, 165, 0))
-                paint.setAlpha(100)
+                paint.color = Color.rgb(255, 165, 0)
+                paint.alpha = 100
                 if (rect != null) {
                     canvas!!.drawOval(
                         (rect.centerX() - 50).toFloat(),
@@ -57,8 +57,8 @@ class ScreenShotActivity : AppCompatActivity() {
                 }
             } else if (screenshot.actionType == ScreenShot.TYPE_LONG_CLICK) {
                 val paint = Paint()
-                paint.setColor(Color.rgb(0, 165, 255))
-                paint.setAlpha(100)
+                paint.color = Color.rgb(0, 165, 255)
+                paint.alpha = 100
                 if (rect != null) {
                     canvas!!.drawCircle(
                         rect.centerX().toFloat(),
@@ -69,8 +69,8 @@ class ScreenShotActivity : AppCompatActivity() {
                 }
             } else if (screenshot.actionType == ScreenShot.TYPE_SELECT) {
                 val paint = Paint()
-                paint.setColor(Color.rgb(165, 0, 255))
-                paint.setAlpha(100)
+                paint.color = Color.rgb(165, 0, 255)
+                paint.alpha = 100
                 if (rect != null) {
                     canvas!!.drawCircle(
                         rect.centerX().toFloat(),
@@ -85,8 +85,8 @@ class ScreenShotActivity : AppCompatActivity() {
             Log.i("Box size", java.lang.String.valueOf(boxes!!.size))
             for (i in 0 until boxes.size) {
                 val paint = Paint()
-                paint.setStyle(Paint.Style.STROKE)
-                paint.setColor(Color.rgb(255, 0, 0))
+                paint.style = Paint.Style.STROKE
+                paint.color = Color.rgb(255, 0, 0)
                 canvas!!.drawRect(boxes[i], paint)
             }
             imageView!!.setImageBitmap(myBit)
@@ -94,9 +94,9 @@ class ScreenShotActivity : AppCompatActivity() {
             imageView!!.setOnClickListener(object : View.OnClickListener {
                 override fun onClick(v: View?) {
                     val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
-                    intent.putExtra("package_name", package_name)
-                    intent.putExtra("trace_name", trace_name)
-                    intent.putExtra("event_name", event_name)
+                    intent.putExtra("package_name", chosenPackageName)
+                    intent.putExtra("trace_name", chosenTraceName)
+                    intent.putExtra("event_name", chosenEventName)
                     startActivity(intent)
                 }
             })

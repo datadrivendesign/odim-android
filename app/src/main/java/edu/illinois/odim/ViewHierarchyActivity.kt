@@ -13,24 +13,24 @@ fun notifyVHAdapter() {
 
 class ViewHierarchyActivity : AppCompatActivity() {
     private var recyclerView: RecyclerView? = null
-    private var package_name: String? = null
-    private var trace_name: String? = null
-    private var event_name: String? = null
+    private var chosenPackageName: String? = null
+    private var chosenTraceName: String? = null
+    private var chosenEventName: String? = null
 
 
-    protected override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_view_hierarchy)
-        package_name = getIntent().extras!!["package_name"].toString()
-        trace_name = getIntent().extras!!["trace_name"].toString()
-        event_name = getIntent().extras!!["event_name"].toString()
-        setTitle("View Hierarchy")
-        recyclerView = findViewById<RecyclerView>(R.id.vhRecyclerView)
+        chosenPackageName = intent.extras!!["package_name"].toString()
+        chosenTraceName = intent.extras!!["trace_name"].toString()
+        chosenEventName = intent.extras!!["event_name"].toString()
+        title = "View Hierarchy"
+        recyclerView = findViewById(R.id.vhRecyclerView)
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         // TODO: Should view hierarchy be a string? It should be a tree right?
         recyclerAdapter = CustomAdapter(
             this,
-            getVh(package_name, trace_name, event_name)
+            getVh(chosenPackageName, chosenTraceName, chosenEventName)
         )
         recyclerView?.adapter = recyclerAdapter
     }

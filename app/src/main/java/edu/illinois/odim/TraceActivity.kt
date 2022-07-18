@@ -16,26 +16,26 @@ fun notifyTraceAdapter() {
 
 class TraceActivity : AppCompatActivity(){
     private var recyclerView: RecyclerView? = null
-    private var package_name: String? = null
+    private var chosenPackageNAme: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_trace)
-        package_name = intent.extras!!["package_name"].toString()
-        title = package_name
+        chosenPackageNAme = intent.extras!!["package_name"].toString()
+        title = chosenPackageNAme
         recyclerView = findViewById<View>(R.id.traceRecyclerView) as RecyclerView
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         recyclerAdapter = CustomAdapter(
             this,
-            getTraces(package_name)
+            getTraces(chosenPackageNAme)
         )
         recyclerView!!.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
             override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, EventActivity::class.java)
-                val trace_name: String = (view as TextView).getText().toString()
-                intent.putExtra("package_name", package_name)
-                intent.putExtra("trace_name", trace_name)
+                val chosenTraceName: String = (view as TextView).text.toString()
+                intent.putExtra("package_name", chosenPackageNAme)
+                intent.putExtra("trace_name", chosenTraceName)
                 startActivity(intent)
             }
         })

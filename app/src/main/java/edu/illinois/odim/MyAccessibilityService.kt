@@ -219,7 +219,7 @@ class MyAccessibilityService : AccessibilityService() {
                 }
 
                 override fun onFailure(errCode: Int) {
-                    Log.e("ScreenshotFailure:", "Error code: $errCode");
+                    Log.e("ScreenshotFailure:", "Error code: $errCode")
                 }
 
             })
