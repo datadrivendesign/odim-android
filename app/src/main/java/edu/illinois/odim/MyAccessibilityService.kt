@@ -7,8 +7,10 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.Rect
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.NetworkInfo
 import android.os.AsyncTask.THREAD_POOL_EXECUTOR
+import android.os.Build
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
 import android.view.accessibility.AccessibilityEvent
@@ -17,15 +19,14 @@ import android.view.accessibility.AccessibilityNodeInfo
 import com.amplifyframework.AmplifyException
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.StorageAccessLevel
+import com.amplifyframework.storage.options.StorageUploadFileOptions
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.google.gson.Gson
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.function.Consumer
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
 
 val package_list: ArrayList<String> = ArrayList()
 val package_set: MutableSet<String> = HashSet()
@@ -65,7 +66,7 @@ class MyAccessibilityService : AccessibilityService() {
     private var lastPackageName: String? = null
 
     companion object {
-
+        const val DEBUG_TAG = "NetworkStatusExample"
     }
 
 
@@ -76,9 +77,9 @@ class MyAccessibilityService : AccessibilityService() {
     private var forward = 0
     private var next = 0
 
-    private var gestures_map: HashMap<String, String>? = null
+    private var gesturesMap: HashMap<String, String>? = null
 
-    private val user_id = "test_user15"
+    private val userId = "test_user15"
 
 
 
@@ -86,11 +87,13 @@ class MyAccessibilityService : AccessibilityService() {
         // Create the service
         println("onServiceConnected")
         val info = AccessibilityServiceInfo()
-        info.eventTypes = AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
-        info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK
-        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-        info.notificationTimeout = 100
-        info.packageNames = null
+        info.apply {
+            // TODO: why are we adding both? Isn't TYPES_ALL_MASK include the other?
+            eventTypes = AccessibilityEvent.TYPES_ALL_MASK or AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+            feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+            notificationTimeout = 100
+            packageNames = null
+        }
         serviceInfo = info
         try {
             // Add these lines to add the AWSCognitoAuthPlugin and AWSS3StoragePlugin plugins
@@ -101,7 +104,7 @@ class MyAccessibilityService : AccessibilityService() {
         } catch (error: AmplifyException) {
             Log.e("MyAmplifyApp", "Could not initialize Amplify", error)
         }
-        gestures_map = HashMap()
+        gesturesMap = HashMap()
 
 //        Amplify.Auth.signUp(
 //                "zhilin",
@@ -123,32 +126,38 @@ class MyAccessibilityService : AccessibilityService() {
             { result ->
                 Log.i(
                     "AuthQuickstart",
-                    if (result.isSignInComplete()) "Sign in succeeded" else "Sign in not complete"
+                    if (result.isSignInComplete) "Sign in succeeded" else "Sign in not complete"
                 )
             }
         ) { error -> Log.e("AuthQuickstart", error.toString()) }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val DEBUG_TAG = "NetworkStatusExample"
         val connMgr: ConnectivityManager =
             getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         var isWifiConn = false
         var isMobileConn = false
 
-        for (network in connMgr.getAllNetworks()) {
-            val networkInfo: NetworkInfo? = connMgr.getNetworkInfo(network)
-            if (networkInfo != null) {
-                if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-                    isWifiConn = isWifiConn or networkInfo!!.isConnected()
+        // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
+        // specifically answered by @AliSh
+        // check if connected to wifi or mobile
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val networkCapabilities = connMgr.activeNetwork ?: return
+            val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
+            isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+            isMobileConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+        } else {   // TODO: Needed for backwards compatibility, but this code is deprecated as we serve as low as API 21
+            for (network in connMgr.allNetworks) {
+                val networkInfo: NetworkInfo? = connMgr.getNetworkInfo(network)
+                if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
+                    isWifiConn = isWifiConn or networkInfo.isConnected
                 }
-            }
-            if (networkInfo != null) {
-                if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
-                    isMobileConn = isMobileConn or networkInfo!!.isConnected()
+                if (networkInfo?.type == ConnectivityManager.TYPE_MOBILE) {
+                    isMobileConn = isMobileConn or networkInfo.isConnected
                 }
             }
         }
+
         Log.d(DEBUG_TAG, "Wifi connected: $isWifiConn")
         Log.d(DEBUG_TAG, "Mobile connected: $isMobileConn")
         if (!isWifiConn) {
@@ -158,24 +167,22 @@ class MyAccessibilityService : AccessibilityService() {
             return
         }
         val packageName = event.packageName.toString()
-        if (packageName == null || event.packageName == "edu.illinois.recordingservice") {
+        if (event.packageName == "edu.illinois.recordingservice") {
             return
         }
         var isNewTrace = false
         if (lastPackageName == null || packageName != lastPackageName) {
             isNewTrace = true
         }
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED //                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
-        //                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
-        //                || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SELECTED)
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
+            || (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED)
+            || (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
+            || (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
         ) {
-
-//            || (event.getEventType()== AccessibilityEvent.TYPE_VIEW_SCROLLED)
-
             // Parse event description
             val date = Date(event.eventTime)
-            val formatter = SimpleDateFormat("HH:mm:ss.SSS")
-            formatter.setTimeZone(TimeZone.getTimeZone("UTC"))
+            val formatter = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
+            formatter.timeZone = TimeZone.getTimeZone("UTC")
             val dateFormatted: String = formatter.format(date)
             val eventTime = "Event Time: $dateFormatted"
             val eventType = "Event Type: " + eventTypeToString(event.eventType)
@@ -184,15 +191,19 @@ class MyAccessibilityService : AccessibilityService() {
 
 
             // Screenshot
-            val action_type: Int
-            if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-                action_type = ScreenShot.TYPE_CLICK
-            } else if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-                action_type = ScreenShot.TYPE_SCROLL
-            } else if (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
-                action_type = ScreenShot.TYPE_LONG_CLICK
-            } else {
-                action_type = ScreenShot.TYPE_SELECT
+            val actionType: Int = when (event.eventType) {
+                AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                    ScreenShot.TYPE_CLICK
+                }
+                AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
+                    ScreenShot.TYPE_SCROLL
+                }
+                AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
+                    ScreenShot.TYPE_LONG_CLICK
+                }
+                else -> {
+                    ScreenShot.TYPE_SELECT
+                }
             }
             while (forward != next) {
                 Log.i("AAA", "$forward!!!$next")
@@ -229,9 +240,9 @@ class MyAccessibilityService : AccessibilityService() {
             val root = rootInActiveWindow
             val boxes: ArrayList<Rect> = ArrayList<Rect>()
             if (root != null) {
-                boxes.addAll(get_boxes(root)!!)
+                boxes.addAll(getBoxes(root))
             }
-            currentScreenshot = ScreenShot(currentBitmap, outbounds, action_type, boxes)
+            currentScreenshot = ScreenShot(currentBitmap, outbounds, actionType, boxes)
 
 
             // VH
@@ -243,11 +254,11 @@ class MyAccessibilityService : AccessibilityService() {
             val rootInActiveWindow = rootInActiveWindow
             var vh = ""
             if (rootInActiveWindow != null) {
-                vh = parse_vh_to_json(rootInActiveWindow)
+                vh = parseVHToJson(rootInActiveWindow)
             }
 
             // add the event
-            add_event(node, packageName, isNewTrace, eventDescription, currentScreenshot!!, vh)
+            addEvent(node, packageName, isNewTrace, eventDescription, currentScreenshot!!, vh)
             lastPackageName = packageName
         }
     }
@@ -256,7 +267,7 @@ class MyAccessibilityService : AccessibilityService() {
         packageId: String,
         trace_number: String,
         action_number: String,
-        gestureDescription: String,
+        gestureDescription: String,  // TODO: we aren't using this, should we keep it?
         vh_content: String,
         bitmap: Bitmap?
     ) {
@@ -266,8 +277,8 @@ class MyAccessibilityService : AccessibilityService() {
 
         // upload VH
         val vhFile = File(applicationContext.filesDir, "vh")
-        val base_location = "$user_id/$packageId/$trace_number/"
-        val vh_location = base_location + "view_hierarchies" + "/" + action_number
+        val baseLocation = "$userId/$packageId/$trace_number/"
+        val viewHierarchyLocation = baseLocation + "view_hierarchies" + "/" + action_number
         try {
             val writer = BufferedWriter(FileWriter(vhFile))
             writer.append(vh_content)
@@ -276,18 +287,18 @@ class MyAccessibilityService : AccessibilityService() {
             Log.e("MyAmplifyApp", "Upload failed", exception)
         }
         Amplify.Storage.uploadFile(
-            vh_location,
+            viewHierarchyLocation,
             vhFile,
             options,
-            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()) }
+            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) }
         ) { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
 
         // upload screenshot
         val screenshotFile = File(applicationContext.filesDir, "screenshot")
-        val screenshot_location = base_location + "screenshots" + "/" + action_number
+        val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
         try {
             FileOutputStream(screenshotFile).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
+                bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
             }
         } catch (e: IOException) {
             e.printStackTrace()
@@ -301,18 +312,18 @@ class MyAccessibilityService : AccessibilityService() {
 //                        error -> Log.e("MyAmplifyApp", "Upload failed", error)
 //                );
         Amplify.Storage.uploadFile(
-            screenshot_location,
+            screenshotLocation,
             screenshotFile,
             options,
-            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()) }
+            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) }
         ) { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
 
         // upload gestures
         val gson = Gson()
-        var json: String = gson.toJson(gestures_map)
+        var json: String = gson.toJson(gesturesMap)
         json = json.replace("\\\\".toRegex(), "")
         val gestureFile = File(applicationContext.filesDir, "vh")
-        val gesture_location = base_location + "gestures"
+        val gestureLocation = baseLocation + "gestures"
         try {
             val writer = BufferedWriter(FileWriter(gestureFile))
             writer.append(json)
@@ -321,80 +332,80 @@ class MyAccessibilityService : AccessibilityService() {
             Log.e("MyAmplifyApp", "Upload failed", exception)
         }
         Amplify.Storage.uploadFile(
-            gesture_location,
+            gestureLocation,
             gestureFile,
             options,
-            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.getKey()) }
+            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) }
         ) { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
     }
 
 
-    private fun get_boxes(node: AccessibilityNodeInfo): ArrayList<Rect>? {
+    private fun getBoxes(node: AccessibilityNodeInfo): ArrayList<Rect> {
         val boxes: ArrayList<Rect> = ArrayList<Rect>()
         val rect = Rect()
         node.getBoundsInScreen(rect)
         boxes.add(rect)
-        for (i in 0 until node.getChildCount()) {
-            val current_node = node.getChild(i)
-            if (current_node != null) {
-                boxes.addAll(get_boxes(current_node)!!)
+        for (i in 0 until node.childCount) {
+            val currentNode = node.getChild(i)
+            if (currentNode != null) {
+                boxes.addAll(getBoxes(currentNode))
             }
         }
-        Log.i("Box size", java.lang.String.valueOf(boxes.size()))
+        Log.i("Box size", java.lang.String.valueOf(boxes.size))
         return boxes
     }
 
 
-    private fun parse_vh_to_json(node: AccessibilityNodeInfo): String {
+    private fun parseVHToJson(node: AccessibilityNodeInfo): String {
         val map: MutableMap<String, String> = HashMap()
-        map["package_name"] = node.getPackageName().toString()
-        map["class_name"] = node.getClassName().toString()
-        map["scrollable"] = java.lang.String.valueOf(node.isScrollable())
-        if (node.getParent() != null) {
-            val cs = node.getParent().className
+        map["package_name"] = node.packageName.toString()
+        map["class_name"] = node.className.toString()
+        map["scrollable"] = java.lang.String.valueOf(node.isScrollable)
+        if (node.parent != null) {
+            val cs = node.parent.className
             if (cs != null) {
-                map["parent"] = node.getParent().className.toString()
+                map["parent"] = node.parent.className.toString()
             }
         } else {
             map["parent"] = "none"
         }
-        map["clickable"] = java.lang.String.valueOf(node.isClickable())
-        map["focusable"] = java.lang.String.valueOf(node.isFocusable())
-        map["long-clickable"] = java.lang.String.valueOf(node.isLongClickable())
-        map["enabled"] = java.lang.String.valueOf(node.isEnabled())
+        map["clickable"] = java.lang.String.valueOf(node.isClickable)
+        map["focusable"] = java.lang.String.valueOf(node.isFocusable)
+        map["long-clickable"] = java.lang.String.valueOf(node.isLongClickable)
+        map["enabled"] = java.lang.String.valueOf(node.isEnabled)
         val outbounds = Rect()
         node.getBoundsInScreen(outbounds)
         map["bounds_in_screen"] = outbounds.toString()
-        map["visibility"] = java.lang.String.valueOf(node.isVisibleToUser())
-        if (node.getContentDescription() != null) {
-            map["content-desc"] = node.getContentDescription().toString()
+        map["visibility"] = java.lang.String.valueOf(node.isVisibleToUser)
+        if (node.contentDescription != null) {
+            map["content-desc"] = node.contentDescription.toString()
         } else {
             map["content-desc"] = "none"
         }
-        node.getBoundsInParent(outbounds)
+        node.getBoundsInParent(outbounds)   // TODO: why do we need this?
         map["bounds_in_parent"] = outbounds.toString()
-        map["focused"] = java.lang.String.valueOf(node.isFocused())
-        map["selected"] = java.lang.String.valueOf(node.isSelected())
-        map["children_count"] = java.lang.String.valueOf(node.getChildCount())
-        map["checkable"] = java.lang.String.valueOf(node.isCheckable())
-        map["checked"] = java.lang.String.valueOf(node.isChecked())
-        val text = node.getText()
+        map["focused"] = java.lang.String.valueOf(node.isFocused)
+        map["selected"] = java.lang.String.valueOf(node.isSelected)
+        map["children_count"] = java.lang.String.valueOf(node.childCount)
+        map["checkable"] = java.lang.String.valueOf(node.isCheckable)
+        map["checked"] = java.lang.String.valueOf(node.isChecked)
+        val text = node.text
         if (text != null) {
-            val text_field = text.toString()
-            if (text_field != "") {
+            val textField = text.toString()
+            if (textField != "") {
                 map["text_field"] = text.toString()
             }
         }
-        var children_vh = "["
-        for (i in 0 until node.getChildCount()) {
-            val current_node = node.getChild(i)
-            if (current_node != null) {
-                children_vh += parse_vh_to_json(current_node) + ","
+        var childrenVH = "["
+        for (i in 0 until node.childCount) {
+            val currentNode = node.getChild(i)
+            if (currentNode != null) {
+                childrenVH += parseVHToJson(currentNode) + ","
             }
         }
-        children_vh += "]"
-        Log.i("VH!!!!!!!", children_vh)
-        map["children"] = children_vh
+        childrenVH += "]"
+        Log.i("VH!!!!!!!", childrenVH)
+        map["children"] = childrenVH
 
         //map.put("to_string", node.toString());
         val gson = Gson()
@@ -446,55 +457,55 @@ class MyAccessibilityService : AccessibilityService() {
     //        }
     //        return vh;
     //    }
-    private fun add_event(
+    private fun addEvent(
         node: AccessibilityNodeInfo?,
         packageName: String,
         isNewTrace: Boolean,
         eventDescription: String,
         currentScreenShot: ScreenShot,
-        viewHierachy: String
+        viewHierarchy: String
     ) {
 
         // add the package
-        val package_map = package_layer.map
-        if (!package_map.containsKey(packageName)) {
+        val packageMap = package_layer.map
+        if (!packageMap.containsKey(packageName)) {
             // this is a new package
             package_set.add(packageName)
             package_list.clear()
             package_list.addAll(package_set)
             package_layer.list = package_list
-            package_map[packageName] = Layer()
-            package_layer.map = package_map
+            packageMap[packageName] = Layer()
+            package_layer.map = packageMap
         }
         notifyPackageAdapter()
 
         // add the trace
         val traceName: String
-        val trace_layer = package_map[packageName] ?: return
-        val trace_map = trace_layer.map
-        val trace_list = trace_layer.list
+        val traceLayer = packageMap[packageName] ?: return
+        val traceMap = traceLayer.map
+        val traceList = traceLayer.list
         if (isNewTrace) {
             // this is a new trace
-            traceName = "trace_" + (trace_list.size + 1)
-            trace_list.add(traceName)
-            trace_layer.list = trace_list
-            trace_map[traceName] = Layer()
-            trace_layer.map = trace_map
+            traceName = "trace_" + (traceList.size + 1)
+            traceList.add(traceName)
+            traceLayer.list = traceList
+            traceMap[traceName] = Layer()
+            traceLayer.map = traceMap
         } else {
-            traceName = "trace_" + trace_list.size
+            traceName = "trace_" + traceList.size
         }
         notifyTraceAdapter()
 
         // add the event
-        val event_name: String
-        val event_layer = trace_map[traceName] ?: return
-        val event_list = event_layer.list
-        event_name = java.lang.String.valueOf(event_list.size + 1)
-        event_list.add(eventDescription)
-        event_layer.list = event_list
-        val event_map = event_layer.map
-        event_map[eventDescription] = Layer()
-        event_layer.map = event_map
+        val eventName: String
+        val eventLayer = traceMap[traceName] ?: return
+        val eventList = eventLayer.list
+        eventName = java.lang.String.valueOf(eventList.size + 1)
+        eventList.add(eventDescription)
+        eventLayer.list = eventList
+        val eventMap = eventLayer.map
+        eventMap[eventDescription] = Layer()
+        eventLayer.map = eventMap
 
 //        Log.i("Oppps", event_layer.getList().get(0));
 //        Log.i("Oppps", Boolean.toString(event_layer.getMap().containsKey(eventDescription)));
@@ -504,27 +515,27 @@ class MyAccessibilityService : AccessibilityService() {
         val outbounds = Rect()
         node?.getBoundsInScreen(outbounds)
         val coordinates = "[" + "[" + outbounds.centerX() + "," + outbounds.centerY() + "]" + "]"
-        gestures_map!![event_name] = coordinates
+        gesturesMap!![eventName] = coordinates
 
         // add the screenshot
-        val screenshot_layer = event_map[eventDescription] ?: return
-        screenshot_layer.screenShot = currentScreenShot
-        val screenshot_map = screenshot_layer.map
-        screenshot_map[eventDescription] = Layer()
-        screenshot_layer.map = screenshot_map
+        val screenshotLayer = eventMap[eventDescription] ?: return
+        screenshotLayer.screenShot = currentScreenShot
+        val screenshotMap = screenshotLayer.map
+        screenshotMap[eventDescription] = Layer()
+        screenshotLayer.map = screenshotMap
 
         // add the view hierarchy
-        val view_hierarchy_layer = screenshot_map[eventDescription] ?: return
-        val view_hierarchy_list = ArrayList<String>()
-        view_hierarchy_list.add(viewHierachy)
-        view_hierarchy_layer.list = view_hierarchy_list
+        val viewHierarchyLayer = screenshotMap[eventDescription] ?: return
+        val viewHierarchyList = ArrayList<String>()
+        viewHierarchyList.add(viewHierarchy)
+        viewHierarchyLayer.list = viewHierarchyList
         notifyVHAdapter()
         uploadFile(
             packageName,
             traceName,
-            event_name,
+            eventName,
             eventDescription,
-            viewHierachy,
+            viewHierarchy,
             currentScreenShot.bitmap
         )
     }
