@@ -130,11 +130,15 @@ class MyAccessibilityService : AccessibilityService() {
         var isMobileConn = false
         for (network in connMgr.getAllNetworks()) {
             val networkInfo: NetworkInfo? = connMgr.getNetworkInfo(network)
-            if (networkInfo.getType() === ConnectivityManager.TYPE_WIFI) {
-                isWifiConn = isWifiConn or networkInfo!!.isConnected()
+            if (networkInfo != null) {
+                if (networkInfo.getType() === ConnectivityManager.TYPE_WIFI) {
+                    isWifiConn = isWifiConn or networkInfo!!.isConnected()
+                }
             }
-            if (networkInfo.getType() === ConnectivityManager.TYPE_MOBILE) {
-                isMobileConn = isMobileConn or networkInfo!!.isConnected()
+            if (networkInfo != null) {
+                if (networkInfo.getType() === ConnectivityManager.TYPE_MOBILE) {
+                    isMobileConn = isMobileConn or networkInfo!!.isConnected()
+                }
             }
         }
         Log.d(DEBUG_TAG, "Wifi connected: $isWifiConn")
@@ -471,8 +475,7 @@ class MyAccessibilityService : AccessibilityService() {
         } else {
             traceName = "trace_" + trace_list.size
         }
-        TraceActivity.notifyTraceAdapter()
-
+        notifyTraceAdapter()
 
         // add the event
         val event_name: String
@@ -487,7 +490,7 @@ class MyAccessibilityService : AccessibilityService() {
 
 //        Log.i("Oppps", event_layer.getList().get(0));
 //        Log.i("Oppps", Boolean.toString(event_layer.getMap().containsKey(eventDescription)));
-        EventActivity.notifyEventAdapter()
+        notifyEventAdapter()
 
         // update gesture map
         val outbounds = Rect()
@@ -507,7 +510,7 @@ class MyAccessibilityService : AccessibilityService() {
         val view_hierarchy_list = ArrayList<String>()
         view_hierarchy_list.add(viewHierachy)
         view_hierarchy_layer.list = view_hierarchy_list
-        ViewHierarchyActivity.notifyVHAdapter()
+        notifyVHAdapter()
         uploadFile(
             packageName,
             traceName,
@@ -517,8 +520,6 @@ class MyAccessibilityService : AccessibilityService() {
             currentScreenShot.bitmap
         )
     }
-
-
 
     override fun onInterrupt() {}
 }

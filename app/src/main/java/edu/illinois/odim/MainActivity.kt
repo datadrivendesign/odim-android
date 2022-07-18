@@ -1,14 +1,22 @@
 package edu.illinois.odim
 
 import CustomAdapter
+import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+
+// this should be static
+private var recyclerAdapter : CustomAdapter? = null
+fun notifyPackageAdapter() {
+    recyclerAdapter?.notifyDataSetChanged();
+}
 
 class MainActivity : AppCompatActivity() {
     private var recyclerView : RecyclerView? = null
     // TODO: this var should be static
-    private var recyclerAdapter : CustomAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,9 +30,8 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView?.adapter = recyclerAdapter
 
-        // TODO: need to create an onitemclicklistener in RecyclerView
-        recyclerView.setOnItemClickListener(object : OnItemClickListener() {
-            fun onItemClick(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+        recyclerAdapter!!.setOnItemClickListener(object: CustomAdapter.OnItemClickListener {
+            override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
                 val package_name: String = (view as TextView).getText().toString()
                 intent.putExtra("package_name", package_name)
@@ -33,9 +40,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // TODO: this needs to be static
-    fun notifyPackageAdapter() {
-        recyclerAdapter?.notifyDataSetChanged();
-    }
+
 }
 

@@ -7,26 +7,41 @@ import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.R
 
 
-class CustomAdapter(context: Context, packageList: ArrayList<String>) : RecyclerView.Adapter<MyViewHolder>() {
+class CustomAdapter(context: Context, itemList: ArrayList<String>) : RecyclerView.Adapter<MyViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context);
-    private var packageList : ArrayList<String> = packageList;
+    private var itemList : ArrayList<String> = itemList;
+    private lateinit var itemClickListener : OnItemClickListener
+
+    interface OnItemClickListener {
+        fun onItemClick(view: View)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
+    }
+
+    fun setOnItemClickListener(listener : OnItemClickListener) {
+        itemClickListener = listener
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         val view = inflater.inflate(R.layout.recycler_view_row, parent, false);
-        val holder = MyViewHolder(view);
+        val holder = MyViewHolder(view, itemClickListener);
         return holder;
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        holder.textView.setText(packageList.get(position));
+        holder.textView.setText(itemList.get(position));
     }
 
     override fun getItemCount(): Int {
-        return packageList.size;
+        return itemList.size;
     }
 }
 
-class MyViewHolder(textView: View) : RecyclerView.ViewHolder(textView)
+class MyViewHolder(textView: View, listener: CustomAdapter.OnItemClickListener) : RecyclerView.ViewHolder(textView)
 {
     var textView : TextView = itemView.findViewById(R.id.packageName);
+
+    init {
+        itemView.setOnClickListener {
+            listener.onItemClick(textView)
+        }
+    }
 }

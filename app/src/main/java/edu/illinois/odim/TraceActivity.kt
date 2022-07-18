@@ -1,17 +1,22 @@
 package edu.illinois.odim
 
 import CustomAdapter
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 
-class TraceActivity : AppCompatActivity(){
+// these were static in java
+private var recyclerAdapter: CustomAdapter? = null
+fun notifyTraceAdapter() {
+    recyclerAdapter?.notifyDataSetChanged()
+}
 
+class TraceActivity : AppCompatActivity(){
     private var recyclerView: RecyclerView? = null
     private var package_name: String? = null
-    // TODO: this var should be static
-    private var recyclerAdapter: CustomAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,8 +29,8 @@ class TraceActivity : AppCompatActivity(){
             get_traces(package_name)
         )
         recyclerView!!.adapter = recyclerAdapter
-        recyclerView.setOnItemClickListener(object : OnItemClickListener() {
-            fun onItemClick(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+        recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
+            override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, EventActivity::class.java)
                 val trace_name: String = (view as TextView).getText().toString()
                 intent.putExtra("package_name", package_name)
@@ -34,11 +39,4 @@ class TraceActivity : AppCompatActivity(){
             }
         })
     }
-
-    // TODO: This should be static
-    fun notifyTraceAdapter() {
-        recyclerAdapter?.notifyDataSetChanged()
-    }
-
-
 }

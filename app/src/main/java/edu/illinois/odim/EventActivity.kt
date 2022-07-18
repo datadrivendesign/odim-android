@@ -2,27 +2,21 @@ package edu.illinois.odim
 
 import CustomAdapter
 import android.content.Intent
-import android.content.Intent.getIntent
 import android.os.Bundle
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.core.app.ApplicationProvider.getApplicationContext
 
-
+// these were static in java
+private var recyclerAdapter: CustomAdapter? = null
+fun notifyEventAdapter() {
+    recyclerAdapter?.notifyDataSetChanged()
+}
 class EventActivity : AppCompatActivity() {
-    // TODO: change listView to recyclerView?
     private var recyclerView: RecyclerView? = null
     private var package_name: String? = null
     private var trace_name: String? = null
-    // TODO: this var should be static
-    private var recyclerAdapter: CustomAdapter? = null
 
     protected override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,10 +28,8 @@ class EventActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.eventRecyclerView) as RecyclerView?
         recyclerAdapter = CustomAdapter(this, get_events(package_name, trace_name))
         recyclerView?.adapter = recyclerAdapter
-
-        // TODO: add onItemClickListener to recyclerView
-        listView?.setOnItemClickListener(object : AdapterView.OnItemClickListener {
-            override fun onItemClick(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+        recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
+            override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(
                     getApplicationContext(),
                     ScreenShotActivity::class.java
@@ -49,10 +41,5 @@ class EventActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         })
-    }
-
-    // TODO: this should be static
-    fun notifyEventAdapter() {
-        recyclerAdapter?.notifyDataSetChanged()
     }
 }
