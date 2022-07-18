@@ -141,22 +141,10 @@ class MyAccessibilityService : AccessibilityService() {
         // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
         // specifically answered by @AliSh
         // check if connected to wifi or mobile
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val networkCapabilities = connMgr.activeNetwork ?: return
-            val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
-            isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-            isMobileConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-        } else {   // TODO: Needed for backwards compatibility, but this code is deprecated as we serve as low as API 21
-            for (network in connMgr.allNetworks) {
-                val networkInfo: NetworkInfo? = connMgr.getNetworkInfo(network)
-                if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
-                    isWifiConn = isWifiConn or networkInfo.isConnected
-                }
-                if (networkInfo?.type == ConnectivityManager.TYPE_MOBILE) {
-                    isMobileConn = isMobileConn or networkInfo.isConnected
-                }
-            }
-        }
+        val networkCapabilities = connMgr.activeNetwork ?: return
+        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
+        isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        isMobileConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
 
         Log.d(DEBUG_TAG, "Wifi connected: $isWifiConn")
         Log.d(DEBUG_TAG, "Mobile connected: $isMobileConn")
@@ -189,7 +177,6 @@ class MyAccessibilityService : AccessibilityService() {
             val eventDescription = "$eventTime; $eventType"
             Log.i("KKK", eventType)
 
-
             // Screenshot
             val actionType: Int = when (event.eventType) {
                 AccessibilityEvent.TYPE_VIEW_CLICKED -> {
@@ -210,22 +197,36 @@ class MyAccessibilityService : AccessibilityService() {
             }
             Log.i("AAA", "Finally out!!! Yeah!!!")
             forward++
-            val consumer: Consumer<ScreenshotResult> = object : Consumer<ScreenshotResult?>() {
-                fun accept(screenshotResult: ScreenshotResult) {
-                    currentBitmap = wrapHardwareBuffer(
-                        screenshotResult.hardwareBuffer,
-                        screenshotResult.colorSpace
-                    )
-                    next++
-                }
-            }
-            val hasTakenScreenShot: Boolean =
-                takeScreenshot(DEFAULT_DISPLAY, THREAD_POOL_EXECUTOR, consumer)
+//            val consumer: Consumer<ScreenshotResult?> = object : Consumer<ScreenshotResult?> {
+//                override fun accept(screenshotResult: ScreenshotResult?) {
+//                    currentBitmap = wrapHardwareBuffer(
+//                        screenshotResult?.hardwareBuffer,
+//                        screenshotResult?.colorSpace
+//                    )
+//                    next++
+//                }
+//            }
+//            val hasTakenScreenShot: Boolean =
+//                takeScreenshot(DEFAULT_DISPLAY, THREAD_POOL_EXECUTOR, consumer)
             //            try {
 //                THREAD_POOL_EXECUTOR.wait();
 //            } catch (InterruptedException e) {
 //                e.printStackTrace();
 //            }
+            var hasTakenScreenShot = false
+            // TODO: should be concurrent?
+            takeScreenshot(DEFAULT_DISPLAY, applicationContext.mainExecutor, object: TakeScreenshotCallback {
+                override fun onSuccess(result: ScreenshotResult) {
+                    hasTakenScreenShot = true
+                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                    next++
+                }
+
+                override fun onFailure(errCode: Int) {
+                    Log.e("ScreenshotFailure:", "Error code: $errCode");
+                }
+
+            })
             Log.i("Screenshot", hasTakenScreenShot.toString())
             while (forward != next) {
                 Log.i("BBB", "$forward!!!$next")
