@@ -14,7 +14,9 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import com.amplifyframework.AmplifyException
+import com.amplifyframework.auth.AuthUserAttributeKey
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
+import com.amplifyframework.auth.options.AuthSignUpOptions
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.StorageAccessLevel
 import com.amplifyframework.storage.options.StorageUploadFileOptions
@@ -102,30 +104,39 @@ class MyAccessibilityService : AccessibilityService() {
         }
         gesturesMap = HashMap()
 
+//        val options = AuthSignUpOptions.builder()
+//            .userAttribute(AuthUserAttributeKey.email(), "carlguo2@illinois.edu")
+//            .build()
 //        Amplify.Auth.signUp(
-//                "zhilin",
-//                "Password123",
-//                AuthSignUpOptions.builder().userAttribute(AuthUserAttributeKey.email(), "zhilinz2@illinois.edu").build(),
-//                result -> Log.i("AuthQuickStart", "Result: " + result.toString()),
-//                error -> Log.e("AuthQuickStart", "Sign up failed", error)
+//                "carl_and_rizky",
+//                "dddg_ODIM_mobi",
+//                options,
+//                { result -> Log.i("AuthQuickStart", "Result: " + result.toString()) },
+//                { error -> Log.e("AuthQuickStart", "Sign up failed", error) }
+//        );
+//
+//        Amplify.Auth.confirmSignUp(
+//                "carl_and_rizky",
+//                "815098",
+//                { result ->
+//                    Log.i(
+//                        "AuthQuickstart",
+//                        if (result.isSignUpComplete()) "Confirm signUp succeeded" else "Confirm sign up not complete")
+//                },
+//                { error -> Log.e("AuthQuickstart", error.toString()) }
 //        );
 
-//        Amplify.Auth.confirmSignUp(
-//                "zhilin",
-//                "061319",
-//                result -> Log.i("AuthQuickstart", result.isSignUpComplete() ? "Confirm signUp succeeded" : "Confirm sign up not complete"),
-//                error -> Log.e("AuthQuickstart", error.toString())
-//        );
         Amplify.Auth.signIn(
-            "zhilin",
-            "Password123",
+            "carl_and_rizky",
+            "dddg_ODIM_mobi",
             { result ->
                 Log.i(
                     "AuthQuickstart",
                     if (result.isSignInComplete) "Sign in succeeded" else "Sign in not complete"
                 )
-            }
-        ) { error -> Log.e("AuthQuickstart", error.toString()) }
+            },
+            { error -> Log.e("AuthQuickstart", error.toString()) }
+        )
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -188,11 +199,13 @@ class MyAccessibilityService : AccessibilityService() {
                     ScreenShot.TYPE_SELECT
                 }
             }
-            while (forward != next) {
-                Log.i("AAA", "$forward!!!$next")
-            }
-            Log.i("AAA", "Finally out!!! Yeah!!!")
-            forward++
+            // TODO: need to figure out if this concurrency solution is still needed or not
+//            while (forward != next) {
+//                Log.i("AAA", "$forward!!!$next")
+//            }
+//            Log.i("AAA", "Finally out!!! Yeah!!!")
+//            forward++
+
 //            val consumer: Consumer<ScreenshotResult?> = object : Consumer<ScreenshotResult?> {
 //                override fun accept(screenshotResult: ScreenshotResult?) {
 //                    currentBitmap = wrapHardwareBuffer(
@@ -224,10 +237,12 @@ class MyAccessibilityService : AccessibilityService() {
 
             })
             Log.i("Screenshot", hasTakenScreenShot.toString())
-            while (forward != next) {
-                Log.i("BBB", "$forward!!!$next")
-            }
-            Log.i("BBB", "Finally out!!! Yeah!!!")
+
+            // TODO: need to figure out if this concurrency solution is still needed or not
+//            while (forward != next) {
+//                Log.i("BBB", "$forward!!!$next")
+//            }
+//            Log.i("BBB", "Finally out!!! Yeah!!!")
 
             // parse view hierarchy
             // current node
@@ -301,13 +316,6 @@ class MyAccessibilityService : AccessibilityService() {
             e.printStackTrace()
         }
 
-//        Amplify.Storage.uploadFile(
-//                key,
-//                file,
-//                options,
-//                result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + key,
-//                        error -> Log.e("MyAmplifyApp", "Upload failed", error)
-//                );
         Amplify.Storage.uploadFile(
             screenshotLocation,
             screenshotFile,

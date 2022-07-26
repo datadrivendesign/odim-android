@@ -1,0 +1,14 @@
+{
+  "resourceName": "odimstorage",
+  "policyUUID": "86d339c4",
+  "bucketName": "mobileodimbucket",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

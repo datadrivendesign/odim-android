@@ -28,7 +28,10 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
 
-        recyclerAdapter = CustomAdapter(this, getPackages())
+        val packages = getPackages()
+        System.out.println(packages)
+
+        recyclerAdapter = CustomAdapter(this, packages)
 
         recyclerView?.adapter = recyclerAdapter
 

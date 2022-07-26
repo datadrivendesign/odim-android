@@ -23,6 +23,7 @@ android {
         }
     }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -32,7 +33,6 @@ android {
 }
 
 dependencies {
-
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'com.google.android.material:material:1.6.1'
@@ -45,4 +45,6 @@ dependencies {
     implementation 'com.amplifyframework:core-kotlin:0.20.2'
     implementation 'com.amplifyframework:aws-storage-s3:1.36.2'
     implementation 'com.amplifyframework:aws-auth-cognito:1.36.2'
+    implementation 'com.amplifyframework:aws-api:1.36.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.9'
 }
