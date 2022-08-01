@@ -3,6 +3,7 @@ package edu.illinois.odim
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -33,7 +34,8 @@ class TraceActivity : AppCompatActivity(){
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
             override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, EventActivity::class.java)
-                val chosenTraceName: String = (view as TextView).text.toString()
+                // TODO: this is a dumb way to get string, please fix later
+                val chosenTraceName: String = ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", chosenPackageNAme)
                 intent.putExtra("trace_name", chosenTraceName)
                 startActivity(intent)

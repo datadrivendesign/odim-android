@@ -3,6 +3,7 @@ package edu.illinois.odim
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -35,7 +36,8 @@ class EventActivity : AppCompatActivity() {
                     applicationContext,
                     ScreenShotActivity::class.java
                 )
-                val chosenEventName: String = (view as TextView).text.toString()
+                // TODO: this is a dumb way to get string, please fix later
+                val chosenEventName: String = ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_name", chosenTraceName)
                 intent.putExtra("event_name", chosenEventName)

@@ -14,9 +14,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import com.amplifyframework.AmplifyException
-import com.amplifyframework.auth.AuthUserAttributeKey
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
-import com.amplifyframework.auth.options.AuthSignUpOptions
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.StorageAccessLevel
 import com.amplifyframework.storage.options.StorageUploadFileOptions
@@ -25,6 +23,9 @@ import com.google.gson.Gson
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
@@ -67,13 +68,9 @@ class MyAccessibilityService : AccessibilityService() {
         const val DEBUG_TAG = "NetworkStatusExample"
     }
 
-
     private var currentBitmap: Bitmap? = null
 
     private var currentScreenshot: ScreenShot? = null
-
-//    private var forward = 0
-//    private var next = 0
 
     private var gesturesMap: HashMap<String, String>? = null
 
@@ -137,6 +134,9 @@ class MyAccessibilityService : AccessibilityService() {
             },
             { error -> Log.e("AuthQuickstart", error.toString()) }
         )
+
+        // TODO: start up background scheduled screenshot take
+        recordScreenPeriodically()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -153,8 +153,8 @@ class MyAccessibilityService : AccessibilityService() {
         isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
         isMobileConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
 
-        Log.d(DEBUG_TAG, "Wifi connected: $isWifiConn")
-        Log.d(DEBUG_TAG, "Mobile connected: $isMobileConn")
+//        Log.d(DEBUG_TAG, "Wifi connected: $isWifiConn")
+//        Log.d(DEBUG_TAG, "Mobile connected: $isMobileConn")
         if (!isWifiConn) {
             return
         }
@@ -199,50 +199,6 @@ class MyAccessibilityService : AccessibilityService() {
                     ScreenShot.TYPE_SELECT
                 }
             }
-            // TODO: need to figure out if this concurrency solution is still needed or not
-//            while (forward != next) {
-//                Log.i("AAA", "$forward!!!$next")
-//            }
-//            Log.i("AAA", "Finally out!!! Yeah!!!")
-//            forward++
-
-//            val consumer: Consumer<ScreenshotResult?> = object : Consumer<ScreenshotResult?> {
-//                override fun accept(screenshotResult: ScreenshotResult?) {
-//                    currentBitmap = wrapHardwareBuffer(
-//                        screenshotResult?.hardwareBuffer,
-//                        screenshotResult?.colorSpace
-//                    )
-//                    next++
-//                }
-//            }
-//            val hasTakenScreenShot: Boolean =
-//                takeScreenshot(DEFAULT_DISPLAY, THREAD_POOL_EXECUTOR, consumer)
-            //            try {
-//                THREAD_POOL_EXECUTOR.wait();
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-            var hasTakenScreenShot = false
-            // TODO: take screenshots in a threadpool and save the screenshot closest to onaccessibilityevent
-            takeScreenshot(DEFAULT_DISPLAY, applicationContext.mainExecutor, object: TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) {
-                    hasTakenScreenShot = true
-                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-//                    next++
-                }
-
-                override fun onFailure(errCode: Int) {
-                    Log.e("ScreenshotFailure:", "Error code: $errCode")
-                }
-
-            })
-            Log.i("Screenshot", hasTakenScreenShot.toString())
-
-            // TODO: need to figure out if this concurrency solution is still needed or not
-//            while (forward != next) {
-//                Log.i("BBB", "$forward!!!$next")
-//            }
-//            Log.i("BBB", "Finally out!!! Yeah!!!")
 
             // parse view hierarchy
             // current node
@@ -254,7 +210,10 @@ class MyAccessibilityService : AccessibilityService() {
             if (root != null) {
                 boxes.addAll(getBoxes(root))
             }
-            currentScreenshot = ScreenShot(currentBitmap, outbounds, actionType, boxes)
+            synchronized(this) {
+                Log.i("currBitmap", currentBitmap?.colorSpace.toString())
+                currentScreenshot = ScreenShot(currentBitmap, outbounds, actionType, boxes)
+            }
 
 
             // VH
@@ -356,10 +315,26 @@ class MyAccessibilityService : AccessibilityService() {
                 boxes.addAll(getBoxes(currentNode))
             }
         }
-        Log.i("Box size", java.lang.String.valueOf(boxes.size))
+//        Log.i("Box size", java.lang.String.valueOf(boxes.size))
         return boxes
     }
 
+    private fun recordScreenPeriodically() {
+        val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+        scheduledExecutorService.schedule({
+            takeScreenshot(DEFAULT_DISPLAY, applicationContext.mainExecutor, object: TakeScreenshotCallback {
+                override fun onSuccess(result: ScreenshotResult) {
+                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                    Log.i("Screenshot:", "Take screenshot success")
+                }
+
+                override fun onFailure(errCode: Int) {
+                    Log.e("ScreenshotFailure:", "Error code: $errCode")
+                }
+
+            })
+        }, 100, TimeUnit.MILLISECONDS)
+    }
 
     private fun parseVHToJson(node: AccessibilityNodeInfo): String {
         val map: MutableMap<String, String> = HashMap()
@@ -409,7 +384,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
         }
         childrenVH += "]"
-        Log.i("VH!!!!!!!", childrenVH)
+//        Log.i("VH!!!!!!!", childrenVH)
         map["children"] = childrenVH
 
         //map.put("to_string", node.toString());
@@ -419,49 +394,6 @@ class MyAccessibilityService : AccessibilityService() {
         return json
     }
 
-
-//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-//    private String parseAllNodeVH(AccessibilityNodeInfo root) {
-//        String vh = "";
-//        Deque<AccessibilityNodeInfo> deque = new ArrayDeque<>();
-//        deque.add(root);
-//        while (deque != null && !deque.isEmpty()) {
-//            AccessibilityNodeInfo node = deque.removeFirst();
-//            if (node != null) {
-//                vh = vh + parse_vh_to_json(node) + "\n" + "\n";
-////                Log.i("Oppps", String.valueOf(node.getChildCount()));
-//                for (int i = 0; i < node.getChildCount(); i++) {
-//                    AccessibilityNodeInfo current_node = node.getChild(i);
-//                    if (current_node != null) {
-//                        deque.addLast(current_node);
-//                    }
-//                }
-//            }
-//        }
-//        return vh;
-//    }
-
-
-    //    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    //    private String parseAllNodeVH(AccessibilityNodeInfo root) {
-    //        String vh = "";
-    //        Deque<AccessibilityNodeInfo> deque = new ArrayDeque<>();
-    //        deque.add(root);
-    //        while (deque != null && !deque.isEmpty()) {
-    //            AccessibilityNodeInfo node = deque.removeFirst();
-    //            if (node != null) {
-    //                vh = vh + parse_vh_to_json(node) + "\n" + "\n";
-    ////                Log.i("Oppps", String.valueOf(node.getChildCount()));
-    //                for (int i = 0; i < node.getChildCount(); i++) {
-    //                    AccessibilityNodeInfo current_node = node.getChild(i);
-    //                    if (current_node != null) {
-    //                        deque.addLast(current_node);
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        return vh;
-    //    }
     private fun addEvent(
         node: AccessibilityNodeInfo?,
         packageName: String,
@@ -512,8 +444,6 @@ class MyAccessibilityService : AccessibilityService() {
         eventMap[eventDescription] = Layer()
         eventLayer.map = eventMap
 
-//        Log.i("Oppps", event_layer.getList().get(0));
-//        Log.i("Oppps", Boolean.toString(event_layer.getMap().containsKey(eventDescription)));
         notifyEventAdapter()
 
         // update gesture map

@@ -3,8 +3,10 @@ package edu.illinois.odim
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.children
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -38,7 +40,8 @@ class MainActivity : AppCompatActivity() {
         recyclerAdapter!!.setOnItemClickListener(object: CustomAdapter.OnItemClickListener {
             override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
-                val clickedPackageName: String = (view as TextView).text.toString()
+                // TODO: this is a dumb way to get string, please fix later
+                val clickedPackageName: String = ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", clickedPackageName)
                 startActivity(intent)
             }
