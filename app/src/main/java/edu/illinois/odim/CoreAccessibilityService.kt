@@ -72,8 +72,8 @@ class MyAccessibilityService : AccessibilityService() {
 
     private var currentScreenshot: ScreenShot? = null
 
-    private var forward = 0
-    private var next = 0
+//    private var forward = 0
+//    private var next = 0
 
     private var gesturesMap: HashMap<String, String>? = null
 
@@ -223,12 +223,12 @@ class MyAccessibilityService : AccessibilityService() {
 //                e.printStackTrace();
 //            }
             var hasTakenScreenShot = false
-            // TODO: should be concurrent?
+            // TODO: take screenshots in a threadpool and save the screenshot closest to onaccessibilityevent
             takeScreenshot(DEFAULT_DISPLAY, applicationContext.mainExecutor, object: TakeScreenshotCallback {
                 override fun onSuccess(result: ScreenshotResult) {
                     hasTakenScreenShot = true
                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                    next++
+//                    next++
                 }
 
                 override fun onFailure(errCode: Int) {
