@@ -321,11 +321,12 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun recordScreenPeriodically() {
         val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-        scheduledExecutorService.schedule({
-            takeScreenshot(DEFAULT_DISPLAY, applicationContext.mainExecutor, object: TakeScreenshotCallback {
+        scheduledExecutorService.scheduleAtFixedRate({
+            takeScreenshot(DEFAULT_DISPLAY, scheduledExecutorService, object: TakeScreenshotCallback {
                 override fun onSuccess(result: ScreenshotResult) {
                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
                     Log.i("Screenshot:", "Take screenshot success")
+                    result.hardwareBuffer.close()
                 }
 
                 override fun onFailure(errCode: Int) {
@@ -333,7 +334,7 @@ class MyAccessibilityService : AccessibilityService() {
                 }
 
             })
-        }, 100, TimeUnit.MILLISECONDS)
+        }, 0, 400, TimeUnit.MILLISECONDS)
     }
 
     private fun parseVHToJson(node: AccessibilityNodeInfo): String {
