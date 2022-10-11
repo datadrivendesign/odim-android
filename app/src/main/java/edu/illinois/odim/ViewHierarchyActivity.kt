@@ -1,6 +1,10 @@
 package edu.illinois.odim
 
 import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -33,5 +37,11 @@ class ViewHierarchyActivity : AppCompatActivity() {
             getVh(chosenPackageName, chosenTraceName, chosenEventName)
         )
         recyclerView?.adapter = recyclerAdapter
+        recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
+            override fun onItemClick(rowText: TextView) {
+                Log.i("View Size", recyclerAdapter!!.itemCount.toString())
+                Log.i("View Element", rowText.text.toString()) //((view as LinearLayout).getChildAt(0) as TextView).text.toString())
+            }
+        })
     }
 }

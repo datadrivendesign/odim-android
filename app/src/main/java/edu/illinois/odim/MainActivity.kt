@@ -53,18 +53,14 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
 
-        val packages = getPackages()
-        System.out.println(packages)
-
-        recyclerAdapter = CustomAdapter(this, packages)
+        recyclerAdapter = CustomAdapter(this, getPackages())
 
         recyclerView?.adapter = recyclerAdapter
 
         recyclerAdapter!!.setOnItemClickListener(object: CustomAdapter.OnItemClickListener {
-            override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
-                // TODO: this is a dumb way to get string, please fix later
-                val clickedPackageName: String = ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
+                val clickedPackageName: String = rowText.text.toString() // ((rowText as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", clickedPackageName)
                 startActivity(intent)
             }

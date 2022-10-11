@@ -31,13 +31,12 @@ class EventActivity : AppCompatActivity() {
         recyclerAdapter = CustomAdapter(this, getEvents(chosenPackageName, chosenTraceName))
         recyclerView?.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
-            override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(
                     applicationContext,
                     ScreenShotActivity::class.java
                 )
-                // TODO: this is a dumb way to get string, please fix later
-                val chosenEventName: String = ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
+                val chosenEventName: String = rowText.text.toString() // ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_name", chosenTraceName)
                 intent.putExtra("event_name", chosenEventName)

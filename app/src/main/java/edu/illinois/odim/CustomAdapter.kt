@@ -13,8 +13,8 @@ class CustomAdapter(context: Context, itemList: ArrayList<String>) : RecyclerVie
     private var itemList : ArrayList<String> = itemList
     private lateinit var itemClickListener : OnItemClickListener
 
-    interface OnItemClickListener {
-        fun onItemClick(view: View)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
+    interface  OnItemClickListener {
+        fun onItemClick(rowText: TextView)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
     }
 
     fun setOnItemClickListener(listener : OnItemClickListener) {
@@ -22,8 +22,8 @@ class CustomAdapter(context: Context, itemList: ArrayList<String>) : RecyclerVie
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val view = inflater.inflate(R.layout.recycler_view_row, parent, false)
-        return MyViewHolder(view, itemClickListener)
+        val itemView = inflater.inflate(R.layout.recycler_view_row, parent, false)
+        return MyViewHolder(itemView, itemClickListener)
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
@@ -35,7 +35,7 @@ class CustomAdapter(context: Context, itemList: ArrayList<String>) : RecyclerVie
     }
 }
 
-class MyViewHolder(textView: View, listener: CustomAdapter.OnItemClickListener) : RecyclerView.ViewHolder(textView)
+class MyViewHolder(itemView: View, listener: CustomAdapter.OnItemClickListener) : RecyclerView.ViewHolder(itemView)
 {
     var textView : TextView = itemView.findViewById(R.id.packageName)
 
