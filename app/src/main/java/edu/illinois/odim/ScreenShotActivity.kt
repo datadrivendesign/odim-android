@@ -4,9 +4,11 @@ import android.graphics.*
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import kotlin.math.roundToInt
 
 class ScreenShotActivity : AppCompatActivity() {
 
@@ -91,13 +93,41 @@ class ScreenShotActivity : AppCompatActivity() {
             }
             imageView!!.setImageBitmap(myBit)
 
-            imageView!!.setOnClickListener {
-                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
-                intent.putExtra("package_name", chosenPackageName)
-                intent.putExtra("trace_name", chosenTraceName)
-                intent.putExtra("event_name", chosenEventName)
-                startActivity(intent)
+//            imageView!!.setOnClickListener {
+////                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
+////                intent.putExtra("package_name", chosenPackageName)
+////                intent.putExtra("trace_name", chosenTraceName)
+////                intent.putExtra("event_name", chosenEventName)
+////                startActivity(intent)
+//                Log.i("OnClick", "Clicked")
+//            }
+        }
+
+    }
+
+    var p1: Point? = null
+    var p2: Point? = null
+    var paint = Paint()
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        Log.i("OnTouch", "Hello from onTouchEvent")
+        val pointX = event!!.getX().roundToInt()
+        val pointY = event!!.getY().roundToInt()
+        when (event!!.getAction()) {
+            MotionEvent.ACTION_DOWN -> {
+                p1 = Point(pointX, pointY)
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                p2 = Point(pointX, pointY)
+                canvas!!.drawRect(p1!!.x.toFloat(), p1!!.x.toFloat(), p2!!.x.toFloat(), p2!!.y.toFloat(), paint)
+            }
+            else -> {
+                return false
             }
         }
+        return true
     }
+
+    canvas.setOnTouchListener(this)
 }

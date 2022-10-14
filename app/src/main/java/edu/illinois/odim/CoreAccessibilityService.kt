@@ -325,7 +325,7 @@ class MyAccessibilityService : AccessibilityService() {
             takeScreenshot(DEFAULT_DISPLAY, scheduledExecutorService, object: TakeScreenshotCallback {
                 override fun onSuccess(result: ScreenshotResult) {
                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                    Log.i("Screenshot:", "Take screenshot success")
+//                    Log.i("Screenshot:", "Take screenshot success")
                     result.hardwareBuffer.close()
                 }
 
