@@ -15,12 +15,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0e7da537-7a16-4874-ac4d-f6e1b1fc0b61" name="Default Changelist" comment="Aop is able to work but screenshots are not being recorded properly.">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScrubbingView.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScreenShotActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScreenShotActivity.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_screenshot.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_screenshot.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScrubbingView.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/edu/illinois/odim/ScrubbingView.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

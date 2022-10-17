@@ -18,15 +18,21 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var paint = Paint()
     var canvas: Canvas? = null
 
-    constructor(ctx : Context) : super(ctx) {
+    constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
         visibility = View.VISIBLE
     }
-    constructor(ctx: Context, attr : AttributeSet): super(ctx, attr) {
+
+    constructor(ctx: Context, attr: AttributeSet) : super(ctx, attr) {
         setWillNotDraw(false)
         visibility = View.VISIBLE
     }
-    constructor(ctx: Context, attr : AttributeSet, defStyleAttr: Int): super(ctx, attr, defStyleAttr) {
+
+    constructor(ctx: Context, attr: AttributeSet, defStyleAttr: Int) : super(
+        ctx,
+        attr,
+        defStyleAttr
+    ) {
         setWillNotDraw(false)
         visibility = View.VISIBLE
     }
@@ -37,7 +43,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 
     // Get coordinates on user touch
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        Log.i("OnTouch", "Hello from onTouchEvent")
         when (event!!.getAction()) {
             MotionEvent.ACTION_DOWN -> {
                 val pointX = event!!.getX().roundToInt()
@@ -59,14 +64,18 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     }
 
     // Draw rectangle according to coordinates
-    override fun onDraw(canvas : Canvas) {
-        Log.i("OnDraw", "Hello from onDraw")
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if(p1!=null && p2!=null) {
-            Log.i("OnDraw", "Hello from onDraw")
-            canvas.drawRect(p1!!.x.toFloat(), p1!!.y.toFloat(), p2!!.x.toFloat(), p2!!.y.toFloat(), paint)
-            p1=null
-            p2=null
+        if (p1 != null && p2 != null) {
+            canvas.drawRect(
+                p1!!.x.toFloat(),
+                p1!!.y.toFloat(),
+                p2!!.x.toFloat(),
+                p2!!.y.toFloat(),
+                paint
+            )
+            p1 = null
+            p2 = null
         }
     }
 
