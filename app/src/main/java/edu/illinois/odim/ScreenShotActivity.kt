@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 
 class ScreenShotActivity : AppCompatActivity() {
 
-    private var imageView: ImageView? = null
+    private var imageView: ScrubbingView? = null
     private var chosenPackageName: String? = null
     private var chosenTraceName: String? = null
     private var chosenEventName: String? = null
@@ -25,7 +25,7 @@ class ScreenShotActivity : AppCompatActivity() {
         chosenTraceName = intent.extras!!["trace_name"].toString()
         chosenEventName = intent.extras!!["event_name"].toString()
         title = "ScreenShot (Click Image for VH)"
-        imageView = findViewById<View>(R.id.screenshot) as ImageView
+        imageView = findViewById<View>(R.id.screenshot) as ScrubbingView
         val screenshot: ScreenShot? =
             getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
         if (screenshot != null) {
@@ -101,33 +101,9 @@ class ScreenShotActivity : AppCompatActivity() {
 ////                startActivity(intent)
 //                Log.i("OnClick", "Clicked")
 //            }
+
         }
 
     }
 
-    var p1: Point? = null
-    var p2: Point? = null
-    var paint = Paint()
-
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        Log.i("OnTouch", "Hello from onTouchEvent")
-        val pointX = event!!.getX().roundToInt()
-        val pointY = event!!.getY().roundToInt()
-        when (event!!.getAction()) {
-            MotionEvent.ACTION_DOWN -> {
-                p1 = Point(pointX, pointY)
-                return true
-            }
-            MotionEvent.ACTION_UP -> {
-                p2 = Point(pointX, pointY)
-                canvas!!.drawRect(p1!!.x.toFloat(), p1!!.x.toFloat(), p2!!.x.toFloat(), p2!!.y.toFloat(), paint)
-            }
-            else -> {
-                return false
-            }
-        }
-        return true
-    }
-
-    canvas.setOnTouchListener(this)
 }
