@@ -17,6 +17,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var p2: Point? = null
     var paint = Paint()
     var canvas: Canvas? = null
+    var rectangles = mutableListOf<Pair<Point, Point>>()
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -29,17 +30,11 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     }
 
     constructor(ctx: Context, attr: AttributeSet, defStyleAttr: Int) : super(
-        ctx,
-        attr,
-        defStyleAttr
+        ctx, attr, defStyleAttr
     ) {
         setWillNotDraw(false)
         visibility = View.VISIBLE
     }
-
-//    fun setCanvas(cvs: Canvas?) : Void {
-//        canvas = cvs
-//    }
 
     // Get coordinates on user touch
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -67,13 +62,15 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
-            canvas.drawRect(
-                p1!!.x.toFloat(),
-                p1!!.y.toFloat(),
-                p2!!.x.toFloat(),
-                p2!!.y.toFloat(),
-                paint
-            )
+            rectangles.add(Pair(p1, p2) as Pair<Point, Point>)
+            for (coord in rectangles) {
+                p1 = coord.first
+                p2 = coord.second
+                canvas.drawRect(
+                    p1!!.x.toFloat(), p1!!.y.toFloat(), p2!!.x.toFloat(), p2!!.y.toFloat(), paint
+                )
+            }
+            Log.i("onDraw", rectangles.joinToString(", "))
             p1 = null
             p2 = null
         }
