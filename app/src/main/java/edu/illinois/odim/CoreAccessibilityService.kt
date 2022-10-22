@@ -74,7 +74,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     private var gesturesMap: HashMap<String, String>? = null
 
-    private val userId = "test_user15"
+//    private val userId = "test_user15"
 
 
 

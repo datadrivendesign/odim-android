@@ -32,10 +32,9 @@ class TraceActivity : AppCompatActivity(){
         )
         recyclerView!!.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
-            override fun onItemClick(view: View) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, EventActivity::class.java)
-                // TODO: this is a dumb way to get string, please fix later
-                val chosenTraceName: String = ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
+                val chosenTraceName: String = rowText.text.toString() // ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", chosenPackageNAme)
                 intent.putExtra("trace_name", chosenTraceName)
                 startActivity(intent)

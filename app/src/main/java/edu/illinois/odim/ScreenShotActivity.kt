@@ -91,15 +91,13 @@ class ScreenShotActivity : AppCompatActivity() {
             }
             imageView!!.setImageBitmap(myBit)
 
-            imageView!!.setOnClickListener(object : View.OnClickListener {
-                override fun onClick(v: View?) {
-                    val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
-                    intent.putExtra("package_name", chosenPackageName)
-                    intent.putExtra("trace_name", chosenTraceName)
-                    intent.putExtra("event_name", chosenEventName)
-                    startActivity(intent)
-                }
-            })
+            imageView!!.setOnClickListener {
+                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
+                intent.putExtra("package_name", chosenPackageName)
+                intent.putExtra("trace_name", chosenTraceName)
+                intent.putExtra("event_name", chosenEventName)
+                startActivity(intent)
+            }
         }
     }
 }
