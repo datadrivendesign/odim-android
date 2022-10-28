@@ -1,9 +1,7 @@
 package edu.illinois.odim
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Point
+import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -15,9 +13,10 @@ import kotlin.math.roundToInt
 class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var p1: Point? = null
     var p2: Point? = null
-    var paint = Paint()
+    val paint = Paint()
     var canvas: Canvas? = null
-    var rectangles = mutableListOf<Pair<Point, Point>>()
+    var rectangles = mutableListOf<Rect>()
+    var vhs: ArrayList<Rect>? = null
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -62,21 +61,47 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
-            rectangles.add(Pair(p1, p2) as Pair<Point, Point>)
-            for (coord in rectangles) {
-                p1 = coord.first
-                p2 = coord.second
-                canvas.drawRect(
-                    p1!!.x.toFloat(), p1!!.y.toFloat(), p2!!.x.toFloat(), p2!!.y.toFloat(), paint
-                )
+            rectangles.add(Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y))
+            for (rect in rectangles) {
+                canvas.drawRect(rect, paint)
             }
-            Log.i("onDraw", rectangles.joinToString(", "))
+            // Testing out VH mapping
+            val vhRects = getAllMatchingVH(vhs)
+            for (rect in vhRects) {
+                canvas.drawRect(rect, paint)
+            }
             p1 = null
             p2 = null
         }
     }
 
-    fun getRects(): List<Pair<Point, Point>> {
+    fun getMatchingVH(vhs: ArrayList<Rect>?, rect: Rect): Rect {
+        var matched = Rect()
+        if (vhs != null) {
+            for (vh in vhs) {
+                if (vh.contains(rect)) {
+                    if (getArea(matched) == 0 || getArea(vh) < getArea(matched)) {
+                        matched = vh
+                    }
+                }
+            }
+        }
+        return matched
+    }
+
+    fun getAllMatchingVH(vhs: ArrayList<Rect>?): List<Rect> {
+        var matched = mutableListOf<Rect>()
+        for (rect in rectangles) {
+            matched.add(getMatchingVH(vhs, rect))
+        }
+        return matched
+    }
+
+    fun getRects(): List<Rect> {
         return rectangles
+    }
+
+    fun getArea(rect: Rect): Int {
+        return rect.width() * rect.height()
     }
 }

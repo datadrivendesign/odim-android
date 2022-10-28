@@ -29,6 +29,7 @@ class ScreenShotActivity : AppCompatActivity() {
         val screenshot: ScreenShot? =
             getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
         if (screenshot != null) {
+            imageView!!.vhs = screenshot.vh
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)
             val rect: Rect? = screenshot.rect
@@ -91,14 +92,15 @@ class ScreenShotActivity : AppCompatActivity() {
                 paint.color = Color.rgb(255, 0, 0)
                 canvas!!.drawRect(boxes[i], paint)
             }
+
             imageView!!.setImageBitmap(myBit)
 
 //            imageView!!.setOnClickListener {
-////                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
-////                intent.putExtra("package_name", chosenPackageName)
-////                intent.putExtra("trace_name", chosenTraceName)
-////                intent.putExtra("event_name", chosenEventName)
-////                startActivity(intent)
+//                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
+//                intent.putExtra("package_name", chosenPackageName)
+//                intent.putExtra("trace_name", chosenTraceName)
+//                intent.putExtra("event_name", chosenEventName)
+//                startActivity(intent)
 //                Log.i("OnClick", "Clicked")
 //            }
 
