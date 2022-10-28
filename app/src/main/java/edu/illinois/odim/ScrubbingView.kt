@@ -76,4 +76,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
     }
 
+    fun getRects(): List<Pair<Point, Point>> {
+        return rectangles
+    }
 }
