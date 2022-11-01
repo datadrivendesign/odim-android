@@ -3,7 +3,7 @@ package edu.illinois.odim
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.LinearLayout
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,6 +17,7 @@ fun notifyVHAdapter() {
 
 class ViewHierarchyActivity : AppCompatActivity() {
     private var recyclerView: RecyclerView? = null
+    private var uploadButton: Button? = null
     private var chosenPackageName: String? = null
     private var chosenTraceName: String? = null
     private var chosenEventName: String? = null
@@ -31,16 +32,31 @@ class ViewHierarchyActivity : AppCompatActivity() {
         title = "View Hierarchy"
         recyclerView = findViewById(R.id.vhRecyclerView)
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        // TODO: Should view hierarchy be a string? It should be a tree right?
+        // populate recycler view with VH content
+        val vhStringArr: ArrayList<String> = getVh(chosenPackageName, chosenTraceName, chosenEventName)
         recyclerAdapter = CustomAdapter(
             this,
-            getVh(chosenPackageName, chosenTraceName, chosenEventName)
+            vhStringArr
         )
         recyclerView?.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
             override fun onItemClick(rowText: TextView) {
                 Log.i("View Size", recyclerAdapter!!.itemCount.toString())
                 Log.i("View Element", rowText.text.toString()) //((view as LinearLayout).getChildAt(0) as TextView).text.toString())
+            }
+        })
+        // instantiate upload button
+        uploadButton = findViewById(R.id.uploadButton)
+        uploadButton?.setOnClickListener( object: View.OnClickListener {
+            override fun onClick(view: View?) {
+                uploadFile(
+                    chosenPackageName!!,
+                    chosenTraceName!!,
+                    chosenEventName!!,
+                    vhStringArr[0],
+                    getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap,
+                    view as Button
+                )
             }
         })
     }
