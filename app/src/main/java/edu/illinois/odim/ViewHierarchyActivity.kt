@@ -55,7 +55,8 @@ class ViewHierarchyActivity : AppCompatActivity() {
                     chosenEventName!!,
                     vhStringArr[0],
                     getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap,
-                    view as Button
+                    view as Button,
+                    applicationContext
                 )
             }
         })

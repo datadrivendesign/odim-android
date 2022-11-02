@@ -14,6 +14,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
+import android.widget.Toast
 import com.amplifyframework.AmplifyException
 import com.amplifyframework.auth.AuthUserAttributeKey
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
@@ -70,6 +71,7 @@ fun uploadFile(
     vh_content: String,
     bitmap: Bitmap?,
     uploadButton: Button,
+    vh_app_ctx: Context
 ) {
     val options: StorageUploadFileOptions = StorageUploadFileOptions.builder()
         .accessLevel(StorageAccessLevel.PRIVATE)
@@ -86,61 +88,91 @@ fun uploadFile(
     } catch (exception: Exception) {
         Log.e("MyAmplifyApp", "Upload failed", exception)
     }
+    val appCtx = MyAccessibilityService.appContext
     Amplify.Storage.uploadFile(
         viewHierarchyLocation,
         vhFile,
         options,
-        {result -> uploadButton.text = MyAccessibilityService.appContext.getString(
-            R.string.uploadVHProgress, result.fractionCompleted)
-        },
-        { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) },
-        { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
-    )
+        { progress -> uploadButton.text = appCtx.getString(
+            R.string.upload_vh_progress, progress.fractionCompleted * 100) },
+        { vh_result ->
+            Log.i("MyAmplifyApp", "Successfully uploaded: " + vh_result.key)
+            uploadButton.text = MyAccessibilityService.appContext.getString(
+                R.string.upload_vh_success)
 
-    // upload screenshot
-    val screenshotFile = File(MyAccessibilityService.appContext.filesDir, "screenshot")
-    val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
-    try {
-        FileOutputStream(screenshotFile).use { out ->
-            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
+            // upload screenshot
+            val screenshotFile = File(appCtx.filesDir, "screenshot")
+            val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
+            try {
+                FileOutputStream(screenshotFile).use { out ->
+                    bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+
+            Amplify.Storage.uploadFile(
+                screenshotLocation,
+                screenshotFile,
+                options,
+                { progress -> uploadButton.text =
+                    appCtx.getString(
+                        R.string.upload_screen_progress, progress.fractionCompleted * 100) },
+                { screen_result ->
+                    Log.i("MyAmplifyApp", "Successfully uploaded: " + screen_result.key)
+                    uploadButton.text = appCtx.getString(R.string.upload_screen_success)
+
+                    // upload gestures
+                    val gson = Gson()
+                    var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
+                    json = json.replace("\\\\".toRegex(), "")
+                    val gestureFile = File(MyAccessibilityService.appContext.filesDir, "vh")
+                    val gestureLocation = baseLocation + "gestures"
+                    try {
+                        val writer = BufferedWriter(FileWriter(gestureFile))
+                        writer.append(json)
+                        writer.close()
+                    } catch (exception: Exception) {
+                        Log.e("MyAmplifyApp", "Upload failed", exception)
+                    }
+                    Amplify.Storage.uploadFile(
+                        gestureLocation,
+                        gestureFile,
+                        options,
+                        { progress ->
+                            uploadButton.text = appCtx.getString(
+                                R.string.upload_gesture_progress,
+                                progress.fractionCompleted * 100) },
+                        { gesture_result ->
+                            Log.i("MyAmplifyApp", "Successfully uploaded: " + gesture_result.key)
+                            uploadButton.text = appCtx.getString(R.string.upload_button_text)
+                            Toast.makeText(vh_app_ctx,
+                                appCtx.getString(R.string.upload_all_toast_success),
+                                Toast.LENGTH_SHORT).show()
+                        },
+                        { storageFailure ->
+                            Log.e("MyAmplifyApp", "Upload failed", storageFailure)
+                            uploadButton.text = appCtx.getString(R.string.upload_gesture_fail)
+                            Toast.makeText(vh_app_ctx,
+                                appCtx.getString(R.string.upload_gesture_toast_fail),
+                                Toast.LENGTH_LONG).show()
+                        }
+                    )
+                },
+                { storageFailure ->
+                    Log.e("MyAmplifyApp", "Upload failed", storageFailure)
+                    uploadButton.text = appCtx.getString(R.string.upload_screen_fail)
+                    Toast.makeText(vh_app_ctx,
+                        appCtx.getString(R.string.upload_screen_toast_fail),
+                        Toast.LENGTH_LONG).show()
+                }
+            )
+        },
+        { storageFailure ->
+            Log.e("MyAmplifyApp", "Upload failed", storageFailure)
+            uploadButton.text = appCtx.getString(R.string.upload_vh_fail)
+            Toast.makeText(vh_app_ctx, appCtx.getString(R.string.upload_vh_toast_fail), Toast.LENGTH_LONG).show()
         }
-    } catch (e: IOException) {
-        e.printStackTrace()
-    }
-
-    Amplify.Storage.uploadFile(
-        screenshotLocation,
-        screenshotFile,
-        options,
-        { result -> uploadButton.text = MyAccessibilityService.appContext.getString(
-            R.string.uploadScreenProgress, result.fractionCompleted)
-        },
-        { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) },
-        { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
-    )
-
-    // upload gestures
-    val gson = Gson()
-    var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
-    json = json.replace("\\\\".toRegex(), "")
-    val gestureFile = File(MyAccessibilityService.appContext.filesDir, "vh")
-    val gestureLocation = baseLocation + "gestures"
-    try {
-        val writer = BufferedWriter(FileWriter(gestureFile))
-        writer.append(json)
-        writer.close()
-    } catch (exception: Exception) {
-        Log.e("MyAmplifyApp", "Upload failed", exception)
-    }
-    Amplify.Storage.uploadFile(
-        gestureLocation,
-        gestureFile,
-        options,
-        { result -> uploadButton.text = MyAccessibilityService.appContext.getString(
-            R.string.uploadGestureProgress, result.fractionCompleted)
-        },
-        { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) },
-        { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
     )
 }
 
@@ -168,9 +200,9 @@ class MyAccessibilityService : AccessibilityService() {
                 "carl_and_rizky",
                 "dddg_ODIM_mobi",
                 options,
-                { result -> Log.i("AuthQuickStart", "Result: " + result.toString()) },
+                { result -> Log.i("AuthQuickStart", "Result: $result") },
                 { error -> Log.e("AuthQuickStart", "Sign up failed", error) }
-        );
+        )
 
         Amplify.Auth.confirmSignUp(
                 "carl_and_rizky",
@@ -178,10 +210,15 @@ class MyAccessibilityService : AccessibilityService() {
                 { result ->
                     Log.i(
                         "AuthQuickstart",
-                        if (result.isSignUpComplete()) "Confirm signUp succeeded" else "Confirm sign up not complete")
+                        if (result.isSignUpComplete) {
+                            "Confirm signUp succeeded"
+                        }
+                        else {
+                            "Confirm sign up not complete"
+                        })
                 },
                 { error -> Log.e("AuthQuickstart", error.toString()) }
-        );
+        )
     }
 
     private fun amplifyLogIn() {
@@ -233,14 +270,13 @@ class MyAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val connMgr: ConnectivityManager =
             getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        var isWifiConn = false
 
         // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
         // specifically answered by @AliSh
         // check if connected to wifi or mobile
         val networkCapabilities = connMgr.activeNetwork ?: return
         val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
-        isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
 
 
         if (!isWifiConn) {
@@ -321,75 +357,6 @@ class MyAccessibilityService : AccessibilityService() {
             lastPackageName = packageName
         }
     }
-
-//    private fun uploadFile(
-//        packageId: String,
-//        trace_number: String,
-//        action_number: String,
-//        vh_content: String,
-//        bitmap: Bitmap?,
-//    ) {
-//        val options: StorageUploadFileOptions = StorageUploadFileOptions.builder()
-//            .accessLevel(StorageAccessLevel.PRIVATE)
-//            .build()
-//
-//        // upload VH
-//        val vhFile = File(applicationContext.filesDir, "vh")
-//        val baseLocation = "$userId/$packageId/$trace_number/"
-//        val viewHierarchyLocation = baseLocation + "view_hierarchies" + "/" + action_number
-//        try {
-//            val writer = BufferedWriter(FileWriter(vhFile))
-//            writer.append(vh_content)
-//            writer.close()
-//        } catch (exception: Exception) {
-//            Log.e("MyAmplifyApp", "Upload failed", exception)
-//        }
-//        Amplify.Storage.uploadFile(
-//            viewHierarchyLocation,
-//            vhFile,
-//            options,
-//            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) }
-//        ) { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
-//
-//        // upload screenshot
-//        val screenshotFile = File(applicationContext.filesDir, "screenshot")
-//        val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
-//        try {
-//            FileOutputStream(screenshotFile).use { out ->
-//                bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
-//            }
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//        }
-//
-//        Amplify.Storage.uploadFile(
-//            screenshotLocation,
-//            screenshotFile,
-//            options,
-//            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) }
-//        ) { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
-//
-//        // upload gestures
-//        val gson = Gson()
-//        var json: String = gson.toJson(gesturesMap)
-//        json = json.replace("\\\\".toRegex(), "")
-//        val gestureFile = File(applicationContext.filesDir, "vh")
-//        val gestureLocation = baseLocation + "gestures"
-//        try {
-//            val writer = BufferedWriter(FileWriter(gestureFile))
-//            writer.append(json)
-//            writer.close()
-//        } catch (exception: Exception) {
-//            Log.e("MyAmplifyApp", "Upload failed", exception)
-//        }
-//        Amplify.Storage.uploadFile(
-//            gestureLocation,
-//            gestureFile,
-//            options,
-//            { result -> Log.i("MyAmplifyApp", "Successfully uploaded: " + result.key) }
-//        ) { storageFailure -> Log.e("MyAmplifyApp", "Upload failed", storageFailure) }
-//    }
-
 
     private fun getBoxes(node: AccessibilityNodeInfo): ArrayList<Rect> {
         val boxes: ArrayList<Rect> = ArrayList<Rect>()
@@ -552,13 +519,6 @@ class MyAccessibilityService : AccessibilityService() {
         viewHierarchyList.add(viewHierarchy)
         viewHierarchyLayer.list = viewHierarchyList
         notifyVHAdapter()
-//        uploadFile(
-//            packageName,
-//            traceName,
-//            eventName,
-//            viewHierarchy,
-//            currentScreenShot.bitmap
-//        )
     }
 
     override fun onInterrupt() {}
