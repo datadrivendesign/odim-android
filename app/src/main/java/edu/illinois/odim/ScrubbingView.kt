@@ -61,15 +61,9 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
-            rectangles.add(Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y))
-            for (rect in rectangles) {
-                canvas.drawRect(rect, paint)
-            }
-            // Testing out VH mapping
-            val vhRects = getAllMatchingVH(vhs)
-            for (rect in vhRects) {
-                canvas.drawRect(rect, paint)
-            }
+            val newrect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
+            val rectmatch = getMatchingVH(vhs, newrect)
+            this.canvas?.drawRect(rectmatch, paint)
             p1 = null
             p2 = null
         }
@@ -89,13 +83,13 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return matched
     }
 
-    fun getAllMatchingVH(vhs: ArrayList<Rect>?): List<Rect> {
-        var matched = mutableListOf<Rect>()
-        for (rect in rectangles) {
-            matched.add(getMatchingVH(vhs, rect))
-        }
-        return matched
-    }
+//    fun getAllMatchingVH(vhs: ArrayList<Rect>?): List<Rect> {
+//        var matched = mutableListOf<Rect>()
+//        for (rect in rectangles) {
+//            matched.add(getMatchingVH(vhs, rect))
+//        }
+//        return matched
+//    }
 
     fun getRects(): List<Rect> {
         return rectangles

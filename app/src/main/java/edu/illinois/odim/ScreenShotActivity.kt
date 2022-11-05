@@ -20,6 +20,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        this.supportActionBar?.hide();
         setContentView(R.layout.activity_screenshot)
         chosenPackageName = intent.extras!!["package_name"].toString()
         chosenTraceName = intent.extras!!["trace_name"].toString()
@@ -32,6 +33,7 @@ class ScreenShotActivity : AppCompatActivity() {
             imageView!!.vhs = screenshot.vh
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)
+            imageView!!.canvas = canvas
             val rect: Rect? = screenshot.rect
             if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
                 val paint = Paint()
@@ -85,7 +87,6 @@ class ScreenShotActivity : AppCompatActivity() {
             }
 
             val boxes: ArrayList<Rect>? = screenshot.vh
-            Log.i("Box size", java.lang.String.valueOf(boxes!!.size))
             for (i in 0 until boxes.size) {
                 val paint = Paint()
                 paint.style = Paint.Style.STROKE
@@ -96,11 +97,13 @@ class ScreenShotActivity : AppCompatActivity() {
             imageView!!.setImageBitmap(myBit)
 
 //            imageView!!.setOnClickListener {
-//                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
-//                intent.putExtra("package_name", chosenPackageName)
-//                intent.putExtra("trace_name", chosenTraceName)
-//                intent.putExtra("event_name", chosenEventName)
-//                startActivity(intent)
+//                val tempPaint = Paint()
+//                canvas!!.drawRect(Rect(0, 66, 154, 220), tempPaint)
+////                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
+////                intent.putExtra("package_name", chosenPackageName)
+////                intent.putExtra("trace_name", chosenTraceName)
+////                intent.putExtra("event_name", chosenEventName)
+////                startActivity(intent)
 //                Log.i("OnClick", "Clicked")
 //            }
 
