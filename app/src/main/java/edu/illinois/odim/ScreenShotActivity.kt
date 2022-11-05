@@ -87,11 +87,13 @@ class ScreenShotActivity : AppCompatActivity() {
             }
 
             val boxes: ArrayList<Rect>? = screenshot.vh
-            for (i in 0 until boxes.size) {
-                val paint = Paint()
-                paint.style = Paint.Style.STROKE
-                paint.color = Color.rgb(255, 0, 0)
-                canvas!!.drawRect(boxes[i], paint)
+            if (boxes != null) {
+                for (i in 0 until boxes!!.size) {
+                    val paint = Paint()
+                    paint.style = Paint.Style.STROKE
+                    paint.color = Color.rgb(255, 0, 0)
+                    canvas!!.drawRect(boxes.get(i), paint)
+                }
             }
 
             imageView!!.setImageBitmap(myBit)
