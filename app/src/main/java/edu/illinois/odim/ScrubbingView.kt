@@ -8,6 +8,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import java.security.KeyStore.Entry.Attribute
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
@@ -69,18 +71,27 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
     }
 
-    fun getMatchingVH(vhs: ArrayList<Rect>?, rect: Rect): Rect {
+    private fun getMatchingVH(vhs: ArrayList<Rect>?, rect: Rect): Rect {
+        var maxOverlapRatio: Float = 0.0F
         var matched = Rect()
         if (vhs != null) {
             for (vh in vhs) {
-                if (vh.contains(rect)) {
-                    if (getArea(matched) == 0 || getArea(vh) < getArea(matched)) {
-                        matched = vh
-                    }
+                val overLapRatio = calculateOverLapRatio(vh, rect)
+                if (overLapRatio > maxOverlapRatio) {
+                    maxOverlapRatio = overLapRatio
+                    matched = vh
                 }
             }
         }
         return matched
+    }
+
+    private fun calculateOverLapRatio(baseRect: Rect, inputRect: Rect): Float {
+        val overlapArea =
+            max(0, min(baseRect.right, inputRect.right) - max(baseRect.left, inputRect.left)) * max(
+                0, min(baseRect.bottom, inputRect.bottom) - max(baseRect.top, inputRect.top)
+            )
+        return overlapArea / getArea(baseRect)
     }
 
 //    fun getAllMatchingVH(vhs: ArrayList<Rect>?): List<Rect> {
@@ -95,7 +106,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return rectangles
     }
 
-    fun getArea(rect: Rect): Int {
-        return rect.width() * rect.height()
+    fun getArea(rect: Rect): Float {
+        return (rect.width() * rect.height()).toFloat()
     }
 }
