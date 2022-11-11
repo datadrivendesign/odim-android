@@ -60,6 +60,19 @@ fun getVh(
     return packageLayer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
 }
 
+fun setVh(
+    package_name: String?,
+    trace_name: String?,
+    event_name: String?,
+    json_string: String?
+) {
+    packageLayer
+        .map[package_name]!!
+        .map[trace_name]!!
+        .map[event_name]!!
+        .map[event_name]!!.list[0] = json_string!!
+}
+
 class MyAccessibilityService : AccessibilityService() {
 
     private var lastPackageName: String? = null
@@ -354,9 +367,13 @@ class MyAccessibilityService : AccessibilityService() {
         map["focusable"] = java.lang.String.valueOf(node.isFocusable)
         map["long-clickable"] = java.lang.String.valueOf(node.isLongClickable)
         map["enabled"] = java.lang.String.valueOf(node.isEnabled)
-        val outbounds = Rect()
+        val outbounds = Rect() // Rect(x1 y1, x2, y2) -> "[x1, y1, x2, y2]"
         node.getBoundsInScreen(outbounds)
-        map["bounds_in_screen"] = outbounds.toString()
+        var x1 = outbounds.left
+        var y1 = outbounds.top
+        var x2 = outbounds.right
+        var y2 = outbounds.bottom
+        map["bounds_in_screen"] = "[$x1, $y1, $x2, $y2]"//outbounds.toString()
         map["visibility"] = java.lang.String.valueOf(node.isVisibleToUser)
         if (node.contentDescription != null) {
             map["content-desc"] = node.contentDescription.toString()
@@ -364,7 +381,11 @@ class MyAccessibilityService : AccessibilityService() {
             map["content-desc"] = "none"
         }
         node.getBoundsInParent(outbounds)   // TODO: why do we need this?
-        map["bounds_in_parent"] = outbounds.toString()
+        x1 = outbounds.left
+        y1 = outbounds.top
+        x2 = outbounds.right
+        y2 = outbounds.bottom
+        map["bounds_in_parent"] = "[$x1, $y1, $x2, $y2]"//outbounds.toString()
         map["focused"] = java.lang.String.valueOf(node.isFocused)
         map["selected"] = java.lang.String.valueOf(node.isSelected)
         map["children_count"] = java.lang.String.valueOf(node.childCount)

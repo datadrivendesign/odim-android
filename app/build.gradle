@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+//    id 'org.jetbrains.kotlin.multiplatform' version '1.7.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.20'
 }
 
 android {
@@ -47,4 +49,5 @@ dependencies {
     implementation 'com.amplifyframework:aws-auth-cognito:1.36.2'
     implementation 'com.amplifyframework:aws-api:1.36.4'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.9'
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
 }

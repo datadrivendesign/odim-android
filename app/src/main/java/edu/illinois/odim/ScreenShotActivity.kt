@@ -8,6 +8,10 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.roundToInt
 
 class ScreenShotActivity : AppCompatActivity() {
@@ -29,8 +33,14 @@ class ScreenShotActivity : AppCompatActivity() {
         imageView = findViewById<View>(R.id.screenshot) as ScrubbingView
         val screenshot: ScreenShot? =
             getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
+
+        val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
+        Log.i("hello im here", jsonArray[0].javaClass.name)
+        val chosenVH: JsonElement = Json.parseToJsonElement(jsonArray[0].toString())
+
         if (screenshot != null) {
-            imageView!!.vhs = screenshot.vh
+            imageView!!.vhRects = screenshot.vh
+//            imageView!!.vhs = chosenVH
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)
             imageView!!.canvas = canvas

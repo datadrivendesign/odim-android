@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
+import org.json.JSONObject
 import java.security.KeyStore.Entry.Attribute
 import kotlin.math.max
 import kotlin.math.min
@@ -18,7 +19,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     val paint = Paint()
     var canvas: Canvas? = null
     var rectangles = mutableListOf<Rect>()
-    var vhs: ArrayList<Rect>? = null
+    var vhRects: ArrayList<Rect>? = null
+    var vhs: JSONObject? = null
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -64,18 +66,18 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
             val newrect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
-            val rectmatch = getMatchingVH(vhs, newrect)
+            val rectmatch = getMatchingVH(vhRects, newrect)
             this.canvas?.drawRect(rectmatch, paint)
             p1 = null
             p2 = null
         }
     }
 
-    private fun getMatchingVH(vhs: ArrayList<Rect>?, rect: Rect): Rect {
+    private fun getMatchingVH(vhRects: ArrayList<Rect>?, rect: Rect): Rect {
         var maxOverlapRatio: Float = 0.0F
         var matched = Rect()
-        if (vhs != null) {
-            for (vh in vhs) {
+        if (vhRects != null) {
+            for (vh in vhRects) {
                 val overLapRatio = calculateOverLapRatio(vh, rect)
                 if (overLapRatio > maxOverlapRatio) {
                     maxOverlapRatio = overLapRatio
@@ -83,6 +85,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 }
             }
         }
+        deleteJson(vhs)
         return matched
     }
 
@@ -94,10 +97,16 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-//    fun getAllMatchingVH(vhs: ArrayList<Rect>?): List<Rect> {
+    private fun deleteJson(vh: JSONObject?) {
+//        if (vh != null) {
+//            Log.i("delete Json", vh.get("children_count").toString())
+//        }
+    }
+
+//    fun getAllMatchingVH(vhRects: ArrayList<Rect>?): List<Rect> {
 //        var matched = mutableListOf<Rect>()
 //        for (rect in rectangles) {
-//            matched.add(getMatchingVH(vhs, rect))
+//            matched.add(getMatchingVH(vhRects, rect))
 //        }
 //        return matched
 //    }
