@@ -13,10 +13,10 @@
         android:layout_alignParentTop="true" />
 
     <Button
-        android:id="@+id/uploadButton"
+        android:id="@+id/uploadEventButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/upload_button_text"
+        android:text="@string/upload_event_button_text"
         app:layout_constraintBottom_toBottomOf="@+id/vhRecyclerView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"

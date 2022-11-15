@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.*
 
 // These were static in java
 private var recyclerAdapter: CustomAdapter? = null
@@ -46,19 +47,22 @@ class ViewHierarchyActivity : AppCompatActivity() {
             }
         })
         // instantiate upload button
-        uploadButton = findViewById(R.id.uploadButton)
-        uploadButton?.setOnClickListener( object: View.OnClickListener {
-            override fun onClick(view: View?) {
-                uploadFile(
-                    chosenPackageName!!,
-                    chosenTraceName!!,
-                    chosenEventName!!,
-                    vhStringArr[0],
-                    getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap,
-                    view as Button,
-                    applicationContext
-                )
+        uploadButton = findViewById(R.id.uploadEventButton)
+        uploadButton?.setOnClickListener { view ->
+            CoroutineScope(Dispatchers.Main + Job()).launch() {
+                withContext(Dispatchers.IO) {
+                    uploadFile(
+                        chosenPackageName!!,
+                        chosenTraceName!!,
+                        chosenEventName!!,
+                        vhStringArr[0],
+                        getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap,
+                        view as Button,
+                        applicationContext
+                    )
+                }
+
             }
-        })
+        }
     }
 }
