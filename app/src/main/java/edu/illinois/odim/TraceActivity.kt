@@ -30,6 +30,8 @@ class TraceActivity : AppCompatActivity(){
             this,
             getTraces(chosenPackageNAme)
         )
+        // Ethar added
+        recyclerView?.addItemDecoration(RecyclerViewItemDecoration(this, R.drawable.divider))
         recyclerView!!.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
             override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
@@ -37,6 +39,7 @@ class TraceActivity : AppCompatActivity(){
                 val chosenTraceName: String = rowText.text.toString() // ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", chosenPackageNAme)
                 intent.putExtra("trace_name", chosenTraceName)
+
                 startActivity(intent)
             }
         })

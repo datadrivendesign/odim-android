@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -8,6 +9,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"/>
+        android:layout_alignParentTop="true"
+        android:divider="#f00"
+        android:listSelector="#0f0"
+        android:dividerHeight="1dp"
+        />
+
+<!--    <ListView-->
+<!--        android:id="@+id/simpleListView"-->
+<!--        android:layout_width="fill_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:divider="#f00"-->
+<!--        android:dividerHeight="1dp"-->
+<!--        android:listSelector="#0f0"-->
+<!--        android:textColor="#000000" />-->
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
