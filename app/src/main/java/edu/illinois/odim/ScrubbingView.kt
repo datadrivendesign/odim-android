@@ -1,17 +1,20 @@
 package edu.illinois.odim
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Point
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.widget.ImageView
-import org.json.JSONObject
-import java.security.KeyStore.Entry.Attribute
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+
 
 class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var p1: Point? = null
@@ -20,7 +23,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var canvas: Canvas? = null
     var rectangles = mutableListOf<Rect>()
     var vhRects: ArrayList<Rect>? = null
-    var vhs: JSONObject? = null
+    var vhs: Map<String, String> = HashMap()
+    var holder = arrayListOf<Map<String, String>>()
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -86,6 +90,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             }
         }
         deleteJson(vhs)
+        rectangles.add(matched)
         return matched
     }
 
@@ -97,10 +102,44 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-    private fun deleteJson(vh: JSONObject?) {
-//        if (vh != null) {
-//            Log.i("delete Json", vh.get("children_count").toString())
-//        }
+    private fun traverse(root: Map<String, String>?): String {
+        // Base Case
+        if (nodeIsMatch(root)) {
+            // do we delete this node's child?
+            // do we go back up to delete child?
+            return Pair(true, ture)
+        }
+        // Recursive Case
+        val gson = GsonBuilder().setLenient().create()
+        val children = root?.get("children") as String
+        val childrenArr = gson.fromJson(children, holder.javaClass)
+
+        for (child in childrenArr) {
+            val isMatch = traverse(child)  //if true, delete child convert back to string
+            if (isMatch[0]) {
+                deleteChild(child)
+                break
+            }
+        }
+        root["children"] = childrenArr.toString()
+        return ""
+    }
+
+    private fun nodeIsMatch(node: Map<String, String>?): Boolean {
+        var rectStr = node!!.get("bounds_in_screen")
+        if (rectStr != null) {
+            rectStr = rectStr.substring(5, rectStr.length - 1).trim()
+//            val rectArr = rectStr.split(", ", " - ")
+//            val intRectArr = rectArr.map { it.toInt() }.toTypedArray()
+//            val currRect = Rect(intRectArr[0], intRectArr[1], intRectArr[2], intRectArr[3])
+            val currRect = Rect.unflattenFromString(rectStr)
+            for (userRect in rectangles) {
+                if (userRect.equals(currRect)) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
 //    fun getAllMatchingVH(vhRects: ArrayList<Rect>?): List<Rect> {

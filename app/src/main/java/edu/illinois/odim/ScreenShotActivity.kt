@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import org.json.JSONArray
@@ -35,8 +36,9 @@ class ScreenShotActivity : AppCompatActivity() {
             getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
 
         val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
-        Log.i("hello im here", jsonArray[0].javaClass.name)
-        val chosenVH: JsonElement = Json.parseToJsonElement(jsonArray[0].toString())
+        val jsonString: String = jsonArray[0] as String
+        var vhMap: Map<String, String> = HashMap()
+        vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
 
         if (screenshot != null) {
             imageView!!.vhRects = screenshot.vh
@@ -44,6 +46,7 @@ class ScreenShotActivity : AppCompatActivity() {
             val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             canvas = Canvas(myBit)
             imageView!!.canvas = canvas
+            imageView!!.vhs = vhMap
             val rect: Rect? = screenshot.rect
             if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
                 val paint = Paint()
