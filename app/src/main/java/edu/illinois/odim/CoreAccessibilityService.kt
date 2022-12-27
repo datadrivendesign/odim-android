@@ -3,6 +3,7 @@ package edu.illinois.odim
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.Rect
@@ -33,6 +34,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.coroutineContext
 
@@ -218,6 +220,9 @@ class MyAccessibilityService : AccessibilityService() {
 
     private var currentScreenshot: ScreenShot? = null
 
+    lateinit var future: ScheduledFuture<*>
+    val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+
     companion object {
         lateinit var appContext: Context
 
@@ -401,8 +406,7 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     private fun recordScreenPeriodically() {
-        val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-        scheduledExecutorService.scheduleAtFixedRate({
+        future = scheduledExecutorService.scheduleAtFixedRate({
             takeScreenshot(DEFAULT_DISPLAY, scheduledExecutorService, object: TakeScreenshotCallback {
                 override fun onSuccess(result: ScreenshotResult) {
                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
@@ -549,4 +553,9 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        future.cancel(true)
+        return super.onUnbind(intent)
+    }
 }
