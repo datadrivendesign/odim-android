@@ -310,7 +310,6 @@ class MyAccessibilityService : AccessibilityService() {
         val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
         val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
 
-
         if (!isWifiConn) {
             return
         }
@@ -318,7 +317,8 @@ class MyAccessibilityService : AccessibilityService() {
             return
         }
         val packageName = event.packageName.toString()
-        if (event.packageName == "edu.illinois.recordingservice") {
+        if (event.packageName == "edu.illinois.recordingservice" ||
+                event.packageName == "edu.illinois.odim") {
             return
         }
         var isNewTrace = false
