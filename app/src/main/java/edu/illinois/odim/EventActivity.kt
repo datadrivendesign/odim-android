@@ -11,10 +11,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import edu.illinois.odim.databinding.CardCellBinding
 import kotlinx.coroutines.*
 
 // these were static in java
-private var recyclerAdapter: CustomAdapter? = null
+private var recyclerAdapter: EventAdapter? = null
 fun notifyEventAdapter() {
     recyclerAdapter?.notifyDataSetChanged()
 }
@@ -32,17 +33,29 @@ class EventActivity : AppCompatActivity() {
         title = "$chosenPackageName: $chosenTraceName"
         // change the way we do this with recyclerview
         recyclerView = findViewById(R.id.eventRecyclerView)
+        // use gridview instead of linear
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        // want both screenshot and event information for trace
+        // create new object SSP contains both screenshot bitmap and event string stuff
+        val screenPreview : ArrayList<ScreenShotPreview> = ArrayList()
+        val eventsInTrace : ArrayList<String> = getEvents(chosenPackageName, chosenTraceName)
+        for (event in eventsInTrace) {
+            val screenshot = getScreenshot(chosenPackageName, chosenTraceName, event)
+            val screenshotPreview = ScreenShotPreview(screenshot.bitmap!!, event, event)
+            screenPreview.add(screenshotPreview)
+        }
+        recyclerAdapter = EventAdapter(this, screenPreview)
         val eventList: ArrayList<String> = getEvents(chosenPackageName, chosenTraceName)
         recyclerAdapter = CustomAdapter(this, eventList)
         recyclerView?.adapter = recyclerAdapter
-        recyclerAdapter!!.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
-            override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+        recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
+            // TODO: change to
+            override fun onItemClick(cardView: CardCellBinding) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(
                     applicationContext,
                     ScreenShotActivity::class.java
                 )
-                val chosenEventName: String = rowText.text.toString() // ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
+                val chosenEventName: String = cardView.event.toString() // ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
                 intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_name", chosenTraceName)
                 intent.putExtra("event_name", chosenEventName)

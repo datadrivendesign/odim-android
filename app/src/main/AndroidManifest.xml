@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="edu.illinois.odim">
+    package="edu.illinois.odim" >
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,31 +14,35 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ODIM"
-        tools:targetApi="31">
-        <service android:name=".MyAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+        tools:targetApi="31" >
+
+        <service
+            android:name=".MyAccessibilityService"
+            android:exported="true"
             android:label="@string/accessibility_service_label"
-            android:exported="true">
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
+
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
         </service>
+
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="edu.illinois.odim.TraceActivity" />
-        <activity android:name="edu.illinois.odim.EventActivity" />
-        <activity android:name="edu.illinois.odim.ViewHierarchyActivity" />
-        <activity android:name="edu.illinois.odim.ScreenShotActivity" />
+        <activity android:name=".TraceActivity" />
+        <activity android:name=".EventActivity" />
+        <activity android:name=".ViewHierarchyActivity" />
+        <activity android:name=".ScreenShotActivity" />
     </application>
 
 </manifest>
