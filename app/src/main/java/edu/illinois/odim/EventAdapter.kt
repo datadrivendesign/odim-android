@@ -1,15 +1,12 @@
 package edu.illinois.odim
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.CardCellBinding
 
-class EventAdapter(context: Context, itemList: ArrayList<ScreenShotPreview>) : RecyclerView.Adapter<DetailViewHolder>() {
-    private var inflater : LayoutInflater = LayoutInflater.from(context)
-    private var itemList : ArrayList<ScreenShotPreview> = itemList
+class EventAdapter(screenPreviews: ArrayList<ScreenShotPreview>) : RecyclerView.Adapter<DetailViewHolder>() {
+    private var itemList : ArrayList<ScreenShotPreview> = screenPreviews
     private lateinit var itemClickListener : OnItemClickListener
 
     interface  OnItemClickListener {
@@ -36,18 +33,18 @@ class EventAdapter(context: Context, itemList: ArrayList<ScreenShotPreview>) : R
 }
 
 class DetailViewHolder(
-    private val cardView : CardCellBinding,
-    private val listener: EventAdapter.OnItemClickListener) : RecyclerView.ViewHolder(cardView.root)
+    private val cardBinding : CardCellBinding,
+    private val listener: EventAdapter.OnItemClickListener) : RecyclerView.ViewHolder(cardBinding.cardView.rootView)
 {
     init {
         itemView.setOnClickListener {
-            listener.onItemClick(cardView)
+            listener.onItemClick(cardBinding)
         }
     }
 
     fun bindScreenshotPreview(ssp: ScreenShotPreview) {
-        cardView.cover.setImageBitmap(ssp.screenShot)
-        cardView.time.text = ssp.timestamp
-        cardView.event.text = ssp.event
+        cardBinding.cover.setImageBitmap(ssp.screenShot)
+        cardBinding.time.text = ssp.timestamp
+        cardBinding.event.text = ssp.event
     }
 }

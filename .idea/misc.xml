@@ -6,16 +6,17 @@
         <entry key="../../../../../Library/Android/sdk/platforms/android-32/data/res/layout/simple_list_item_1.xml" value="0.28229166666666666" />
         <entry key="../../../../../Library/Android/sdk/platforms/android-32/data/res/layout/simple_selectable_list_item.xml" value="0.28229166666666666" />
         <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.2085" />
-        <entry key="app/src/main/res/layout/activity_event.xml" value="0.28125" />
+        <entry key="app/src/main/res/layout/activity_event.xml" value="0.25" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.25" />
         <entry key="app/src/main/res/layout/activity_screenshot.xml" value="0.28125" />
         <entry key="app/src/main/res/layout/activity_trace.xml" value="0.28125" />
         <entry key="app/src/main/res/layout/activity_view_hierarchy.xml" value="0.28125" />
+        <entry key="app/src/main/res/layout/card_cell.xml" value="0.2755208333333333" />
         <entry key="app/src/main/res/layout/recycler_view_row.xml" value="0.28229166666666666" />
         <entry key="app/src/main/res/xml/accessiblity_service_config.xml" value="0.1" />
       </map>
     </option>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android API 31 Platform" project-jdk-type="Android SDK" />
 </project>
