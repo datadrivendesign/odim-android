@@ -5,7 +5,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent">
 
-    <ImageView
+    <edu.illinois.odim.ScrubbingView
         android:id="@+id/screenshot"
         android:layout_width="0dp"
         android:layout_height="0dp"
