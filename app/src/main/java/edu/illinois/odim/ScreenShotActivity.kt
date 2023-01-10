@@ -1,18 +1,13 @@
 package edu.illinois.odim
 
 import android.graphics.*
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import org.json.JSONArray
-import org.json.JSONObject
-import kotlin.math.roundToInt
 
 class ScreenShotActivity : AppCompatActivity() {
 
