@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -24,6 +25,8 @@ class ScreenShotActivity : AppCompatActivity() {
     private var canvas: Canvas? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+//        val fab = FloatingActionButton(applicationContext)
+//        val fab = MovableFloatingActionButton(applicationContext)
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide();
         setContentView(R.layout.activity_screenshot)
