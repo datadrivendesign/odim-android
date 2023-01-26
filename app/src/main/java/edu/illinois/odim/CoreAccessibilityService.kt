@@ -458,7 +458,7 @@ class MyAccessibilityService : AccessibilityService() {
         var y1 = outbounds.top
         var x2 = outbounds.right
         var y2 = outbounds.bottom
-        map["bounds_in_screen"] = "[$x1, $y1, $x2, $y2]"//outbounds.toString()
+        map["bounds_in_screen"] = outbounds.toString() // "[$x1, $y1, $x2, $y2]"
         map["visibility"] = java.lang.String.valueOf(node.isVisibleToUser)
         if (node.contentDescription != null) {
             map["content-desc"] = node.contentDescription.toString()
@@ -470,7 +470,7 @@ class MyAccessibilityService : AccessibilityService() {
         y1 = outbounds.top
         x2 = outbounds.right
         y2 = outbounds.bottom
-        map["bounds_in_parent"] = "[$x1, $y1, $x2, $y2]"//outbounds.toString()
+        map["bounds_in_parent"] = outbounds.toString() // "[$x1, $y1, $x2, $y2]"
         map["focused"] = java.lang.String.valueOf(node.isFocused)
         map["selected"] = java.lang.String.valueOf(node.isSelected)
         map["children_count"] = java.lang.String.valueOf(node.childCount)
@@ -496,7 +496,7 @@ class MyAccessibilityService : AccessibilityService() {
         //map.put("to_string", node.toString());
         val gson = Gson()
         var json: String = gson.toJson(map)
-        json = json.replace("\\\\".toRegex(), "")
+//        json = json.replace("\\\\".toRegex(), "")
         return json
     }
 
