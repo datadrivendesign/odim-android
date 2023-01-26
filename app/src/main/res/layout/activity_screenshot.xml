@@ -23,10 +23,12 @@
         android:clickable="true"
         android:minWidth="48dp"
         android:minHeight="48dp"
+        app:backgroundTint="@color/material_dynamic_secondary80"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.887"
+        app:layout_constraintHorizontal_bias="0.112"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_dialog_dialer" />
+        app:layout_constraintVertical_bias="0.942"
+        app:srcCompat="@android:drawable/ic_menu_save" />
 </androidx.constraintlayout.widget.ConstraintLayout>

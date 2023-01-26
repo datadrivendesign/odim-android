@@ -36,7 +36,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.coroutineContext
 
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
@@ -85,19 +84,20 @@ fun setVh(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-suspend fun uploadFile(packageId: String,
+suspend fun uploadFile(
+    packageId: String,
     trace_number: String,
     action_number: String,
     vh_content: String,
     bitmap: Bitmap?,
-    uploadButton: Button,
+    uploadButton: Button?,
     vh_app_ctx: Context
 ) {
     val options: StorageUploadFileOptions = StorageUploadFileOptions.builder()
         .accessLevel(StorageAccessLevel.PRIVATE)
         .build()
     val baseLocation = "$userId/$packageId/$trace_number/"
-    val initButtonText = uploadButton.text
+    val initButtonText = uploadButton?.text
     val appCtx = MyAccessibilityService.appContext
     // try to upload VH content to AWS
     val vhFile = File(MyAccessibilityService.appContext.filesDir, "vh")
@@ -112,7 +112,9 @@ suspend fun uploadFile(packageId: String,
         val vhProgressJob = CoroutineScope(Dispatchers.Main + Job()).launch {
             async {
                 vhUpload.progress().collect {
-                uploadButton.text = appCtx.getString(R.string.upload_vh_progress, it.fractionCompleted * 100)
+                    if (uploadButton != null) {
+                        uploadButton.text = appCtx.getString(R.string.upload_vh_progress, it.fractionCompleted * 100)
+                    }
             } }
         }
         // update if successfully uploaded VH
@@ -120,12 +122,16 @@ suspend fun uploadFile(packageId: String,
         vhProgressJob.cancel()
         Log.i("MyAmplifyApp", "Successfully uploaded: " + vhResult.key)
         CoroutineScope(Dispatchers.Main + Job()).launch {
-            uploadButton.text = MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
+            if (uploadButton != null) {
+                uploadButton.text = MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
+            }
         }
     } catch (error: StorageException) {
         Log.e("MyAmplifyApp", "Upload failed", error)
         CoroutineScope(Dispatchers.Main + Job()).launch {
-            uploadButton.text = appCtx.getString(R.string.upload_vh_fail)
+            if (uploadButton != null) {
+                uploadButton.text = appCtx.getString(R.string.upload_vh_fail)
+            }
             Toast.makeText(vh_app_ctx, appCtx.getString(R.string.upload_vh_toast_fail), Toast.LENGTH_LONG).show()
         }
     } catch (exception: IOException) {
@@ -146,9 +152,11 @@ suspend fun uploadFile(packageId: String,
         val screenProgressJob = CoroutineScope(Dispatchers.Main + Job()).launch {
             async {
                 screenUpload.progress().collect {
-                    uploadButton.text = appCtx.getString(
-                        R.string.upload_screen_progress,
-                        it.fractionCompleted * 100)
+                    if (uploadButton != null) {
+                        uploadButton.text = appCtx.getString(
+                            R.string.upload_screen_progress,
+                            it.fractionCompleted * 100)
+                    }
                 }
             }
         }
@@ -157,12 +165,16 @@ suspend fun uploadFile(packageId: String,
         screenProgressJob.cancel()
         Log.i("MyAmplifyApp", "Successfully uploaded: " + screenResult.key)
         CoroutineScope(Dispatchers.Main + Job()).launch {
-            uploadButton.text = appCtx.getString(R.string.upload_screen_success)
+            if (uploadButton != null) {
+                uploadButton.text = appCtx.getString(R.string.upload_screen_success)
+            }
         }
     } catch (error: StorageException) {
         Log.e("MyAmplifyApp", "Upload failed", error)
         CoroutineScope(Dispatchers.Main + Job()).launch {
-            uploadButton.text = appCtx.getString(R.string.upload_screen_fail)
+            if (uploadButton != null) {
+                uploadButton.text = appCtx.getString(R.string.upload_screen_fail)
+            }
             Toast.makeText(
                 vh_app_ctx,
                 appCtx.getString(R.string.upload_screen_toast_fail),
@@ -190,9 +202,11 @@ suspend fun uploadFile(packageId: String,
         val gestureProgressJob = CoroutineScope(Dispatchers.Main + Job()).launch {
             async {
                 gestureUpload.progress().collect {
-                    uploadButton.text = appCtx.getString(
-                        R.string.upload_gesture_progress,
-                        it.fractionCompleted * 100)
+                    if (uploadButton != null) {
+                        uploadButton.text = appCtx.getString(
+                            R.string.upload_gesture_progress,
+                            it.fractionCompleted * 100)
+                    }
                 }
             }
         }
@@ -201,7 +215,9 @@ suspend fun uploadFile(packageId: String,
         gestureProgressJob.cancel()
         Log.i("MyAmplifyApp", "Successfully uploaded: " + gestureResult.key)
         CoroutineScope(Dispatchers.Main + Job()).launch {
-            uploadButton.text = initButtonText
+            if (uploadButton != null) {
+                uploadButton.text = initButtonText
+            }
             Toast.makeText(
                 vh_app_ctx,
                 appCtx.getString(R.string.upload_all_toast_success),
@@ -211,7 +227,9 @@ suspend fun uploadFile(packageId: String,
     } catch (error: StorageException) {
         Log.e("MyAmplifyApp", "Upload failed", error)
         CoroutineScope(Dispatchers.Main + Job()).launch {
-            uploadButton.text = appCtx.getString(R.string.upload_gesture_fail)
+            if (uploadButton != null) {
+                uploadButton.text = appCtx.getString(R.string.upload_gesture_fail)
+            }
             Toast.makeText(
                 vh_app_ctx,
                 appCtx.getString(R.string.upload_gesture_toast_fail),

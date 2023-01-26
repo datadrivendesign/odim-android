@@ -1,20 +1,13 @@
 package edu.illinois.odim
 
 import android.graphics.*
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.view.MotionEvent
 import android.view.View
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
+import kotlinx.coroutines.*
 import org.json.JSONArray
-import org.json.JSONObject
-import kotlin.math.roundToInt
 
 class ScreenShotActivity : AppCompatActivity() {
 
@@ -25,8 +18,6 @@ class ScreenShotActivity : AppCompatActivity() {
     private var canvas: Canvas? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-//        val fab = FloatingActionButton(applicationContext)
-//        val fab = MovableFloatingActionButton(applicationContext)
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide();
         setContentView(R.layout.activity_screenshot)
@@ -114,7 +105,24 @@ class ScreenShotActivity : AppCompatActivity() {
             }
 
             imageView!!.setImageBitmap(myBit)
-            screenshot.bitmap = tempBit
+
+            val fab : FloatingActionButton = findViewById(R.id.fab)
+            fab.setOnClickListener { view ->
+                screenshot.bitmap = tempBit
+                CoroutineScope(Dispatchers.Main + Job()).launch() {
+                    withContext(Dispatchers.IO) {
+                        uploadFile(
+                            chosenPackageName!!,
+                            chosenTraceName!!,
+                            chosenEventName!!,
+                            getVh(chosenPackageName, chosenTraceName, chosenEventName)[0],
+                            getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap,
+                            null,
+                            applicationContext
+                        )
+                    }
+                }
+            }
 
 //            imageView!!.setOnClickListener {
 //                val tempPaint = Paint()
