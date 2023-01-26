@@ -89,7 +89,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 }
             }
         }
-        deleteJson(vhs)
         rectangles.add(matched)
         return matched
     }
@@ -102,28 +101,28 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-    private fun traverse(root: Map<String, String>?): String {
-        // Base Case
-        if (nodeIsMatch(root)) {
-            // do we delete this node's child?
-            // do we go back up to delete child?
-            return Pair(true, ture)
-        }
-        // Recursive Case
-        val gson = GsonBuilder().setLenient().create()
-        val children = root?.get("children") as String
-        val childrenArr = gson.fromJson(children, holder.javaClass)
-
-        for (child in childrenArr) {
-            val isMatch = traverse(child)  //if true, delete child convert back to string
-            if (isMatch[0]) {
-                deleteChild(child)
-                break
-            }
-        }
-        root["children"] = childrenArr.toString()
-        return ""
-    }
+//    private fun traverse(root: Map<String, String>?): String {
+//        // Base Case
+//        if (nodeIsMatch(root)) {
+//            // do we delete this node's child?
+//            // do we go back up to delete child?
+//            return Pair(true, ture)
+//        }
+//        // Recursive Case
+//        val gson = GsonBuilder().setLenient().create()
+//        val children = root?.get("children") as String
+//        val childrenArr = gson.fromJson(children, holder.javaClass)
+//
+//        for (child in childrenArr) {
+//            val isMatch = traverse(child)  //if true, delete child convert back to string
+//            if (isMatch[0]) {
+//                deleteChild(child)
+//                break
+//            }
+//        }
+//        root["children"] = childrenArr.toString()
+//        return ""
+//    }
 
     private fun nodeIsMatch(node: Map<String, String>?): Boolean {
         var rectStr = node!!.get("bounds_in_screen")
