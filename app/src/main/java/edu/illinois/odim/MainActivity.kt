@@ -5,13 +5,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
-import android.view.View
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 
 // this should be static
 private var recyclerAdapter : CustomAdapter? = null
@@ -56,6 +55,9 @@ class MainActivity : AppCompatActivity() {
         recyclerAdapter = CustomAdapter(this, getPackages())
 
         recyclerView?.adapter = recyclerAdapter
+
+        // Ethar added
+        recyclerView?.addItemDecoration(RecyclerViewItemDecoration(this, R.drawable.divider))
 
         recyclerAdapter!!.setOnItemClickListener(object: CustomAdapter.OnItemClickListener {
             override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {

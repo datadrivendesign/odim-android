@@ -2,4 +2,23 @@
     <string name="app_name">ODIM</string>
     <string name="accessibility_service_label">ODIM Service</string>
     <string name="accessibility_service_description">ODIM records your gestures, screens, traces</string>
+
+    <string name="cover">Cover</string>
+    <string name="title_place_holder">Title Place Holder</string>
+    <string name="time_stamp">Time Stamp</string>
+    <string name="event_function">Event Function</string>
+    <string name="upload_trace_button_text">Upload Trace to AWS</string>
+    <string name="upload_event_button_text">Upload Event to AWS</string>
+    <string name="upload_vh_progress" formatted="true">"Upload VH: %.0f%%</string>
+    <string name="upload_vh_success">VH uploaded</string>
+    <string name="upload_vh_fail">Upload VH Failed</string>
+    <string name="upload_vh_toast_fail">VH failed to upload, try again</string>
+    <string name="upload_screen_progress" formatted="true">"Upload Screenshot: %.0f%%</string>
+    <string name="upload_screen_success">Screenshot uploaded</string>
+    <string name="upload_screen_fail">Upload Screen Failed</string>
+    <string name="upload_screen_toast_fail">Screenshot failed to upload, try again</string>
+    <string name="upload_gesture_progress" formatted="true">Upload Gestures: %.0f%%</string>
+    <string name="upload_gesture_fail">Upload Gestures Failed</string>
+    <string name="upload_gesture_toast_fail">Gestures failed to upload, try again</string>
+    <string name="upload_all_toast_success">All event data uploaded</string>
 </resources>
