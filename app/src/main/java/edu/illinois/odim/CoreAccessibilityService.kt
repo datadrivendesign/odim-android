@@ -113,9 +113,13 @@ suspend fun uploadFile(
             async {
                 vhUpload.progress().collect {
                     if (uploadButton != null) {
-                        uploadButton.text = appCtx.getString(R.string.upload_vh_progress, it.fractionCompleted * 100)
+                        uploadButton.text = appCtx.getString(
+                            R.string.upload_vh_progress,
+                            it.fractionCompleted * 100
+                        )
                     }
-            } }
+                }
+            }
         }
         // update if successfully uploaded VH
         val vhResult = vhUpload.result()
@@ -123,7 +127,8 @@ suspend fun uploadFile(
         Log.i("MyAmplifyApp", "Successfully uploaded: " + vhResult.key)
         CoroutineScope(Dispatchers.Main + Job()).launch {
             if (uploadButton != null) {
-                uploadButton.text = MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
+                uploadButton.text =
+                    MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
             }
         }
     } catch (error: StorageException) {
@@ -132,7 +137,11 @@ suspend fun uploadFile(
             if (uploadButton != null) {
                 uploadButton.text = appCtx.getString(R.string.upload_vh_fail)
             }
-            Toast.makeText(vh_app_ctx, appCtx.getString(R.string.upload_vh_toast_fail), Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                vh_app_ctx,
+                appCtx.getString(R.string.upload_vh_toast_fail),
+                Toast.LENGTH_LONG
+            ).show()
         }
     } catch (exception: IOException) {
         Log.e("MyAmplifyApp", "Write to file failed", exception)
@@ -155,7 +164,8 @@ suspend fun uploadFile(
                     if (uploadButton != null) {
                         uploadButton.text = appCtx.getString(
                             R.string.upload_screen_progress,
-                            it.fractionCompleted * 100)
+                            it.fractionCompleted * 100
+                        )
                     }
                 }
             }
@@ -205,7 +215,8 @@ suspend fun uploadFile(
                     if (uploadButton != null) {
                         uploadButton.text = appCtx.getString(
                             R.string.upload_gesture_progress,
-                            it.fractionCompleted * 100)
+                            it.fractionCompleted * 100
+                        )
                     }
                 }
             }
@@ -267,7 +278,8 @@ class MyAccessibilityService : AccessibilityService() {
             .userAttribute(AuthUserAttributeKey.email(), "carlguo2@illinois.edu")
             .build()
         try {
-            val result = Amplify.Auth.signUp("carl_and_rizky", "dddg_ODIM_mobi", options
+            val result = Amplify.Auth.signUp(
+                "carl_and_rizky", "dddg_ODIM_mobi", options
             )
             Log.i("AuthQuickStart", "Result: $result")
         } catch (error: AuthException) {
@@ -275,10 +287,14 @@ class MyAccessibilityService : AccessibilityService() {
         }
 
         try {
-            val result = Amplify.Auth.confirmSignUp("carl_and_rizky", "815098",)
-            Log.i("AuthQuickstart",
-                if (result.isSignUpComplete) { "Confirm signUp succeeded" }
-                else { "Confirm sign up not complete" }
+            val result = Amplify.Auth.confirmSignUp("carl_and_rizky", "815098")
+            Log.i(
+                "AuthQuickstart",
+                if (result.isSignUpComplete) {
+                    "Confirm signUp succeeded"
+                } else {
+                    "Confirm sign up not complete"
+                }
             )
         } catch (error: AuthException) {
             Log.e("AuthQuickstart", error.toString())
@@ -288,7 +304,8 @@ class MyAccessibilityService : AccessibilityService() {
     private suspend fun amplifyLogIn() {
         try {
             val result = Amplify.Auth.signIn("carl_and_rizky", "dddg_ODIM_mobi")
-            Log.i("AuthQuickstart",
+            Log.i(
+                "AuthQuickstart",
                 if (result.isSignInComplete) "Sign in succeeded" else "Sign in not complete"
             )
         } catch (error: AuthException) {
@@ -304,7 +321,8 @@ class MyAccessibilityService : AccessibilityService() {
         val info = AccessibilityServiceInfo()
         info.apply {
             // TODO: why are we adding both? Isn't TYPES_ALL_MASK include the other?
-            eventTypes = AccessibilityEvent.TYPES_ALL_MASK or AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+            eventTypes =
+                AccessibilityEvent.TYPES_ALL_MASK or AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
             notificationTimeout = 100
             packageNames = null
@@ -349,7 +367,8 @@ class MyAccessibilityService : AccessibilityService() {
         }
         val packageName = event.packageName.toString()
         if (event.packageName == "edu.illinois.recordingservice" ||
-                event.packageName == "edu.illinois.odim") {
+            event.packageName == "edu.illinois.odim"
+        ) {
             return
         }
         var isNewTrace = false
@@ -438,18 +457,21 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun recordScreenPeriodically() {
         future = scheduledExecutorService.scheduleAtFixedRate({
-            takeScreenshot(DEFAULT_DISPLAY, scheduledExecutorService, object: TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) {
-                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+            takeScreenshot(
+                DEFAULT_DISPLAY,
+                scheduledExecutorService,
+                object : TakeScreenshotCallback {
+                    override fun onSuccess(result: ScreenshotResult) {
+                        currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
 //                    Log.i("Screenshot:", "Take screenshot success")
-                    result.hardwareBuffer.close()
-                }
+                        result.hardwareBuffer.close()
+                    }
 
-                override fun onFailure(errCode: Int) {
-                    Log.e("ScreenshotFailure:", "Error code: $errCode")
-                }
+                    override fun onFailure(errCode: Int) {
+                        Log.e("ScreenshotFailure:", "Error code: $errCode")
+                    }
 
-            })
+                })
         }, 0, 400, TimeUnit.MILLISECONDS)
     }
 

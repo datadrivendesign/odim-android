@@ -1,5 +1,6 @@
 package edu.illinois.odim
 
+import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Bundle
 import android.view.View
@@ -41,6 +42,7 @@ class ScreenShotActivity : AppCompatActivity() {
             val myBit: Bitmap = tempBit
             canvas = Canvas(myBit)
             imageView!!.canvas = canvas
+            imageView!!.originalBitMap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             imageView!!.vhs = vhMap
             val rect: Rect? = screenshot.rect
             if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
@@ -106,8 +108,9 @@ class ScreenShotActivity : AppCompatActivity() {
 
             imageView!!.setImageBitmap(myBit)
 
-            val fab : FloatingActionButton = findViewById(R.id.fab)
-            fab.setOnClickListener { view ->
+            // Save Listener
+            val savefab: FloatingActionButton = findViewById(R.id.fab)
+            savefab.setOnClickListener { view ->
                 screenshot.bitmap = tempBit
                 CoroutineScope(Dispatchers.Main + Job()).launch() {
                     withContext(Dispatchers.IO) {
@@ -116,7 +119,11 @@ class ScreenShotActivity : AppCompatActivity() {
                             chosenTraceName!!,
                             chosenEventName!!,
                             getVh(chosenPackageName, chosenTraceName, chosenEventName)[0],
-                            getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap,
+                            getScreenshot(
+                                chosenPackageName,
+                                chosenTraceName,
+                                chosenEventName
+                            ).bitmap,
                             null,
                             applicationContext
                         )
@@ -124,17 +131,20 @@ class ScreenShotActivity : AppCompatActivity() {
                 }
             }
 
-//            imageView!!.setOnClickListener {
-//                val tempPaint = Paint()
-//                canvas!!.drawRect(Rect(0, 66, 154, 220), tempPaint)
-////                val intent = Intent(applicationContext, ViewHierarchyActivity::class.java)
-////                intent.putExtra("package_name", chosenPackageName)
-////                intent.putExtra("trace_name", chosenTraceName)
-////                intent.putExtra("event_name", chosenEventName)
-////                startActivity(intent)
-//                Log.i("OnClick", "Clicked")
-//            }
-
+            // Delete Listener
+            val deletefab: FloatingActionButton = findViewById(R.id.fabdelete)
+            deletefab.setOnClickListener { view ->
+                val deleteColor = Color.argb(250, 255, 100, 150)
+                val drawColor = Color.argb(250, 181, 202, 215)
+                imageView!!.drawMode = !imageView!!.drawMode
+                if (imageView!!.drawMode) {
+                    view.backgroundTintList = ColorStateList.valueOf(drawColor)
+                    (view as FloatingActionButton).setImageResource(android.R.drawable.ic_menu_edit)
+                } else {
+                    view.backgroundTintList = ColorStateList.valueOf(deleteColor)
+                    (view as FloatingActionButton).setImageResource(android.R.drawable.ic_delete)
+                }
+            }
         }
 
     }

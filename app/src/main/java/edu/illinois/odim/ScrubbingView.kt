@@ -1,10 +1,7 @@
 package edu.illinois.odim
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Point
-import android.graphics.Rect
+import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -25,6 +22,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var vhRects: ArrayList<Rect>? = null
     var vhs: Map<String, String> = HashMap()
     var holder = arrayListOf<Map<String, String>>()
+    var drawMode: Boolean = true
+    var originalBitMap: Bitmap? = null
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -45,16 +44,30 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 
     // Get coordinates on user touch
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when (event!!.getAction()) {
+        when (event!!.action) {
             MotionEvent.ACTION_DOWN -> {
-                val pointX = event!!.getX().roundToInt()
-                val pointY = event!!.getY().roundToInt()
+                val pointX = event.x.roundToInt()
+                val pointY = event.y.roundToInt()
+
+                // Delete rectangle if in Delete Mode
+                if (!drawMode) {
+                    for (rect in rectangles) {
+                        if (rect.contains(pointX, pointY)) {
+                            rectangles.remove(rect)
+                            originalBitMap?.let { canvas?.drawBitmap(it, rect, rect, null) }
+                            postInvalidate()
+                            return true
+                        }
+                    }
+                    return true
+                }
+
                 p1 = Point(pointX, pointY)
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                val pointX = event!!.getX().roundToInt()
-                val pointY = event!!.getY().roundToInt()
+                val pointX = event.x.roundToInt()
+                val pointY = event.y.roundToInt()
                 p2 = Point(pointX, pointY)
                 postInvalidate()
             }
@@ -76,6 +89,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             p2 = null
         }
     }
+
 
     private fun getMatchingVH(vhRects: ArrayList<Rect>?, rect: Rect): Rect {
         var maxOverlapRatio: Float = 0.0F
@@ -125,7 +139,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 //    }
 
     private fun nodeIsMatch(node: Map<String, String>?): Boolean {
-        var rectStr = node!!.get("bounds_in_screen")
+        var rectStr = node!!["bounds_in_screen"]
         if (rectStr != null) {
             rectStr = rectStr.substring(5, rectStr.length - 1).trim()
 //            val rectArr = rectStr.split(", ", " - ")
@@ -133,7 +147,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 //            val currRect = Rect(intRectArr[0], intRectArr[1], intRectArr[2], intRectArr[3])
             val currRect = Rect.unflattenFromString(rectStr)
             for (userRect in rectangles) {
-                if (userRect.equals(currRect)) {
+                if (userRect == currRect) {
                     return true
                 }
             }
@@ -149,11 +163,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 //        return matched
 //    }
 
-    fun getRects(): List<Rect> {
-        return rectangles
-    }
-
-    fun getArea(rect: Rect): Float {
+    private fun getArea(rect: Rect): Float {
         return (rect.width() * rect.height()).toFloat()
     }
 }
