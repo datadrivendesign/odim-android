@@ -32,7 +32,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
         val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
         val jsonString: String = jsonArray[0] as String
-        var vhMap: Map<String, String> = HashMap()
+        var vhMap: HashMap<String, String> = HashMap()
         vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
 
         if (screenshot != null) {

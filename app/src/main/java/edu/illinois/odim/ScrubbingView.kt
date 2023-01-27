@@ -11,6 +11,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -23,8 +24,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var canvas: Canvas? = null
     var rectangles = mutableListOf<Rect>()
     var vhRects: ArrayList<Rect>? = null
-    var vhs: Map<String, String> = HashMap()
-    var holder = arrayListOf<Map<String, String>>()
+    var vhs: HashMap<String, String> = HashMap()
+    var holder = arrayListOf<HashMap<String, String>>()
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -72,6 +73,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             val newrect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
             val rectmatch = getMatchingVH(vhRects, newrect)
             this.canvas?.drawRect(rectmatch, paint)
+            traverse(vhs)
             p1 = null
             p2 = null
         }
@@ -101,39 +103,54 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-//    private fun traverse(root: Map<String, String>?): String {
-//        // Base Case
-//        if (nodeIsMatch(root)) {
-//            // do we delete this node's child?
-//            // do we go back up to delete child?
-//            return Pair(true, ture)
-//        }
-//        // Recursive Case
-//        val gson = GsonBuilder().setLenient().create()
-//        val children = root?.get("children") as String
-//        val childrenArr = gson.fromJson(children, holder.javaClass)
-//
-//        for (child in childrenArr) {
-//            val isMatch = traverse(child)  //if true, delete child convert back to string
-//            if (isMatch[0]) {
-//                deleteChild(child)
-//                break
-//            }
-//        }
-//        root["children"] = childrenArr.toString()
-//        return ""
-//    }
+    private fun traverse(root: HashMap<String, String>?): Pair<Boolean, Boolean> {
+        // Base Case
+        if (nodeIsMatch(root)) {
+            // matching child is found to the rectangle
+            return Pair(true, false)  // return pair of isFound flag, isDeleted flag
+        }
+        // Recursive Case
+        val gson = GsonBuilder().create()
+        val children = root?.get("children") ?: return Pair(false, false)
+        val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
+        val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
+
+        for (i in childrenArr.indices) {
+            val isMatch = traverse(childrenArr[i])  //if true, delete child convert back to string
+            if (isMatch.first) {
+                Log.i("childarr before:", childrenArr.toString())
+                val removedElem = childrenArr.removeAt(i)
+                Log.i("removed", removedElem.entries.toString())
+                root?.set("children", childrenArr.toString())
+                Log.i("childarr after:", childrenArr.toString())  // TODO: there are nulls in the view hierarchy json, not sure if that's normal though...
+
+                return Pair(false, true)
+            }
+            // if already deleted just return and move back up
+            if (isMatch.second) {
+                return Pair(false, true)
+            }
+        }
+        // something went wrong?
+        return Pair(false, false)
+    }
 
     private fun nodeIsMatch(node: Map<String, String>?): Boolean {
-        var rectStr = node!!.get("bounds_in_screen")
+        var rectStr = node?.get("bounds_in_screen")
         if (rectStr != null) {
             rectStr = rectStr.substring(5, rectStr.length - 1).trim()
-//            val rectArr = rectStr.split(", ", " - ")
+            rectStr = rectStr.replace(", "," ")  // TODO: optimize
+            rectStr = rectStr.replace(" - ", " ")
 //            val intRectArr = rectArr.map { it.toInt() }.toTypedArray()
 //            val currRect = Rect(intRectArr[0], intRectArr[1], intRectArr[2], intRectArr[3])
+            Log.i("assume string", rectStr)
             val currRect = Rect.unflattenFromString(rectStr)
             for (userRect in rectangles) {
+                Log.i("actual", userRect.toString())
+                Log.i("test", userRect.flattenToString())
+                Log.i("assume", currRect.toString())
                 if (userRect.equals(currRect)) {
+                    Log.i("status", "bounds found")
                     return true
                 }
             }
@@ -148,10 +165,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 //        }
 //        return matched
 //    }
-
-    fun getRects(): List<Rect> {
-        return rectangles
-    }
 
     fun getArea(rect: Rect): Float {
         return (rect.width() * rect.height()).toFloat()
