@@ -42,7 +42,7 @@ class ScreenShotActivity : AppCompatActivity() {
             val myBit: Bitmap = tempBit
             canvas = Canvas(myBit)
             imageView!!.canvas = canvas
-            imageView!!.originalBitMap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
+//            imageView!!.originalBitMap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             imageView!!.vhs = vhMap
             val rect: Rect? = screenshot.rect
             if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
@@ -105,6 +105,7 @@ class ScreenShotActivity : AppCompatActivity() {
                     canvas!!.drawRect(boxes.get(i), paint)
                 }
             }
+            imageView!!.originalBitMap = myBit.copy(Bitmap.Config.ARGB_8888, true)
 
             imageView!!.setImageBitmap(myBit)
 
