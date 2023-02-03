@@ -3,6 +3,7 @@ package edu.illinois.odim
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -32,7 +33,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
         val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
         val jsonString: String = jsonArray[0] as String
-        var vhMap: Map<String, String> = HashMap()
+        var vhMap: HashMap<String, String> = HashMap()
         vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
 
         if (screenshot != null) {
