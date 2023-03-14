@@ -3,11 +3,11 @@ package edu.illinois.odim
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.*
 import org.json.JSONArray
 
@@ -21,7 +21,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        this.supportActionBar?.hide();
+        this.supportActionBar?.hide()
         setContentView(R.layout.activity_screenshot)
         chosenPackageName = intent.extras!!["package_name"].toString()
         chosenTraceName = intent.extras!!["trace_name"].toString()
@@ -38,12 +38,10 @@ class ScreenShotActivity : AppCompatActivity() {
 
         if (screenshot != null) {
             imageView!!.vhRects = screenshot.vh
-//            imageView!!.vhs = chosenVH
             val tempBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             val myBit: Bitmap = tempBit
             canvas = Canvas(myBit)
             imageView!!.canvas = canvas
-//            imageView!!.originalBitMap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
             imageView!!.vhs = vhMap
             val rect: Rect? = screenshot.rect
             if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
@@ -99,7 +97,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
             val boxes: ArrayList<Rect>? = screenshot.vh
             if (boxes != null) {
-                for (i in 0 until boxes!!.size) {
+                for (i in 0 until boxes.size) {
                     val paint = Paint()
                     paint.style = Paint.Style.STROKE
                     paint.color = Color.rgb(255, 0, 0)
@@ -112,9 +110,19 @@ class ScreenShotActivity : AppCompatActivity() {
 
             // Save Listener
             val savefab: FloatingActionButton = findViewById(R.id.fab)
+            val gson = GsonBuilder().create()
             savefab.setOnClickListener { view ->
-                screenshot.bitmap = tempBit
-                CoroutineScope(Dispatchers.Main + Job()).launch() {
+                // loop through imageView.rectangles
+                for (drawnRects: Rect in imageView!!.rectangles) {
+                    // traverse each rectangle
+                    imageView!!.traverse(imageView!!.vhs, drawnRects)
+                    setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
+                }
+                // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
+                screenshot.bitmap = tempBit   // save your bitmap
+                // clear imageView.rectangles
+                imageView!!.rectangles.clear()
+                CoroutineScope(Dispatchers.Main + Job()).launch {
                     withContext(Dispatchers.IO) {
                         uploadFile(
                             chosenPackageName!!,

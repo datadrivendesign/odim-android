@@ -369,6 +369,8 @@ class MyAccessibilityService : AccessibilityService() {
         val packageName = event.packageName.toString()
         if (event.packageName == "edu.illinois.recordingservice" ||
             event.packageName == "edu.illinois.odim"
+//            ||
+//            event.packageName == "com.google.android.apps.nexuslauncher"
         ) {
             return
         }
@@ -422,12 +424,6 @@ class MyAccessibilityService : AccessibilityService() {
                 currentScreenshot = ScreenShot(currentBitmap, outbounds, actionType, boxes)
             }
 
-
-            // VH
-//            String json = parse_vh_to_json(node);
-//
-//            String vh_currentnode = "Current Node: " + "\n" + json + "\n";
-
             // all nodes
             val rootInActiveWindow = rootInActiveWindow
             var vh = ""
@@ -452,7 +448,6 @@ class MyAccessibilityService : AccessibilityService() {
                 boxes.addAll(getBoxes(currentNode))
             }
         }
-//        Log.i("Box size", java.lang.String.valueOf(boxes.size))
         return boxes
     }
 
@@ -464,7 +459,6 @@ class MyAccessibilityService : AccessibilityService() {
                 object : TakeScreenshotCallback {
                     override fun onSuccess(result: ScreenshotResult) {
                         currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-//                    Log.i("Screenshot:", "Take screenshot success")
                         result.hardwareBuffer.close()
                     }
 
@@ -495,11 +489,7 @@ class MyAccessibilityService : AccessibilityService() {
         map["enabled"] = java.lang.String.valueOf(node.isEnabled)
         val outbounds = Rect() // Rect(x1 y1, x2, y2) -> "[x1, y1, x2, y2]"
         node.getBoundsInScreen(outbounds)
-        var x1 = outbounds.left
-        var y1 = outbounds.top
-        var x2 = outbounds.right
-        var y2 = outbounds.bottom
-        map["bounds_in_screen"] = outbounds.toString() // "[$x1, $y1, $x2, $y2]"
+        map["bounds_in_screen"] = outbounds.toString()
         map["visibility"] = java.lang.String.valueOf(node.isVisibleToUser)
         if (node.contentDescription != null) {
             map["content-desc"] = node.contentDescription.toString()
@@ -507,11 +497,7 @@ class MyAccessibilityService : AccessibilityService() {
             map["content-desc"] = "none"
         }
         node.getBoundsInParent(outbounds)   // TODO: why do we need this?
-        x1 = outbounds.left
-        y1 = outbounds.top
-        x2 = outbounds.right
-        y2 = outbounds.bottom
-        map["bounds_in_parent"] = outbounds.toString() // "[$x1, $y1, $x2, $y2]"
+        map["bounds_in_parent"] = outbounds.toString()
         map["focused"] = java.lang.String.valueOf(node.isFocused)
         map["selected"] = java.lang.String.valueOf(node.isSelected)
         map["children_count"] = java.lang.String.valueOf(node.childCount)
@@ -536,8 +522,7 @@ class MyAccessibilityService : AccessibilityService() {
 
         //map.put("to_string", node.toString());
         val gson = Gson()
-        var json: String = gson.toJson(map)
-//        json = json.replace("\\\\".toRegex(), "")
+        val json: String = gson.toJson(map)
         return json
     }
 
