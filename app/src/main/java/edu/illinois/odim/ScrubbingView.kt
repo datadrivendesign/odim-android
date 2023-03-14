@@ -6,10 +6,8 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import java.lang.StringBuilder
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -124,7 +122,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
         // Recursive Case
         val gson = GsonBuilder().create()
-        var children = root?.get("children") ?: return Triple(false, false, null)
+        val children = root?.get("children") ?: return Triple(false, false, null)
         // TODO: get rid of trailing comma at end of array, need to find fix with GSON fromJson doing this
         children.replace(",]", "]")
 
@@ -134,13 +132,13 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             val isMatch = traverse(childrenArr[i], newRect)  //if true, delete child convert back to string
             if (isMatch.first) {
                 childrenArr[i] = hashMapOf("content" to "redacted")
-                root?.set("children", gson.toJson(childrenArr))
+                root["children"] = gson.toJson(childrenArr)
 
                 return Triple(false, true, root)
             }
             // if already deleted just return and move back up
             if (isMatch.second) {
-                root?.set("children", gson.toJson(isMatch.third))
+                root["children"] = gson.toJson(isMatch.third)
                 return Triple(false, true, root)
             }
         }
