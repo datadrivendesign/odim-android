@@ -126,9 +126,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         val gson = GsonBuilder().create()
         var children = root?.get("children") ?: return Triple(false, false, null)
         // TODO: get rid of trailing comma at end of array, need to find fix with GSON fromJson doing this
-        if (children[children.length-1] == ']' && children[children.length-2] == ',') {
-            children = StringBuilder(children).deleteCharAt(children.length-2).toString()
-        }
+        children.replace(",]", "]")
 
         val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
         val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
