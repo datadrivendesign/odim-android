@@ -36,7 +36,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.coroutineContext
 
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
@@ -98,19 +97,23 @@ suspend fun uploadFile(
         .accessLevel(StorageAccessLevel.PRIVATE)
         .build()
     val baseLocation = "$userId/$packageId/$trace_number/"
-    val initButtonText = uploadButton?.text
+//    val initButtonText = uploadButton?.text
     val appCtx = MyAccessibilityService.appContext
     // try to upload VH content to AWS
     val vhFile = File(MyAccessibilityService.appContext.filesDir, "vh")
     val viewHierarchyLocation = baseLocation + "view_hierarchies" + "/" + action_number
+
+    val uploadScope = CoroutineScope(Dispatchers.Main + Job())
     try {
         // get VH content and write to the to-be-uploaded file
-        val writer = BufferedWriter(FileWriter(vhFile))
-        writer.append(vh_content)
-        writer.close()
+        val VHwriter = BufferedWriter(FileWriter(vhFile))
+        VHwriter.append(vh_content)
+        VHwriter.close()
+
+
         // Upload VH file
         val vhUpload = Amplify.Storage.uploadFile(viewHierarchyLocation, vhFile, options)
-        val vhProgressJob = CoroutineScope(Dispatchers.Main + Job()).launch {
+        val vhProgressJob = uploadScope.launch {
             async {
                 vhUpload.progress().collect {
                     if (uploadButton != null) {
@@ -118,99 +121,32 @@ suspend fun uploadFile(
                             R.string.upload_vh_progress,
                             it.fractionCompleted * 100
                         )
-                    }
-                }
-            }
-        }
-        // update if successfully uploaded VH
-        val vhResult = vhUpload.result()
-        vhProgressJob.cancel()
-        Log.i("MyAmplifyApp", "Successfully uploaded: " + vhResult.key)
-        CoroutineScope(Dispatchers.Main + Job()).launch {
-            if (uploadButton != null) {
-                uploadButton.text =
-                    MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
-            }
-        }
-    } catch (error: StorageException) {
-        Log.e("MyAmplifyApp", "Upload failed", error)
-        CoroutineScope(Dispatchers.Main + Job()).launch {
-            if (uploadButton != null) {
-                uploadButton.text = appCtx.getString(R.string.upload_vh_fail)
-            }
-            Toast.makeText(
-                vh_app_ctx,
-                appCtx.getString(R.string.upload_vh_toast_fail),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    } catch (exception: IOException) {
-        Log.e("MyAmplifyApp", "Write to file failed", exception)
-    } catch (exception: Exception) {
-        Log.e("MyAmplifyApp", "Upload filed", exception)
-    }
-    // try to upload screenshot content to AWS
-    val screenshotFile = File(appCtx.filesDir, "screenshot")
-    val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
-    try {
-        // write screenshot to a file for upload
-        FileOutputStream(screenshotFile).use { out ->
-            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
-        }
-        // upload gestures file
-        val screenUpload = Amplify.Storage.uploadFile(screenshotLocation, screenshotFile, options)
-        val screenProgressJob = CoroutineScope(Dispatchers.Main + Job()).launch {
-            async {
-                screenUpload.progress().collect {
-                    if (uploadButton != null) {
-                        uploadButton.text = appCtx.getString(
-                            R.string.upload_screen_progress,
-                            it.fractionCompleted * 100
-                        )
-                    }
-                }
-            }
-        }
-        // update button if successfully uploaded screenshot
-        val screenResult = screenUpload.result()
-        screenProgressJob.cancel()
-        Log.i("MyAmplifyApp", "Successfully uploaded: " + screenResult.key)
-        CoroutineScope(Dispatchers.Main + Job()).launch {
-            if (uploadButton != null) {
-                uploadButton.text = appCtx.getString(R.string.upload_screen_success)
-            }
-        }
-    } catch (error: StorageException) {
-        Log.e("MyAmplifyApp", "Upload failed", error)
-        CoroutineScope(Dispatchers.Main + Job()).launch {
-            if (uploadButton != null) {
-                uploadButton.text = appCtx.getString(R.string.upload_screen_fail)
-            }
-            Toast.makeText(
-                vh_app_ctx,
-                appCtx.getString(R.string.upload_screen_toast_fail),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    } catch (exception: IOException) {
-        Log.e("MyAmplifyApp", "Write to file failed", exception)
-    } catch (exception: Exception) {
-        Log.e("MyAmplifyApp", "Upload filed", exception)
-    }
 
-    // Write json gestures to file for upload
-    val gson = Gson()
-    var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
-    json = json.replace("\\\\".toRegex(), "")
-    val gestureFile = File(MyAccessibilityService.appContext.filesDir, "vh")
-    val gestureLocation = baseLocation + "gestures"
-    try {
-        val writer = BufferedWriter(FileWriter(gestureFile))
-        writer.append(json)
-        writer.close()
+                        if (it.fractionCompleted >= 1.0) {
+                            uploadButton.text =
+                                MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+        // Write json gestures to file for upload
+        val gson = Gson()
+        var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
+        json = json.replace("\\\\".toRegex(), "")
+        val gestureFile = File(MyAccessibilityService.appContext.filesDir, "vh")
+        val gestureLocation = baseLocation + "gestures"
+        val gestureWriter = BufferedWriter(FileWriter(gestureFile))
+        gestureWriter.append(json)
+        gestureWriter.close()
+
         // upload gestures file
         val gestureUpload = Amplify.Storage.uploadFile(gestureLocation, gestureFile, options)
-        val gestureProgressJob = CoroutineScope(Dispatchers.Main + Job()).launch {
+        val gestureProgressJob = uploadScope.launch {
             async {
                 gestureUpload.progress().collect {
                     if (uploadButton != null) {
@@ -218,40 +154,60 @@ suspend fun uploadFile(
                             R.string.upload_gesture_progress,
                             it.fractionCompleted * 100
                         )
+
+                        if (it.fractionCompleted >= 1.0) {
+                            uploadButton.text = appCtx.getString(R.string.upload_gesture_success)
+                        }
+
                     }
                 }
             }
         }
-        // update button and make toast if successfully uploaded gesture
-        val gestureResult = gestureUpload.result()
-        gestureProgressJob.cancel()
-        Log.i("MyAmplifyApp", "Successfully uploaded: " + gestureResult.key)
-        CoroutineScope(Dispatchers.Main + Job()).launch {
-            if (uploadButton != null) {
-                uploadButton.text = initButtonText
+
+
+
+        // try to upload screenshot content to AWS
+        val screenshotFile = File(appCtx.filesDir, "screenshot")
+        val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
+        // write screenshot to a file for upload
+        FileOutputStream(screenshotFile).use { out ->
+            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
+        }
+        // upload gestures file
+        val screenUpload = Amplify.Storage.uploadFile(screenshotLocation, screenshotFile, options)
+        val screenProgressJob = uploadScope.launch {
+            async {
+                screenUpload.progress().collect {
+                    if (uploadButton != null) {
+                        uploadButton.text = appCtx.getString(
+                            R.string.upload_screen_progress,
+                            it.fractionCompleted * 100
+                        )
+
+                        if (it.fractionCompleted >= 1.0) {
+                            uploadButton.text = appCtx.getString(R.string.upload_trace_button_text)
+                            Toast.makeText(
+                                vh_app_ctx,
+                                appCtx.getString(R.string.upload_all_toast_success),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                }
             }
-            Toast.makeText(
-                vh_app_ctx,
-                appCtx.getString(R.string.upload_all_toast_success),
-                Toast.LENGTH_SHORT
-            ).show()
         }
     } catch (error: StorageException) {
         Log.e("MyAmplifyApp", "Upload failed", error)
-        CoroutineScope(Dispatchers.Main + Job()).launch {
-            if (uploadButton != null) {
-                uploadButton.text = appCtx.getString(R.string.upload_gesture_fail)
-            }
-            Toast.makeText(
-                vh_app_ctx,
-                appCtx.getString(R.string.upload_gesture_toast_fail),
-                Toast.LENGTH_LONG
-            ).show()
-        }
+        Toast.makeText(
+            vh_app_ctx,
+            appCtx.getString(R.string.upload_vh_toast_fail),
+            Toast.LENGTH_LONG
+        ).show()
     } catch (exception: IOException) {
         Log.e("MyAmplifyApp", "Write to file failed", exception)
     } catch (exception: Exception) {
-        Log.e("MyAmplifyApp", "Upload failed", exception)
+        Log.e("MyAmplifyApp", "Upload filed", exception)
     }
 }
 
