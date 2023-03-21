@@ -9,6 +9,7 @@ import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Base64
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
 import android.view.accessibility.AccessibilityEvent
@@ -28,7 +29,11 @@ import com.amplifyframework.storage.options.StorageUploadFileOptions
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.google.gson.Gson
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
+import ru.gildor.coroutines.okhttp.await
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,6 +41,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
+import java.util.logging.Logger
+
 
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
@@ -83,8 +91,7 @@ fun setVh(
         .map[event_name]!!.list[0] = json_string!!
 }
 
-@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-suspend fun uploadFile(
+fun uploadFile(
     packageId: String,
     trace_number: String,
     action_number: String,
@@ -93,44 +100,37 @@ suspend fun uploadFile(
     uploadButton: Button?,
     vh_app_ctx: Context
 ) {
-    val options: StorageUploadFileOptions = StorageUploadFileOptions.builder()
-        .accessLevel(StorageAccessLevel.PRIVATE)
-        .build()
-    val baseLocation = "$userId/$packageId/$trace_number/"
-//    val initButtonText = uploadButton?.text
     val appCtx = MyAccessibilityService.appContext
     // try to upload VH content to AWS
-    val vhFile = File(MyAccessibilityService.appContext.filesDir, "vh")
-    val viewHierarchyLocation = baseLocation + "view_hierarchies" + "/" + action_number
+//    val vhFile = File(MyAccessibilityService.appContext.filesDir, "vh")
 
     val uploadScope = CoroutineScope(Dispatchers.Main + Job())
+    val client = OkHttpClient()
+    Logger.getLogger(OkHttpClient::class.java.name).setLevel(Level.FINE)
+    val bucket = "mobileodimbucket155740-dev"
+
     try {
-        // get VH content and write to the to-be-uploaded file
-        val VHwriter = BufferedWriter(FileWriter(vhFile))
-        VHwriter.append(vh_content)
-        VHwriter.close()
-
-
         // Upload VH file
-        val vhUpload = Amplify.Storage.uploadFile(viewHierarchyLocation, vhFile, options)
         val vhProgressJob = uploadScope.launch {
-            async {
-                vhUpload.progress().collect {
-                    if (uploadButton != null) {
-                        uploadButton.text = appCtx.getString(
-                            R.string.upload_vh_progress,
-                            it.fractionCompleted * 100
-                        )
-
-                        if (it.fractionCompleted >= 1.0) {
-                            uploadButton.text =
-                                MyAccessibilityService.appContext.getString(R.string.upload_vh_success)
-                        }
-                    }
+            val gestureMediaType = "application/json; charset=utf-8".toMediaType()
+            val request = Request.Builder()
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/view_hierarchies/$action_number")
+                .header("Connection", "close")
+                .post(vh_content.toRequestBody(gestureMediaType))
+                .build()
+            val response: Response = client.newCall(request).await()
+            if (response.isSuccessful) {
+                if (uploadButton != null) {
+                    uploadButton.text = appCtx.getString(R.string.upload_gesture_success)
                 }
+                Log.i("api", "success upload")
+            } else {
+                if (uploadButton != null) {
+                    uploadButton.text = appCtx.getString(R.string.upload_fail)
+                }
+                Log.i("api", "fail upload")
             }
         }
-
 
 
 
@@ -138,76 +138,73 @@ suspend fun uploadFile(
         val gson = Gson()
         var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
         json = json.replace("\\\\".toRegex(), "")
-        val gestureFile = File(MyAccessibilityService.appContext.filesDir, "vh")
-        val gestureLocation = baseLocation + "gestures"
-        val gestureWriter = BufferedWriter(FileWriter(gestureFile))
-        gestureWriter.append(json)
-        gestureWriter.close()
-
         // upload gestures file
-        val gestureUpload = Amplify.Storage.uploadFile(gestureLocation, gestureFile, options)
         val gestureProgressJob = uploadScope.launch {
-            async {
-                gestureUpload.progress().collect {
-                    if (uploadButton != null) {
-                        uploadButton.text = appCtx.getString(
-                            R.string.upload_gesture_progress,
-                            it.fractionCompleted * 100
-                        )
-
-                        if (it.fractionCompleted >= 1.0) {
-                            uploadButton.text = appCtx.getString(R.string.upload_gesture_success)
-                        }
-
-                    }
+            val vhMediaType = "application/json; charset=utf-8".toMediaType()
+            val request = Request.Builder()
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/gestures")
+                .header("Connection", "close")
+                .post(json.toRequestBody(vhMediaType))
+                .build()
+            val response: Response = client.newCall(request).await()
+            if (response.isSuccessful) {
+                if (uploadButton != null) {
+                    uploadButton.text = appCtx.getString(R.string.upload_gesture_success)
                 }
+                Log.i("api", "success upload")
+            } else {
+                if (uploadButton != null) {
+                    uploadButton.text = appCtx.getString(R.string.upload_fail)
+                }
+                Log.i("api", "fail upload")
             }
         }
 
 
-
-        // try to upload screenshot content to AWS
-        val screenshotFile = File(appCtx.filesDir, "screenshot")
-        val screenshotLocation = baseLocation + "screenshots" + "/" + action_number
         // write screenshot to a file for upload
-        FileOutputStream(screenshotFile).use { out ->
-            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out) // bmp is your Bitmap instance
-        }
         // upload gestures file
-        val screenUpload = Amplify.Storage.uploadFile(screenshotLocation, screenshotFile, options)
         val screenProgressJob = uploadScope.launch {
-            async {
-                screenUpload.progress().collect {
-                    if (uploadButton != null) {
-                        uploadButton.text = appCtx.getString(
-                            R.string.upload_screen_progress,
-                            it.fractionCompleted * 100
-                        )
+            val byteOut = ByteArrayOutputStream()
+            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
+            val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
+            val screenshotMediaType = "text/plain".toMediaType()
+            val request = Request.Builder()
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/screenshots/$action_number")
+                .addHeader("Content-Transfer-Encoding", "base64")
+                .addHeader("Content-Type", "text/plain")
+                .header("Connection", "close")
+                .post(bitmapBase64.toRequestBody(screenshotMediaType))
+                .build()
 
-                        if (it.fractionCompleted >= 1.0) {
-                            uploadButton.text = appCtx.getString(R.string.upload_trace_button_text)
-                            Toast.makeText(
-                                vh_app_ctx,
-                                appCtx.getString(R.string.upload_all_toast_success),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-
+            val response: Response = client.newCall(request).await()
+            if (response.isSuccessful) {
+                if (uploadButton != null) {
+                    uploadButton.text = appCtx.getString(R.string.upload_trace_button_text)
                 }
+                Toast.makeText(
+                    vh_app_ctx,
+                    appCtx.getString(R.string.upload_all_toast_success),
+                    Toast.LENGTH_SHORT
+                ).show()
+                Log.i("api", "success upload")
+            } else {
+                if (uploadButton != null) {
+                    uploadButton.text = appCtx.getString(R.string.upload_fail)
+                }
+                Log.i("api", "fail upload")
             }
         }
     } catch (error: StorageException) {
-        Log.e("MyAmplifyApp", "Upload failed", error)
+        Log.e("ODIMUpload", "Upload failed", error)
         Toast.makeText(
             vh_app_ctx,
             appCtx.getString(R.string.upload_vh_toast_fail),
             Toast.LENGTH_LONG
         ).show()
     } catch (exception: IOException) {
-        Log.e("MyAmplifyApp", "Write to file failed", exception)
+        Log.e("ODIMUpload", "Write to file failed", exception)
     } catch (exception: Exception) {
-        Log.e("MyAmplifyApp", "Upload filed", exception)
+        Log.e("ODIMUpload", "Upload filed", exception)
     }
 }
 
@@ -228,49 +225,6 @@ class MyAccessibilityService : AccessibilityService() {
         var gesturesMap: HashMap<String, String>? = null
     }
 
-//    private val userId = "test_user15"
-
-    private suspend fun amplifySignUp() {
-        val options = AuthSignUpOptions.builder()
-            .userAttribute(AuthUserAttributeKey.email(), "carlguo2@illinois.edu")
-            .build()
-        try {
-            val result = Amplify.Auth.signUp(
-                "carl_and_rizky", "dddg_ODIM_mobi", options
-            )
-            Log.i("AuthQuickStart", "Result: $result")
-        } catch (error: AuthException) {
-            Log.e("AuthQuickStart", "Sign up failed", error)
-        }
-
-        try {
-            val result = Amplify.Auth.confirmSignUp("carl_and_rizky", "815098")
-            Log.i(
-                "AuthQuickstart",
-                if (result.isSignUpComplete) {
-                    "Confirm signUp succeeded"
-                } else {
-                    "Confirm sign up not complete"
-                }
-            )
-        } catch (error: AuthException) {
-            Log.e("AuthQuickstart", error.toString())
-        }
-    }
-
-    private suspend fun amplifyLogIn() {
-        try {
-            val result = Amplify.Auth.signIn("carl_and_rizky", "dddg_ODIM_mobi")
-            Log.i(
-                "AuthQuickstart",
-                if (result.isSignInComplete) "Sign in succeeded" else "Sign in not complete"
-            )
-        } catch (error: AuthException) {
-            Log.e("AuthQuickstart", error.toString())
-        }
-
-    }
-
     override fun onServiceConnected() {
         // Create the service
         Log.i("onServiceConnected", "Accessibility Service Connected")
@@ -285,21 +239,7 @@ class MyAccessibilityService : AccessibilityService() {
             packageNames = null
         }
         serviceInfo = info
-        try {
-            // Add these lines to add the AWSCognitoAuthPlugin and AWSS3StoragePlugin plugins
-            Amplify.addPlugin(AWSCognitoAuthPlugin())
-            Amplify.addPlugin(AWSS3StoragePlugin())
-            Amplify.configure(applicationContext)
-            Log.i("MyAmplifyApp", "Initialized Amplify")
-        } catch (error: AmplifyException) {
-            Log.e("MyAmplifyApp", "Could not initialize Amplify", error)
-        }
         gesturesMap = HashMap()
-
-//        amplifySignUp()
-        CoroutineScope(Dispatchers.IO).launch() {
-            amplifyLogIn()
-        }
 
         // TODO: start up background scheduled screenshot take
         recordScreenPeriodically()
@@ -324,9 +264,8 @@ class MyAccessibilityService : AccessibilityService() {
         }
         val packageName = event.packageName.toString()
         if (event.packageName == "edu.illinois.recordingservice" ||
-            event.packageName == "edu.illinois.odim"
-//            ||
-//            event.packageName == "com.google.android.apps.nexuslauncher"
+            event.packageName == "edu.illinois.odim" ||
+            event.packageName == "com.google.android.apps.nexuslauncher"
         ) {
             return
         }
