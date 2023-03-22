@@ -32,19 +32,16 @@ class MainActivity : AppCompatActivity() {
         // set up user id
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
         builder.setTitle("Input user id")
-
         val input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT
+        builder.setCancelable(false)
         builder.setView(input)
-
-        builder.setPositiveButton("DONE", { dialogInterface, which ->
+        builder.setPositiveButton("DONE") { _, _ ->
             userId = input.text.toString()
             Log.i("userId", userId)
-        })
-        builder.setNegativeButton("CANCEL", { dialogInterface, which ->
-            dialogInterface.cancel()
-        })
+        }
         builder.show()
+
         // set up package view
         title = " Packages"
 
