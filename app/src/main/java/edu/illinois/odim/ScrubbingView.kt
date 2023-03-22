@@ -14,9 +14,9 @@ import kotlin.math.roundToInt
 
 
 class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
-    var p1: Point? = null
-    var p2: Point? = null
-    val paint = Paint()
+    private var p1: Point? = null
+    private var p2: Point? = null
+    private val paint = Paint()
     var canvas: Canvas? = null
     var rectangles = mutableListOf<Rect>()
     var vhRects: ArrayList<Rect>? = null
@@ -124,7 +124,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         val gson = GsonBuilder().create()
         val children = root?.get("children") ?: return Triple(false, false, null)
         // TODO: get rid of trailing comma at end of array, need to find fix with GSON fromJson doing this
-        children.replace(",]", "]")
+        children = children.replace(",]", "]", true)
 
         val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
         val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
@@ -138,7 +138,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             }
             // if already deleted just return and move back up
             if (isMatch.second) {
-                root["children"] = gson.toJson(isMatch.third)
+                root["children"] = "[${gson.toJson(isMatch.third)}]"
                 return Triple(false, true, root)
             }
         }

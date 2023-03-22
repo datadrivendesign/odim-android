@@ -4,6 +4,7 @@
     package="edu.illinois.odim" >
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -14,7 +15,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ODIM"
-        tools:targetApi="31" >
+        tools:targetApi="31"
+        android:networkSecurityConfig="@xml/network_security_config" >
 
         <service
             android:name=".MyAccessibilityService"
@@ -41,7 +43,6 @@
         </activity>
         <activity android:name=".TraceActivity" />
         <activity android:name=".EventActivity" />
-        <activity android:name=".ViewHierarchyActivity" />
         <activity android:name=".ScreenShotActivity" />
     </application>
 

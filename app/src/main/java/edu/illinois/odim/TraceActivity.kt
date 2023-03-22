@@ -3,7 +3,6 @@ package edu.illinois.odim
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,18 +16,18 @@ fun notifyTraceAdapter() {
 
 class TraceActivity : AppCompatActivity(){
     private var recyclerView: RecyclerView? = null
-    private var chosenPackageNAme: String? = null
+    private var chosenPackageName: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_trace)
-        chosenPackageNAme = intent.extras!!["package_name"].toString()
-        title = chosenPackageNAme
+        chosenPackageName = intent.extras!!["package_name"].toString()
+        title = chosenPackageName
         recyclerView = findViewById<View>(R.id.traceRecyclerView) as RecyclerView
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         recyclerAdapter = CustomAdapter(
             this,
-            getTraces(chosenPackageNAme)
+            getTraces(chosenPackageName)
         )
         // Ethar added
         recyclerView?.addItemDecoration(RecyclerViewItemDecoration(this, R.drawable.divider))
@@ -37,7 +36,7 @@ class TraceActivity : AppCompatActivity(){
             override fun onItemClick(rowText: TextView) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, EventActivity::class.java)
                 val chosenTraceName: String = rowText.text.toString() // ((view as LinearLayout).getChildAt(0) as TextView).text.toString()
-                intent.putExtra("package_name", chosenPackageNAme)
+                intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_name", chosenTraceName)
 
                 startActivity(intent)
