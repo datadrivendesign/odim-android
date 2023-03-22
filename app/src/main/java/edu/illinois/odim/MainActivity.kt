@@ -3,7 +3,10 @@ package edu.illinois.odim
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextUtils
+import android.text.TextWatcher
 import android.util.Log
 import android.widget.EditText
 import android.widget.TextView
@@ -29,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
-        // set up user id
+        // set up dialog to get user id
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
         builder.setTitle("Input user id")
         val input = EditText(this)
@@ -40,7 +43,15 @@ class MainActivity : AppCompatActivity() {
             userId = input.text.toString()
             Log.i("userId", userId)
         }
-        builder.show()
+        val alertDialog = builder.show()
+        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+        input.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun afterTextChanged(str: Editable?) {
+                alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
+            }
+        })
 
         // set up package view
         title = " Packages"
