@@ -15,8 +15,6 @@ import android.view.Display.DEFAULT_DISPLAY
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.Button
-import android.widget.Toast
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import okhttp3.*
@@ -86,16 +84,14 @@ fun uploadFile(
     trace_number: String,
     action_number: String,
     vh_content: String,
-    bitmap: Bitmap?,
-    uploadButton: Button?,
-    vh_app_ctx: Context
-) {
-    val appCtx = MyAccessibilityService.appContext
+    bitmap: Bitmap?
+) : Boolean {
     // try to upload VH content to AWS
     val uploadScope = CoroutineScope(Dispatchers.Main + Job())
     val client = OkHttpClient()
     val bucket = "mobileodimbucket155740-dev"
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
+    var isSuccessUpload = true
     try {
         // Upload VH file
         uploadScope.launch {
@@ -107,20 +103,19 @@ fun uploadFile(
                 .build()
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
-                if (uploadButton != null) {
-                    uploadButton.text = appCtx.getString(R.string.upload_gesture_success)
-                }
-                Log.i("api", "success upload")
+                Log.i("api", "success upload gestures")
             } else {
-                if (uploadButton != null) {
-                    uploadButton.text = appCtx.getString(R.string.upload_fail)
-                }
-                Log.i("api", "fail upload")
+                Log.i("api", "fail upload gestures")
+                isSuccessUpload = false
             }
             response.body?.close()
         }
 
-        // Write json gestures to file for upload
+        if (!isSuccessUpload) {
+            return isSuccessUpload
+        }
+
+        // Write json gestures to upload
         val gson = Gson()
         var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
         json = json.replace("\\\\".toRegex(), "")
@@ -134,22 +129,19 @@ fun uploadFile(
                 .build()
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
-                if (uploadButton != null) {
-                    uploadButton.text = appCtx.getString(R.string.upload_gesture_success)
-                }
-                Log.i("api", "success upload")
+                Log.i("api", "success upload view hierarchies")
             } else {
-                if (uploadButton != null) {
-                    uploadButton.text = appCtx.getString(R.string.upload_fail)
-                }
-                Log.i("api", "fail upload")
+                Log.i("api", "fail upload view hierarchies")
+                isSuccessUpload = false
             }
             response.body?.close()
         }
 
+        if (!isSuccessUpload) {
+            return false
+        }
 
-        // write screenshot to a file for upload
-        // upload gestures file
+        // upload gestures
         uploadScope.launch {
             val byteOut = ByteArrayOutputStream()
             bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
@@ -165,31 +157,18 @@ fun uploadFile(
 
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
-                if (uploadButton != null) {
-                    uploadButton.text = appCtx.getString(R.string.upload_trace_button_text)
-                }
-                Toast.makeText(
-                    vh_app_ctx,
-                    appCtx.getString(R.string.upload_all_toast_success),
-                    Toast.LENGTH_SHORT
-                ).show()
-                Log.i("api", "success upload")
+                Log.i("api", "success upload screenshot")
             } else {
-                if (uploadButton != null) {
-                    uploadButton.text = appCtx.getString(R.string.upload_fail)
-                }
-                Log.i("api", "fail upload")
+                Log.i("api", "fail upload screenshot")
+                isSuccessUpload = false
             }
             response.body?.close()
         }
     } catch (exception: Exception) {
-        Toast.makeText(
-            vh_app_ctx,
-            appCtx.getString(R.string.upload_vh_toast_fail),
-            Toast.LENGTH_LONG
-        ).show()
         Log.e("ODIMUpload", "Upload filed", exception)
+        return false
     }
+    return isSuccessUpload
 }
 
 class MyAccessibilityService : AccessibilityService() {
