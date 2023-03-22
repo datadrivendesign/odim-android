@@ -17,16 +17,6 @@ import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
 import android.widget.Toast
-import com.amplifyframework.AmplifyException
-import com.amplifyframework.auth.AuthException
-import com.amplifyframework.auth.AuthUserAttributeKey
-import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
-import com.amplifyframework.auth.options.AuthSignUpOptions
-import com.amplifyframework.kotlin.core.Amplify
-import com.amplifyframework.storage.StorageAccessLevel
-import com.amplifyframework.storage.StorageException
-import com.amplifyframework.storage.options.StorageUploadFileOptions
-import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import okhttp3.*
@@ -102,16 +92,13 @@ fun uploadFile(
 ) {
     val appCtx = MyAccessibilityService.appContext
     // try to upload VH content to AWS
-//    val vhFile = File(MyAccessibilityService.appContext.filesDir, "vh")
-
     val uploadScope = CoroutineScope(Dispatchers.Main + Job())
     val client = OkHttpClient()
-    Logger.getLogger(OkHttpClient::class.java.name).setLevel(Level.FINE)
     val bucket = "mobileodimbucket155740-dev"
-
+    Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     try {
         // Upload VH file
-        val vhProgressJob = uploadScope.launch {
+        uploadScope.launch {
             val gestureMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
                 .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/view_hierarchies/$action_number")
@@ -130,16 +117,15 @@ fun uploadFile(
                 }
                 Log.i("api", "fail upload")
             }
+            response.body?.close()
         }
-
-
 
         // Write json gestures to file for upload
         val gson = Gson()
         var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
         json = json.replace("\\\\".toRegex(), "")
         // upload gestures file
-        val gestureProgressJob = uploadScope.launch {
+        uploadScope.launch {
             val vhMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
                 .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/gestures")
@@ -158,12 +144,13 @@ fun uploadFile(
                 }
                 Log.i("api", "fail upload")
             }
+            response.body?.close()
         }
 
 
         // write screenshot to a file for upload
         // upload gestures file
-        val screenProgressJob = uploadScope.launch {
+        uploadScope.launch {
             val byteOut = ByteArrayOutputStream()
             bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
             val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
@@ -193,17 +180,14 @@ fun uploadFile(
                 }
                 Log.i("api", "fail upload")
             }
+            response.body?.close()
         }
-    } catch (error: StorageException) {
-        Log.e("ODIMUpload", "Upload failed", error)
+    } catch (exception: Exception) {
         Toast.makeText(
             vh_app_ctx,
             appCtx.getString(R.string.upload_vh_toast_fail),
             Toast.LENGTH_LONG
         ).show()
-    } catch (exception: IOException) {
-        Log.e("ODIMUpload", "Write to file failed", exception)
-    } catch (exception: Exception) {
         Log.e("ODIMUpload", "Upload filed", exception)
     }
 }
@@ -216,8 +200,8 @@ class MyAccessibilityService : AccessibilityService() {
 
     private var currentScreenshot: ScreenShot? = null
 
-    lateinit var future: ScheduledFuture<*>
-    val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+    private lateinit var future: ScheduledFuture<*>
+    private val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
 
     companion object {
         lateinit var appContext: Context
@@ -417,8 +401,7 @@ class MyAccessibilityService : AccessibilityService() {
 
         //map.put("to_string", node.toString());
         val gson = Gson()
-        val json: String = gson.toJson(map)
-        return json
+        return gson.toJson(map)
     }
 
     private fun addEvent(
@@ -491,7 +474,6 @@ class MyAccessibilityService : AccessibilityService() {
         val viewHierarchyList = ArrayList<String>()
         viewHierarchyList.add(viewHierarchy)
         viewHierarchyLayer.list = viewHierarchyList
-        notifyVHAdapter()
     }
 
     override fun onInterrupt() {}
