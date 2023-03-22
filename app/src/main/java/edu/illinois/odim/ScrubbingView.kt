@@ -122,7 +122,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
         // Recursive Case
         val gson = GsonBuilder().create()
-        var children = root?.get("children") ?: return Triple(false, false, null)
+        val children = root?.get("children") ?: return Triple(false, false, null)
         // TODO: get rid of trailing comma at end of array, need to find fix with GSON fromJson doing this
         children = children.replace(",]", "]", true)
 
