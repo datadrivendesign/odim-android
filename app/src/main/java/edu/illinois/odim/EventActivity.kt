@@ -2,13 +2,12 @@ package edu.illinois.odim
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.CardCellBinding
-import kotlinx.coroutines.*
 
 // these were static in java
 private var recyclerAdapter: EventAdapter? = null
@@ -62,23 +61,28 @@ class EventActivity : AppCompatActivity() {
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.uploadTraceButton)
         uploadTraceButton?.setOnClickListener { view ->
-            CoroutineScope(Dispatchers.Main + Job()).launch() {
-                withContext(Dispatchers.IO) {
-                    for (event: String in eventsInTrace) {
-                        Log.i("TraceEvent", event)
-                        val vhStringArr = getVh(chosenPackageName, chosenTraceName, event)
-                        uploadFile(
-                            chosenPackageName!!,
-                            chosenTraceName!!,
-                            event,
-                            vhStringArr[0],
-                            getScreenshot(chosenPackageName, chosenTraceName, event).bitmap,
-                            view as Button,
-                            applicationContext
-                        )
-                    }
+            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+            builder.setTitle("WARNING")
+            builder.setMessage(R.string.event_upload_warning)
+            builder.setPositiveButton("UPLOAD") { _, _ ->
+                for (event: String in eventsInTrace) {
+                    val vhStringArr = getVh(chosenPackageName, chosenTraceName, event)
+                    uploadFile(
+                        chosenPackageName!!,
+                        chosenTraceName!!,
+                        event,
+                        vhStringArr[0],
+                        getScreenshot(chosenPackageName, chosenTraceName, event).bitmap,
+                        view as Button,
+                        applicationContext
+                    )
                 }
             }
+            builder.setNegativeButton("CANCEL") { dialogInterface, _ ->
+                dialogInterface.cancel()
+            }
+            builder.show()
+
         }
     }
 }
