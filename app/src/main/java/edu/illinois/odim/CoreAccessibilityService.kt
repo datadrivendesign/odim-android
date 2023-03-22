@@ -87,7 +87,7 @@ fun uploadFile(
     bitmap: Bitmap?
 ) : Boolean {
     // try to upload VH content to AWS
-    val uploadScope = CoroutineScope(Dispatchers.Main + Job())
+    val uploadScope = CoroutineScope(Dispatchers.IO)
     val client = OkHttpClient()
     val bucket = "mobileodimbucket155740-dev"
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE

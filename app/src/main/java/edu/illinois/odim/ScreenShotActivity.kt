@@ -4,8 +4,11 @@ import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.json.JSONArray
@@ -107,9 +110,9 @@ class ScreenShotActivity : AppCompatActivity() {
         imageView!!.setImageBitmap(myBit)
 
         // Save Listener
-        val savefab: FloatingActionButton = findViewById(R.id.fab)
+        val saveFAB: MovableFloatingActionButton = findViewById(R.id.fab)
         val gson = GsonBuilder().create()
-        savefab.setOnClickListener {
+        saveFAB.setOnClickListener { fabView ->
             // loop through imageView.rectangles
             for (drawnRect: Rect in imageView!!.rectangles) {
                 // traverse each rectangle
@@ -121,7 +124,7 @@ class ScreenShotActivity : AppCompatActivity() {
             // clear imageView.rectangles
             imageView!!.rectangles.clear()
 
-            uploadFile(
+            val uploadSuccess = uploadFile(
                 chosenPackageName!!,
                 chosenTraceName!!,
                 chosenEventName!!,
@@ -130,10 +133,21 @@ class ScreenShotActivity : AppCompatActivity() {
                     chosenPackageName,
                     chosenTraceName,
                     chosenEventName
-                ).bitmap,
-                null,
-                applicationContext
+                ).bitmap
             )
+            if (!uploadSuccess) {
+                val errSnackbar = Snackbar.make(fabView, R.string.upload_fail, Snackbar.LENGTH_LONG)
+                errSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
+                errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                    .setTextColor(ContextCompat.getColor(this, R.color.white))
+                errSnackbar.show()
+            } else {
+                val successSnackbar = Snackbar.make(fabView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                successSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+                successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                    .setTextColor(ContextCompat.getColor(this, R.color.white))
+                successSnackbar.show()
+            }
         }
 
         // Delete Listener

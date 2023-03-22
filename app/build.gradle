@@ -48,12 +48,9 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     implementation 'com.google.code.gson:gson:2.8.9'
-    implementation 'com.amplifyframework:core-kotlin:0.20.2'
-    implementation 'com.amplifyframework:aws-storage-s3:1.36.2'
-    implementation 'com.amplifyframework:aws-auth-cognito:1.36.2'
-    implementation 'com.amplifyframework:aws-api:1.36.4'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.9'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
     // add api library for HTTP calls
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     // define a BOM and its version

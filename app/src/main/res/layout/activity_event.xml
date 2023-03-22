@@ -19,7 +19,7 @@
         tools:layout_editor_absoluteX="-209dp"
         tools:layout_editor_absoluteY="0dp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/uploadTraceButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -29,6 +29,7 @@
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="@+id/eventRecyclerView"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.938" />
+        app:layout_constraintVertical_bias="0.938" >
+    </com.google.android.material.button.MaterialButton>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

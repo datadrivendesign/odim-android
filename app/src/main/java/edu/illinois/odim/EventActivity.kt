@@ -3,10 +3,13 @@ package edu.illinois.odim
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import edu.illinois.odim.databinding.CardCellBinding
 
 // these were static in java
@@ -31,7 +34,6 @@ class EventActivity : AppCompatActivity() {
         // use gridview instead of linear
         recyclerView?.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
         // want both screenshot and event information for trace
-        // create new object SSP contains both screenshot bitmap and event string stuff
         val screenPreview : ArrayList<ScreenShotPreview> = ArrayList()
         val eventsInTrace : ArrayList<String> = getEvents(chosenPackageName, chosenTraceName)
         for (event in eventsInTrace) {
@@ -60,23 +62,34 @@ class EventActivity : AppCompatActivity() {
         recyclerView?.adapter = recyclerAdapter
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.uploadTraceButton)
-        uploadTraceButton?.setOnClickListener { view ->
+        uploadTraceButton?.setOnClickListener { buttonView ->
             val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             builder.setTitle("WARNING")
             builder.setMessage(R.string.event_upload_warning)
             builder.setPositiveButton("UPLOAD") { _, _ ->
-                for (event: String in eventsInTrace) {
+                for ((i, event) in eventsInTrace.withIndex()) {
                     val vhStringArr = getVh(chosenPackageName, chosenTraceName, event)
-                    uploadFile(
+                    val uploadSuccess = uploadFile(
                         chosenPackageName!!,
                         chosenTraceName!!,
                         event,
                         vhStringArr[0],
-                        getScreenshot(chosenPackageName, chosenTraceName, event).bitmap,
-                        view as Button,
-                        applicationContext
+                        getScreenshot(chosenPackageName, chosenTraceName, event).bitmap
                     )
+                    if (!uploadSuccess) {
+                        val errSnackbar = Snackbar.make(buttonView, R.string.upload_fail, Snackbar.LENGTH_LONG)
+                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
+                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                            .setTextColor(ContextCompat.getColor(this, R.color.white))
+                        errSnackbar.show()
+                        break
+                    }
                 }
+                val successSnackbar = Snackbar.make(buttonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                successSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+                successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                    .setTextColor(ContextCompat.getColor(this, R.color.white))
+                successSnackbar.show()
             }
             builder.setNegativeButton("CANCEL") { dialogInterface, _ ->
                 dialogInterface.cancel()
