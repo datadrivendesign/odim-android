@@ -3,7 +3,6 @@ package edu.illinois.odim
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import com.google.gson.GsonBuilder
@@ -16,13 +15,21 @@ import kotlin.math.roundToInt
 class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     private var p1: Point? = null
     private var p2: Point? = null
-    private val paint = Paint()
+    private val tempPaint = Paint()
+    private val confirmPaint = Paint()
     var canvas: Canvas? = null
     var rectangles = mutableListOf<Rect>()
     var vhRects: ArrayList<Rect>? = null
     var vhs: HashMap<String, String> = HashMap()
     var drawMode: Boolean = true
-    var originalBitMap: Bitmap? = null
+    var baseBitMap: Bitmap? = null
+
+    init {
+        tempPaint.color = Color.GRAY
+        tempPaint.style = Paint.Style.FILL
+        confirmPaint.color = Color.BLACK
+        confirmPaint.style = Paint.Style.FILL
+    }
 
     constructor(ctx: Context) : super(ctx) {
         setWillNotDraw(false)
@@ -53,7 +60,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                     for (rect in rectangles) {
                         if (rect.contains(pointX, pointY)) {
                             rectangles.remove(rect)
-                            originalBitMap?.let { canvas?.drawBitmap(it, rect, rect, null) }
+                            this.canvas?.drawBitmap(baseBitMap!!, rect, rect, null)
                             postInvalidate()
                             return true
                         }
@@ -83,7 +90,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         if (p1 != null && p2 != null) {
             val newrect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
             val rectmatch = getMatchingVH(vhRects, newrect)
-            this.canvas?.drawRect(rectmatch, paint)
+            this.canvas?.drawRect(rectmatch, tempPaint)
             p1 = null
             p2 = null
         }
@@ -122,7 +129,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
         // Recursive Case
         val gson = GsonBuilder().create()
-        val children = root?.get("children") ?: return Triple(false, false, null)
+        var children = root?.get("children") ?: return Triple(false, false, null)
         // TODO: get rid of trailing comma at end of array, need to find fix with GSON fromJson doing this
         children = children.replace(",]", "]", true)
 
@@ -133,7 +140,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             if (isMatch.first) {
                 childrenArr[i] = hashMapOf("content" to "redacted")
                 root["children"] = gson.toJson(childrenArr)
-
+                this.canvas?.drawRect(newRect, confirmPaint)
                 return Triple(false, true, root)
             }
             // if already deleted just return and move back up
@@ -154,7 +161,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             rectStr = rectStr.replace(" - ", " ")
             val currRect = Rect.unflattenFromString(rectStr)
             if (newRect == currRect){
-                Log.i("status", "bounds found")
                 return true
             }
         }

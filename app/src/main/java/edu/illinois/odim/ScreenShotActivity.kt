@@ -20,6 +20,7 @@ class ScreenShotActivity : AppCompatActivity() {
     private var chosenTraceName: String? = null
     private var chosenEventName: String? = null
     private var canvas: Canvas? = null
+    private var originalBitmap: Bitmap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,8 +40,7 @@ class ScreenShotActivity : AppCompatActivity() {
         vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
 
         imageView!!.vhRects = screenshot.vh
-        val tempBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
-        val myBit: Bitmap = tempBit
+        val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)  //tempBit
         canvas = Canvas(myBit)
         imageView!!.canvas = canvas
         imageView!!.vhs = vhMap
@@ -95,24 +95,31 @@ class ScreenShotActivity : AppCompatActivity() {
                 )
             }
         }
+        this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
 
         val boxes: ArrayList<Rect>? = screenshot.vh
         if (boxes != null) {
             for (i in 0 until boxes.size) {
                 val paint = Paint()
                 paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 2F
                 paint.color = Color.rgb(255, 0, 0)
                 canvas!!.drawRect(boxes[i], paint)
             }
         }
-        imageView!!.originalBitMap = myBit.copy(Bitmap.Config.ARGB_8888, true)
-
+        imageView!!.baseBitMap = myBit.copy(Bitmap.Config.ARGB_8888, true)
+        // set the full drawings as primary bitmap for scrubbingView
         imageView!!.setImageBitmap(myBit)
-
         // Save Listener
         val saveFAB: MovableFloatingActionButton = findViewById(R.id.fab)
         val gson = GsonBuilder().create()
         saveFAB.setOnClickListener { fabView ->
+            // remove red paint strokes from bitmap
+            if (boxes != null) {
+                for (i in 0 until boxes.size) {
+                    canvas!!.drawBitmap(this.originalBitmap!!, boxes[i], boxes[i], null)
+                }
+            }
             // loop through imageView.rectangles
             for (drawnRect: Rect in imageView!!.rectangles) {
                 // traverse each rectangle
@@ -120,7 +127,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
             }
             // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
-            screenshot.bitmap = tempBit   // save your bitmap
+            screenshot.bitmap = myBit
             // clear imageView.rectangles
             imageView!!.rectangles.clear()
 
