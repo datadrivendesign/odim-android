@@ -230,6 +230,7 @@ class MyAccessibilityService : AccessibilityService() {
             event.packageName == "edu.illinois.odim" ||
             event.packageName == "com.google.android.apps.nexuslauncher"
         ) {
+            lastPackageName = event.packageName.toString()
             return
         }
         var isNewTrace = false
@@ -237,7 +238,7 @@ class MyAccessibilityService : AccessibilityService() {
             isNewTrace = true
         }
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
-            || (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED)
+            || (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED)  // TODO: may need to remove this
             || (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
             || (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
         ) {
@@ -354,8 +355,6 @@ class MyAccessibilityService : AccessibilityService() {
         } else {
             map["content-desc"] = "none"
         }
-        node.getBoundsInParent(outbounds)   // TODO: why do we need this?
-        map["bounds_in_parent"] = outbounds.toString()
         map["focused"] = java.lang.String.valueOf(node.isFocused)
         map["selected"] = java.lang.String.valueOf(node.isSelected)
         map["children_count"] = java.lang.String.valueOf(node.childCount)
@@ -372,7 +371,10 @@ class MyAccessibilityService : AccessibilityService() {
         for (i in 0 until node.childCount) {
             val currentNode = node.getChild(i)
             if (currentNode != null) {
-                childrenVH += parseVHToJson(currentNode) + ","
+                childrenVH += parseVHToJson(currentNode)
+                if (i < node.childCount-1) {
+                    childrenVH += ","
+                }
             }
         }
         childrenVH += "]"

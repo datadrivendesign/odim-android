@@ -129,13 +129,14 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
         // Recursive Case
         val gson = GsonBuilder().create()
-        var children = root?.get("children") ?: return Triple(false, false, null)
-        // TODO: get rid of trailing comma at end of array, need to find fix with GSON fromJson doing this
-        children = children.replace(",]", "]", true)
-
+        val children = root?.get("children") ?: return Triple(false, false, null)
         val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
         val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
         for (i in childrenArr.indices) {
+            // skip children already redacted
+            if (childrenArr[i]["content"] != null && childrenArr[i]["content"] == "redacted") {
+                continue
+            }
             val isMatch = traverse(childrenArr[i], newRect)  //if true, delete child convert back to string
             if (isMatch.first) {
                 childrenArr[i] = hashMapOf("content" to "redacted")
@@ -145,7 +146,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             }
             // if already deleted just return and move back up
             if (isMatch.second) {
-                root["children"] = "[${gson.toJson(isMatch.third)}]"
+                childrenArr[i] = isMatch.third!!
+                root["children"] = gson.toJson(childrenArr)
                 return Triple(false, true, root)
             }
         }
