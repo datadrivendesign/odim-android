@@ -157,7 +157,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 
     private fun nodeIsMatch(node: Map<String, String>?, newRect: Rect): Boolean {
         var rectStr = node?.get("bounds_in_screen")
-        if (rectStr != null) {
+        if (rectStr != null) {  // convert bounds: "Rect(0, 1926 - 1080, 6228)" format to unflatten
             rectStr = rectStr.substring(5, rectStr.length - 1).trim()
             rectStr = rectStr.replace(", "," ")  // TODO: optimize
             rectStr = rectStr.replace(" - ", " ")
