@@ -30,7 +30,7 @@ class EventActivity : AppCompatActivity() {
         chosenTraceName = intent.extras!!["trace_name"].toString()
         title = "$chosenPackageName: $chosenTraceName"
         // change the way we do this with recyclerview
-        recyclerView = findViewById(R.id.eventRecyclerView)
+        recyclerView = findViewById(R.id.event_recycler_view)
         // use gridview instead of linear
         recyclerView?.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
         // want both screenshot and event information for trace
@@ -61,7 +61,7 @@ class EventActivity : AppCompatActivity() {
         })
         recyclerView?.adapter = recyclerAdapter
         // instantiate upload button
-        uploadTraceButton = findViewById(R.id.uploadTraceButton)
+        uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
             val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             builder.setTitle("WARNING")

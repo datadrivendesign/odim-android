@@ -7,27 +7,35 @@
     android:layout_height="match_parent"
     android:divider="#3F51B5"
     android:dividerHeight="1dp"
-
     >
 
+    <include
+        android:id="@+id/event_app_header"
+        layout="@layout/odim_app_bar"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent" />
+
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/eventRecyclerView"
+        android:id="@+id/event_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        tools:layout_editor_absoluteX="-209dp"
-        tools:layout_editor_absoluteY="0dp" />
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@+id/event_app_header"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0"
+    />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/uploadTraceButton"
+        android:id="@+id/upload_trace_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/upload_trace_button_text"
-        app:layout_constraintBottom_toBottomOf="@+id/eventRecyclerView"
+        app:layout_constraintBottom_toBottomOf="@+id/event_recycler_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="@+id/eventRecyclerView"
+        app:layout_constraintStart_toStartOf="@+id/event_recycler_view"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.938" >
     </com.google.android.material.button.MaterialButton>
