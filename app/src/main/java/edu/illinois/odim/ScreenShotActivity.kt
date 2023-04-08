@@ -45,6 +45,8 @@ class ScreenShotActivity : AppCompatActivity() {
         imageView!!.canvas = canvas
         imageView!!.vhs = vhMap
         val rect: Rect? = screenshot.rect
+        // TODO: find a way to fix gestures
+//        Log.i("gesture rect:", rect.toString())
         if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
             val paint = Paint()
             paint.color = Color.rgb(255, 165, 0)
@@ -172,6 +174,23 @@ class ScreenShotActivity : AppCompatActivity() {
             }
         }
 
-    }
+//        This took an embarrassing amount of time to figure out dimensions of the screen, image and canvas
+//        Further calculations are done in the scrubbing view
 
+//        val size = Point()
+//        val display = getDisplay()?.getSize(size)
+//        Log.i("display size:", "x: ${size.x}  y: ${size.y}")
+//
+//        val realSize = Point()
+//        val realDisplay = getDisplay()?.getRealSize(realSize)
+//        Log.i("real display size:", "x: ${realSize.x} y: ${realSize.y}")
+//
+//        val statusBarHeightId = resources.getIdentifier("status_bar_height", "dimen", "android")
+//        val statusBarHeight = resources.getDimensionPixelSize(statusBarHeightId)
+//        Log.i("status bar h:", statusBarHeight.toString())
+//
+//        val navBarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+//        val navBarHeight = resources.getDimensionPixelSize(navBarHeightId)
+//        Log.i("nav bar h:", navBarHeight.toString())
+    }
 }

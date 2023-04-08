@@ -48,6 +48,31 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         visibility = View.VISIBLE
     }
 
+    fun convertXToImageScale(x: Int) : Int {
+        val bitmapWidth = this.drawable.intrinsicWidth  // original image width, height
+        val bitmapHeight = this.drawable.intrinsicHeight
+        val canvasImageHeight = this.measuredHeight  // canvas height space available
+        val canvasImageWidth = bitmapWidth * (canvasImageHeight.toDouble() / bitmapHeight)
+        val canvasImageWidthOffset = (bitmapWidth - canvasImageWidth) / 2
+        val convertedX = (bitmapHeight.toDouble() / canvasImageHeight) * (x - canvasImageWidthOffset)
+        // out of range of screen, return a -1. This can happen if users touch outside image
+        if (convertedX < 0 || convertedX > bitmapWidth) {
+            return -1
+        }
+        return convertedX.roundToInt()
+    }
+
+    fun convertYToImageScale(y: Int) : Int {
+        val bitmapHeight = this.drawable.intrinsicHeight
+        val canvasImageHeight = this.measuredHeight  // canvas height space available
+        val convertedY = (bitmapHeight.toDouble() / canvasImageHeight) * y
+        // out of range check, just in case int multiplication causes edge cases
+        if (convertedY < 0 || convertedY > bitmapHeight) {
+            return -1
+        }
+        return convertedY.roundToInt()
+    }
+
     // Get coordinates on user touch
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         when (event!!.action) {
@@ -55,10 +80,17 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 val pointX = event.x.roundToInt()
                 val pointY = event.y.roundToInt()
 
+                val convertedX = convertXToImageScale(pointX)
+                val convertedY = convertYToImageScale(pointY)
+                if (convertedX == -1 || convertedY == -1) {
+                    postInvalidate()
+                    return false
+                }
+
                 // Delete rectangle if in Delete Mode
                 if (!drawMode) {
                     for (rect in rectangles) {
-                        if (rect.contains(pointX, pointY)) {
+                        if (rect.contains(convertedX, convertedY)) {
                             rectangles.remove(rect)
                             this.canvas?.drawBitmap(baseBitMap!!, rect, rect, null)
                             postInvalidate()
@@ -68,13 +100,21 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                     return true
                 }
 
-                p1 = Point(pointX, pointY)
+                p1 = Point(convertedX, convertedY)
                 return true
             }
             MotionEvent.ACTION_UP -> {
                 val pointX = event.x.roundToInt()
                 val pointY = event.y.roundToInt()
-                p2 = Point(pointX, pointY)
+
+                val convertedX = convertXToImageScale(pointX)
+                val convertedY = convertYToImageScale(pointY)
+                if (convertedX == -1 || convertedY == -1) {
+                    postInvalidate()
+                    return false
+                }
+
+                p2 = Point(convertedX, convertedY)
                 postInvalidate()
             }
             else -> {
