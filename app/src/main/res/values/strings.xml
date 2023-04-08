@@ -12,4 +12,7 @@
         This button will NOT record the edit redactions that you have made to the
         screens. Use the save button in the screen scrubbing interface to save those.
     </string>
+    <string name="appNameStringSize">20sp</string>
+    <string name="MainTextHeader">Apps</string>
+    <string name="traceNumScreens">%1$d Screens</string>
 </resources>
