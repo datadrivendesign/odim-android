@@ -35,8 +35,9 @@ import java.util.logging.Logger
 
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
-
 val packageLayer = Layer()
+internal var workerId = "test_user"
+internal var projectCode = "test"  // TODO: use this to query cloud bucket and traces
 
 fun getPackages(): ArrayList<String> {
     return packageList
@@ -89,7 +90,7 @@ fun uploadFile(
     // try to upload VH content to AWS
     val uploadScope = CoroutineScope(Dispatchers.IO)
     val client = OkHttpClient()
-    val bucket = "mobileodimbucket155740-dev"
+    val bucket = "mobileodimbucket155740-dev"  // TODO: will retrieve from project api
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     var isSuccessUpload = true
     try {
@@ -97,7 +98,7 @@ fun uploadFile(
         uploadScope.launch {
             val gestureMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/view_hierarchies/$action_number")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/view_hierarchies/$action_number")
                 .header("Connection", "close")
                 .post(vh_content.toRequestBody(gestureMediaType))
                 .build()
@@ -123,7 +124,7 @@ fun uploadFile(
         uploadScope.launch {
             val vhMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/gestures")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/gestures")
                 .header("Connection", "close")
                 .post(json.toRequestBody(vhMediaType))
                 .build()
@@ -148,7 +149,7 @@ fun uploadFile(
             val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
             val screenshotMediaType = "text/plain".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$userId/$packageId/$trace_number/screenshots/$action_number")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/screenshots/$action_number")
                 .addHeader("Content-Transfer-Encoding", "base64")
                 .addHeader("Content-Type", "text/plain")
                 .header("Connection", "close")
@@ -243,14 +244,13 @@ class MyAccessibilityService : AccessibilityService() {
             || (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
         ) {
             // Parse event description
-            val date = Date(event.eventTime)
-            val formatter = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
+            val date = Date(System.currentTimeMillis()) //event.eventTime)
+            val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
             formatter.timeZone = TimeZone.getTimeZone("UTC")
-            val dateFormatted: String = formatter.format(date)
-            val eventTime = "Event Time: $dateFormatted"
-            val eventType = "Event Type: " + eventTypeToString(event.eventType)
+            val eventTime = formatter.format(date)
+            val eventType = eventTypeToString(event.eventType)
             val eventDescription = "$eventTime; $eventType"
-            Log.i("KKK", eventType)
+            Log.i("recordedEvent", eventType)
 
             // Screenshot
             val actionType: Int = when (event.eventType) {
@@ -258,6 +258,11 @@ class MyAccessibilityService : AccessibilityService() {
                     ScreenShot.TYPE_CLICK
                 }
                 AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
+                    // TODO: need to find fix for scrolling to only detect user scrolls
+//                    Log.i("event scroll x", event.scrollX.toString())
+//                    Log.i("event scroll x delta", event.scrollDeltaX.toString())
+//                    Log.i("event scroll y", event.scrollY.toString())
+//                    Log.i("event scroll y delta", event.scrollDeltaY.toString())
                     ScreenShot.TYPE_SCROLL
                 }
                 AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
