@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
             workerId = workerIdInput?.text.toString()
             projectCode = projectCodeInput?.text.toString()
             // TODO: check if trace and project exist
+            // TODO: get the cloud storage location
         }
         val alertDialog = builder.show()
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
@@ -52,7 +53,6 @@ class MainActivity : AppCompatActivity() {
             override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(str: Editable?) {
-                // TODO: do some string validation
                 alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
                                                                                 && !TextUtils.isEmpty(projectCodeInput?.text)
             }
@@ -61,7 +61,6 @@ class MainActivity : AppCompatActivity() {
             override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(str: Editable?) {
-                // TODO: do some string validation
                 alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
                                                                                 && !TextUtils.isEmpty(workerIdInput?.text)
             }

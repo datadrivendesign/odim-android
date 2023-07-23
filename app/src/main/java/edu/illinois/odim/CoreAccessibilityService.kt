@@ -195,9 +195,8 @@ class MyAccessibilityService : AccessibilityService() {
         appContext = applicationContext
         val info = AccessibilityServiceInfo()
         info.apply {
-            // TODO: why are we adding both? Isn't TYPES_ALL_MASK include the other?
             eventTypes =
-                AccessibilityEvent.TYPES_ALL_MASK or AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+                AccessibilityEvent.TYPES_ALL_MASK //or AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
             notificationTimeout = 100
             packageNames = null
@@ -205,7 +204,8 @@ class MyAccessibilityService : AccessibilityService() {
         serviceInfo = info
         gesturesMap = HashMap()
 
-        // TODO: start up background scheduled screenshot take
+        // TODO: try to replace
+        // start up background scheduled screenshot take
         recordScreenPeriodically()
     }
 
@@ -419,13 +419,13 @@ class MyAccessibilityService : AccessibilityService() {
         val traceList = traceLayer.list
         if (isNewTrace) {
             // this is a new trace
-            traceName = "trace_" + (traceList.size + 1)
+            traceName = eventDescription.substringBefore(";")//"trace_" + (traceList.size + 1)
             traceList.add(traceName)
             traceLayer.list = traceList
             traceMap[traceName] = Layer()
             traceLayer.map = traceMap
         } else {
-            traceName = "trace_" + traceList.size
+            traceName = traceList.last() //"trace_" + traceList.size
         }
         notifyTraceAdapter()
 

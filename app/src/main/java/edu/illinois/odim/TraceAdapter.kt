@@ -1,6 +1,7 @@
 package edu.illinois.odim
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,7 +33,7 @@ class TraceAdapter(context: Context, packageName: String, itemList: ArrayList<St
         val events = getEvents(packageName, traceName)
 
         holder.traceName = traceName
-        holder.traceDateTextView.text = if (events.size > 0) events[0] else "Empty Trace"
+        holder.traceDateTextView.text = traceName  // if (events.size > 0) events[0].substringBefore(";") else "Empty Trace"  // should never be empty, trace created at first event
         holder.traceScreensTextView.text = this.inflater.context.getString(R.string.traceNumScreens, events.size)
     }
 
