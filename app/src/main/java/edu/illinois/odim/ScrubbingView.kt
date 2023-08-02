@@ -1,9 +1,13 @@
 package edu.illinois.odim
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Point
+import android.graphics.Rect
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import com.google.gson.GsonBuilder
@@ -180,7 +184,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             }
             val isMatch = traverse(childrenArr[i], newRect)  //if true, delete child convert back to string
             if (isMatch.first && !isMatch.second) {
-                Log.i("toDelete", childrenArr[i].map { "${it.key}: ${it.value}" }.joinToString(", "))
                 if ("text_field" in childrenArr[i]) {
                     childrenArr[i]["text_field"] = "text redacted."
                 }
@@ -199,7 +202,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return Triple(false, false, null)
     }
 
-    private fun nodeIsMatch(node: Map<String, String>?, newRect: Rect): Boolean {  // TODO: optimize by comparing strings instead of Rects
+    private fun nodeIsMatch(node: Map<String, String>?, newRect: Rect): Boolean {
         val nodeRectString = node?.get("bounds_in_screen")
         val newRectString = newRect.toString()
         return nodeRectString.equals(newRectString)

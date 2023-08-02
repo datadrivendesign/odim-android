@@ -43,6 +43,7 @@ import java.util.logging.Logger
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
 val packageLayer = Layer()
+val redactionMap: HashMap<String, HashMap<String, String>> = HashMap()
 internal var workerId = "test_user"
 internal var projectCode = "test"  // TODO: use this to query cloud bucket and traces
 
@@ -87,10 +88,10 @@ fun setVh(
         .map[event_name]!!.list[0] = json_string!!
 }
 
-fun uploadFile(   // TODO: add redaction data to uploads as well
+fun uploadFile(
     packageId: String,
-    trace_number: String,
-    action_number: String,
+    trace_name: String,
+    event_name: String,
     vh_content: String,
     bitmap: Bitmap?
 ) : Boolean {
@@ -103,11 +104,11 @@ fun uploadFile(   // TODO: add redaction data to uploads as well
     try {
         // Upload VH file
         uploadScope.launch {
-            val gestureMediaType = "application/json; charset=utf-8".toMediaType()
+            val vhMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/view_hierarchies/$action_number")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/view_hierarchies/$event_name")
                 .header("Connection", "close")
-                .post(vh_content.toRequestBody(gestureMediaType))
+                .post(vh_content.toRequestBody(vhMediaType))
                 .build()
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
@@ -126,15 +127,15 @@ fun uploadFile(   // TODO: add redaction data to uploads as well
 
         // Write json gestures to upload
         val gson = Gson()
-        var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
+        var json: String = gson.toJson(MyAccessibilityService.gesturesMap!![trace_name])
         json = json.replace("\\\\".toRegex(), "")
         // upload gestures file
         uploadScope.launch {
-            val vhMediaType = "application/json; charset=utf-8".toMediaType()
+            val gestureMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/gestures")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/gestures")
                 .header("Connection", "close")
-                .post(json.toRequestBody(vhMediaType))
+                .post(json.toRequestBody(gestureMediaType))
                 .build()
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
@@ -158,7 +159,7 @@ fun uploadFile(   // TODO: add redaction data to uploads as well
             val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
             val screenshotMediaType = "text/plain".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/screenshots/$action_number")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/screenshots/$event_name")
                 .addHeader("Content-Transfer-Encoding", "base64")
                 .addHeader("Content-Type", "text/plain")
                 .header("Connection", "close")
@@ -174,6 +175,34 @@ fun uploadFile(   // TODO: add redaction data to uploads as well
             }
             response.body?.close()
         }
+
+        if (!isSuccessUpload) {
+            Log.e("upload", "upload failure in the api")
+            return false
+        }
+
+        // upload redactions
+        if (redactionMap.containsKey(trace_name) && redactionMap[trace_name]!!.containsKey(event_name)) {
+            // upload redactions
+            uploadScope.launch {
+                val redactionMediaType = "text/plain".toMediaType()
+                val request = Request.Builder()
+                    .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/redactions/$event_name")
+                    .addHeader("Content-Type", "text/plain")
+                    .post(redactionMap[trace_name]!![event_name]!!.toRequestBody(redactionMediaType))
+                    .build()
+
+                val response: Response = client.newCall(request).await()
+                if (response.isSuccessful) {
+                    Log.i("api", "success upload redactions")
+                } else {
+                    Log.i("api", "fail upload redactions")
+                    isSuccessUpload = false
+                }
+                response.body?.close()
+            }
+        }
+
     } catch (exception: Exception) {
         Log.e("ODIMUpload", "Upload filed", exception)
         return false
@@ -199,7 +228,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     companion object {
         lateinit var appContext: Context
-        var gesturesMap: HashMap<String, String>? = null
+        var gesturesMap: HashMap<String, HashMap<String, String>>? = null
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -292,7 +321,6 @@ class MyAccessibilityService : AccessibilityService() {
         if (event == null || event.packageName == null) {
             return
         }
-        Log.i("screen event pair", isScreenEventPaired.toString() + ":" + eventTypeToString(event.eventType) + ":" + event.packageName)
 
         val packageName = event.packageName.toString()
         if (event.packageName == "edu.illinois.recordingservice" ||
@@ -347,7 +375,6 @@ class MyAccessibilityService : AccessibilityService() {
                 }
             }
             if (actionType == ScreenShot.TYPE_SCROLL) {
-                Log.i("scroll:", "x:"+event.scrollDeltaX.toString()+",y:"+event.scrollDeltaY.toString())
                 scroll_coords = Pair(event.scrollDeltaX, event.scrollDeltaY)
             }
 
@@ -370,7 +397,6 @@ class MyAccessibilityService : AccessibilityService() {
 
 
             // add vh to screenshot
-            Log.i("currBitmap", currentBitmap?.colorSpace.toString())
             currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scroll_coords, boxes)
 
             // all nodes
@@ -381,7 +407,7 @@ class MyAccessibilityService : AccessibilityService() {
 
 
             // add the event
-            addEvent(node, packageName, isNewTrace, eventDescription, currentScreenshot!!, vh)  // TODO: add scrolls to gesture
+            addEvent(node, packageName, isNewTrace, eventDescription, scroll_coords, currentScreenshot!!, vh)  // TODO: add scrolls to gesture
             lastPackageName = packageName
         }
     }
@@ -460,6 +486,7 @@ class MyAccessibilityService : AccessibilityService() {
         packageName: String,
         isNewTrace: Boolean,
         eventDescription: String,
+        scroll_coords: Pair<Int, Int>?,
         currentScreenShot: ScreenShot,
         viewHierarchy: String
     ) {
@@ -510,8 +537,17 @@ class MyAccessibilityService : AccessibilityService() {
         // update gesture map
         val outbounds = Rect()
         node?.getBoundsInScreen(outbounds)
-        val coordinates = "[" + "[" + outbounds.centerX() + "," + outbounds.centerY() + "]" + "]"
-        gesturesMap!![eventName] = coordinates  // TODO: update gesture map to include scrolls
+        var coordinates = "[[${outbounds.centerX()},${outbounds.centerY()}"
+        if (scroll_coords != null) {
+            coordinates + ",${scroll_coords.first},${scroll_coords.second}"
+        }
+        coordinates = "$coordinates]]"
+        if (gesturesMap!!.containsKey(traceName)) {
+            gesturesMap!![traceName]?.set(eventName, coordinates)
+        } else {
+            gesturesMap!![traceName] = HashMap()
+            gesturesMap!![traceName]?.set(eventName, coordinates)
+        }
 
         // add the screenshot
         val screenshotLayer = eventMap[eventDescription] ?: return

@@ -148,6 +148,18 @@ class ScreenShotActivity : AppCompatActivity() {
                 // traverse each rectangle
                 imageView!!.traverse(imageView!!.vhs, drawnRect)
                 setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
+                if (redactionMap.containsKey(chosenTraceName)) {
+                    if (redactionMap[chosenTraceName]!!.containsKey(chosenEventName)) {
+                        redactionMap[chosenTraceName]!![chosenEventName!!] += ";${drawnRect.toShortString()}"
+                    } else {
+                        redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.toShortString()
+                    }
+
+                } else {
+                    redactionMap[chosenTraceName!!] = HashMap()
+                    redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.toShortString()
+                }
+
             }
             // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
             screenshot.bitmap = myBit
@@ -159,11 +171,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 chosenTraceName!!,
                 chosenEventName!!,
                 getVh(chosenPackageName, chosenTraceName, chosenEventName)[0],
-                getScreenshot(
-                    chosenPackageName,
-                    chosenTraceName,
-                    chosenEventName
-                ).bitmap
+                getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap
             )
             if (!uploadSuccess) {
                 val errSnackbar = Snackbar.make(fabView, R.string.upload_fail, Snackbar.LENGTH_LONG)
