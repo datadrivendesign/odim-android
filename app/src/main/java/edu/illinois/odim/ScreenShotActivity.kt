@@ -12,6 +12,8 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.json.JSONArray
+import kotlin.math.min
+import kotlin.math.pow
 
 class ScreenShotActivity : AppCompatActivity() {
 
@@ -55,7 +57,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 canvas!!.drawCircle(
                     rect.centerX().toFloat(),
                     rect.centerY().toFloat(),
-                    (((rect.height() + rect.width()) * 0.25).toFloat()),
+                    (min(rect.height(), rect.width()) * 0.5).toFloat(), //(((rect.height() + rect.width()) * 0.25).toFloat()),
                     paint
                 )
             }
@@ -63,14 +65,33 @@ class ScreenShotActivity : AppCompatActivity() {
             val paint = Paint()
             paint.color = Color.rgb(255, 165, 0)
             paint.alpha = 100
+            val scrollCoords = screenshot.scrollCoords
             if (rect != null) {
-                canvas!!.drawOval(
-                    (rect.centerX() - 50).toFloat(),
-                    (rect.centerY() - 100).toFloat(),
-                    (rect.centerX() + 50).toFloat(),
-                    (rect.centerY() + 100).toFloat(),
-                    paint
-                )
+                if (scrollCoords != null) {
+                    val deltaXIncr = scrollCoords.first / 4
+                    val deltaYIncr = scrollCoords.second / 4
+                    val centerX = rect.centerX() + 0.5*deltaXIncr
+                    val centerY = rect.centerY() + 0.5*deltaYIncr
+                    val multiplier = 0.8
+                    val radius = 100
+                    for (i in 0..4) {
+                        canvas!!.drawCircle(
+                            (centerX - i*deltaXIncr).toFloat(),
+                            (centerY - i*deltaYIncr).toFloat(),
+                            ((radius * multiplier.pow(i)).toFloat()),
+                            paint
+                        )
+                    }
+                } else {
+                    canvas!!.drawOval(
+                        (rect.centerX() - 50).toFloat(),
+                        (rect.centerY() - 100).toFloat(),
+                        (rect.centerX() + 50).toFloat(),
+                        (rect.centerY() + 100).toFloat(),
+                        paint
+                    )
+                }
+
             }
         } else if (screenshot.actionType == ScreenShot.TYPE_LONG_CLICK) {
             val paint = Paint()
@@ -80,7 +101,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 canvas!!.drawCircle(
                     rect.centerX().toFloat(),
                     rect.centerY().toFloat(),
-                    ((rect.height() + rect.width()) * 0.25).toFloat(),
+                    (min(rect.height(), rect.width()) * 0.5).toFloat(), // ((rect.height() + rect.width()) * 0.25).toFloat(),
                     paint
                 )
             }
@@ -92,7 +113,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 canvas!!.drawCircle(
                     rect.centerX().toFloat(),
                     rect.centerY().toFloat(),
-                    ((rect.height() + rect.width()) * 0.25).toFloat(),
+                    (min(rect.height(), rect.width()) * 0.5).toFloat(), //((rect.height() + rect.width()) * 0.25).toFloat(),
                     paint
                 )
             }
