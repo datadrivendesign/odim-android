@@ -2,33 +2,40 @@ package edu.illinois.odim
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
+import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Base64
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.FrameLayout
 import com.google.gson.Gson
-import kotlinx.coroutines.*
-import okhttp3.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import ru.gildor.coroutines.okhttp.await
-import java.io.*
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -36,6 +43,7 @@ import java.util.logging.Logger
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
 val packageLayer = Layer()
+val redactionMap: HashMap<String, HashMap<String, String>> = HashMap()
 internal var workerId = "test_user"
 internal var projectCode = "test"  // TODO: use this to query cloud bucket and traces
 
@@ -82,8 +90,8 @@ fun setVh(
 
 fun uploadFile(
     packageId: String,
-    trace_number: String,
-    action_number: String,
+    trace_name: String,
+    event_name: String,
     vh_content: String,
     bitmap: Bitmap?
 ) : Boolean {
@@ -96,37 +104,38 @@ fun uploadFile(
     try {
         // Upload VH file
         uploadScope.launch {
-            val gestureMediaType = "application/json; charset=utf-8".toMediaType()
+            val vhMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/view_hierarchies/$action_number")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/view_hierarchies/$event_name")
                 .header("Connection", "close")
-                .post(vh_content.toRequestBody(gestureMediaType))
+                .post(vh_content.toRequestBody(vhMediaType))
                 .build()
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
                 Log.i("api", "success upload gestures")
             } else {
-                Log.i("api", "fail upload gestures")
+                Log.e("api", "fail upload gestures")
                 isSuccessUpload = false
             }
             response.body?.close()
         }
 
         if (!isSuccessUpload) {
-            return isSuccessUpload
+            Log.e("upload", "upload failure in the api")
+            return false
         }
 
         // Write json gestures to upload
         val gson = Gson()
-        var json: String = gson.toJson(MyAccessibilityService.gesturesMap)
+        var json: String = gson.toJson(MyAccessibilityService.gesturesMap!![trace_name])
         json = json.replace("\\\\".toRegex(), "")
         // upload gestures file
         uploadScope.launch {
-            val vhMediaType = "application/json; charset=utf-8".toMediaType()
+            val gestureMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/gestures")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/gestures")
                 .header("Connection", "close")
-                .post(json.toRequestBody(vhMediaType))
+                .post(json.toRequestBody(gestureMediaType))
                 .build()
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
@@ -139,17 +148,18 @@ fun uploadFile(
         }
 
         if (!isSuccessUpload) {
+            Log.e("upload", "upload failure in the api")
             return false
         }
 
-        // upload gestures
+        // upload screenshots
         uploadScope.launch {
             val byteOut = ByteArrayOutputStream()
             bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
             val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
             val screenshotMediaType = "text/plain".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_number/screenshots/$action_number")
+                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/screenshots/$event_name")
                 .addHeader("Content-Transfer-Encoding", "base64")
                 .addHeader("Content-Type", "text/plain")
                 .header("Connection", "close")
@@ -160,11 +170,39 @@ fun uploadFile(
             if (response.isSuccessful) {
                 Log.i("api", "success upload screenshot")
             } else {
-                Log.i("api", "fail upload screenshot")
+                Log.e("api", "fail upload screenshot")
                 isSuccessUpload = false
             }
             response.body?.close()
         }
+
+        if (!isSuccessUpload) {
+            Log.e("upload", "upload failure in the api")
+            return false
+        }
+
+        // upload redactions
+        if (redactionMap.containsKey(trace_name) && redactionMap[trace_name]!!.containsKey(event_name)) {
+            // upload redactions
+            uploadScope.launch {
+                val redactionMediaType = "text/plain".toMediaType()
+                val request = Request.Builder()
+                    .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/redactions/$event_name")
+                    .addHeader("Content-Type", "text/plain")
+                    .post(redactionMap[trace_name]!![event_name]!!.toRequestBody(redactionMediaType))
+                    .build()
+
+                val response: Response = client.newCall(request).await()
+                if (response.isSuccessful) {
+                    Log.i("api", "success upload redactions")
+                } else {
+                    Log.i("api", "fail upload redactions")
+                    isSuccessUpload = false
+                }
+                response.body?.close()
+            }
+        }
+
     } catch (exception: Exception) {
         Log.e("ODIMUpload", "Upload filed", exception)
         return false
@@ -180,33 +218,90 @@ class MyAccessibilityService : AccessibilityService() {
 
     private var currentScreenshot: ScreenShot? = null
 
-    private lateinit var future: ScheduledFuture<*>
-    private val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+    private var windowManager: WindowManager? = null
+
+    private var isScreenEventPaired: Boolean = false
+
+    var currRootWindow: AccessibilityNodeInfo? = null
+    var currVHBoxes: ArrayList<Rect> = ArrayList()
+    var currVHString: String? = null
 
     companion object {
         lateinit var appContext: Context
-
-        var gesturesMap: HashMap<String, String>? = null
+        var gesturesMap: HashMap<String, HashMap<String, String>>? = null
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onServiceConnected() {
         // Create the service
         Log.i("onServiceConnected", "Accessibility Service Connected")
         appContext = applicationContext
         val info = AccessibilityServiceInfo()
-        info.apply {
-            eventTypes =
-                AccessibilityEvent.TYPES_ALL_MASK //or AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
-            feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-            notificationTimeout = 100
-            packageNames = null
-        }
+        info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
+                        AccessibilityEvent.TYPE_VIEW_SCROLLED or
+                        AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
+                        AccessibilityEvent.TYPE_VIEW_SELECTED or
+                        AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+        info.notificationTimeout = 50
+        info.packageNames = null
         serviceInfo = info
+        // initialize map to capture gestures
         gesturesMap = HashMap()
+        // add invisible layout to get touches to screen
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager?
+        val layout = FrameLayout(appContext)
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+            PixelFormat.TRANSLUCENT
+        )
+        params.gravity = Gravity.TOP
+        windowManager!!.addView(layout, params)
+        layout.setOnTouchListener (object : View.OnTouchListener {
+            override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
+                currRootWindow = rootInActiveWindow
+                if (!currVHBoxes.isEmpty()) {
+                    currVHBoxes.clear()
+                }
+                currVHString = null
 
-        // TODO: try to replace
-        // start up background scheduled screenshot take
-        recordScreenPeriodically()
+                if (currRootWindow == null ||
+                    currRootWindow!!.packageName == "edu.illinois.recordingservice" ||
+                    currRootWindow!!.packageName == "edu.illinois.odim" ||
+                    currRootWindow!!.packageName == "com.google.android.apps.nexuslauncher"
+                ) {
+                    return false
+                }
+
+                currVHBoxes = getBoxes(currRootWindow!!)
+                currVHString = parseVHToJson(currRootWindow!!)
+                Log.i("currRootWindow", "update window")
+
+                takeScreenshot(
+                    DEFAULT_DISPLAY,
+                    appContext.mainExecutor,
+                    object : TakeScreenshotCallback {
+                        override fun onSuccess(result: ScreenshotResult) {
+                            isScreenEventPaired = false
+                            currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                            result.hardwareBuffer.close()
+                            Log.i("screenshot", "update screen")
+                        }
+
+                        override fun onFailure(errCode: Int) {
+                            Log.e("ScreenshotFailure:", "Error code: $errCode")
+                        }
+                    }
+                )
+                return false
+            }
+        })
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -226,6 +321,7 @@ class MyAccessibilityService : AccessibilityService() {
         if (event == null || event.packageName == null) {
             return
         }
+
         val packageName = event.packageName.toString()
         if (event.packageName == "edu.illinois.recordingservice" ||
             event.packageName == "edu.illinois.odim" ||
@@ -238,11 +334,21 @@ class MyAccessibilityService : AccessibilityService() {
         if (lastPackageName == null || packageName != lastPackageName) {
             isNewTrace = true
         }
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
-            || (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED)  // TODO: may need to remove this
-            || (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED)
-            || (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
+
+        if (isScreenEventPaired) {  // ignore following non user events
+            return
+        }
+
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
         ) {
+            if (currentBitmap == null) {
+                return
+            }
+
+            isScreenEventPaired = true
             // Parse event description
             val date = Date(System.currentTimeMillis()) //event.eventTime)
             val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
@@ -250,19 +356,15 @@ class MyAccessibilityService : AccessibilityService() {
             val eventTime = formatter.format(date)
             val eventType = eventTypeToString(event.eventType)
             val eventDescription = "$eventTime; $eventType"
-            Log.i("recordedEvent", eventType)
+
 
             // Screenshot
+            var scroll_coords : Pair<Int, Int>? = null
             val actionType: Int = when (event.eventType) {
                 AccessibilityEvent.TYPE_VIEW_CLICKED -> {
                     ScreenShot.TYPE_CLICK
                 }
                 AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                    // TODO: need to find fix for scrolling to only detect user scrolls
-//                    Log.i("event scroll x", event.scrollX.toString())
-//                    Log.i("event scroll x delta", event.scrollDeltaX.toString())
-//                    Log.i("event scroll y", event.scrollY.toString())
-//                    Log.i("event scroll y delta", event.scrollDeltaY.toString())
                     ScreenShot.TYPE_SCROLL
                 }
                 AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
@@ -272,37 +374,46 @@ class MyAccessibilityService : AccessibilityService() {
                     ScreenShot.TYPE_SELECT
                 }
             }
+            if (actionType == ScreenShot.TYPE_SCROLL) {
+                scroll_coords = Pair(event.scrollDeltaX, event.scrollDeltaY)
+            }
 
             // parse view hierarchy
             // current node
             val node = event.source ?: return
             val outbounds = Rect()
             node.getBoundsInScreen(outbounds)
-            val root = rootInActiveWindow
-            val boxes: ArrayList<Rect> = ArrayList<Rect>()
-            if (root != null) {
-                boxes.addAll(getBoxes(root))
+
+            if (currRootWindow == null) {
+                Log.i("window", "refresh window root")
+                currRootWindow = rootInActiveWindow ?: return
             }
-            synchronized(this) {
-                Log.i("currBitmap", currentBitmap?.colorSpace.toString())
-                currentScreenshot = ScreenShot(currentBitmap, outbounds, actionType, boxes)
+            val boxes: ArrayList<Rect> = ArrayList()
+            if (currVHBoxes.isEmpty()) {
+                boxes.addAll(getBoxes(currRootWindow!!))
+            } else {
+                boxes.addAll(currVHBoxes)
             }
+
+
+            // add vh to screenshot
+            currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scroll_coords, boxes)
 
             // all nodes
-            val rootInActiveWindow = rootInActiveWindow
-            var vh = ""
-            if (rootInActiveWindow != null) {
-                vh = parseVHToJson(rootInActiveWindow)
+            var vh = currVHString
+            if (vh == null) {
+                vh = parseVHToJson(currRootWindow!!)
             }
 
+
             // add the event
-            addEvent(node, packageName, isNewTrace, eventDescription, currentScreenshot!!, vh)
+            addEvent(node, packageName, isNewTrace, eventDescription, scroll_coords, currentScreenshot!!, vh)  // TODO: add scrolls to gesture
             lastPackageName = packageName
         }
     }
 
     private fun getBoxes(node: AccessibilityNodeInfo): ArrayList<Rect> {
-        val boxes: ArrayList<Rect> = ArrayList<Rect>()
+        val boxes: ArrayList<Rect> = ArrayList()
         val rect = Rect()
         node.getBoundsInScreen(rect)
         boxes.add(rect)
@@ -313,25 +424,6 @@ class MyAccessibilityService : AccessibilityService() {
             }
         }
         return boxes
-    }
-
-    private fun recordScreenPeriodically() {
-        future = scheduledExecutorService.scheduleAtFixedRate({
-            takeScreenshot(
-                DEFAULT_DISPLAY,
-                scheduledExecutorService,
-                object : TakeScreenshotCallback {
-                    override fun onSuccess(result: ScreenshotResult) {
-                        currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                        result.hardwareBuffer.close()
-                    }
-
-                    override fun onFailure(errCode: Int) {
-                        Log.e("ScreenshotFailure:", "Error code: $errCode")
-                    }
-
-                })
-        }, 0, 400, TimeUnit.MILLISECONDS)
     }
 
     private fun parseVHToJson(node: AccessibilityNodeInfo): String {
@@ -385,7 +477,6 @@ class MyAccessibilityService : AccessibilityService() {
         childrenVH += "]"
         map["children"] = childrenVH
 
-        //map.put("to_string", node.toString());
         val gson = Gson()
         return gson.toJson(map)
     }
@@ -395,6 +486,7 @@ class MyAccessibilityService : AccessibilityService() {
         packageName: String,
         isNewTrace: Boolean,
         eventDescription: String,
+        scroll_coords: Pair<Int, Int>?,
         currentScreenShot: ScreenShot,
         viewHierarchy: String
     ) {
@@ -419,13 +511,13 @@ class MyAccessibilityService : AccessibilityService() {
         val traceList = traceLayer.list
         if (isNewTrace) {
             // this is a new trace
-            traceName = eventDescription.substringBefore(";")//"trace_" + (traceList.size + 1)
+            traceName = eventDescription.substringBefore(";")
             traceList.add(traceName)
             traceLayer.list = traceList
             traceMap[traceName] = Layer()
             traceLayer.map = traceMap
         } else {
-            traceName = traceList.last() //"trace_" + traceList.size
+            traceName = traceList.last()
         }
         notifyTraceAdapter()
 
@@ -445,8 +537,17 @@ class MyAccessibilityService : AccessibilityService() {
         // update gesture map
         val outbounds = Rect()
         node?.getBoundsInScreen(outbounds)
-        val coordinates = "[" + "[" + outbounds.centerX() + "," + outbounds.centerY() + "]" + "]"
-        gesturesMap!![eventName] = coordinates
+        var coordinates = "[[${outbounds.centerX()},${outbounds.centerY()}"
+        if (scroll_coords != null) {
+            coordinates + ",${scroll_coords.first},${scroll_coords.second}"
+        }
+        coordinates = "$coordinates]]"
+        if (gesturesMap!!.containsKey(traceName)) {
+            gesturesMap!![traceName]?.set(eventName, coordinates)
+        } else {
+            gesturesMap!![traceName] = HashMap()
+            gesturesMap!![traceName]?.set(eventName, coordinates)
+        }
 
         // add the screenshot
         val screenshotLayer = eventMap[eventDescription] ?: return
@@ -463,9 +564,4 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
-
-    override fun onUnbind(intent: Intent?): Boolean {
-        future.cancel(true)
-        return super.onUnbind(intent)
-    }
 }

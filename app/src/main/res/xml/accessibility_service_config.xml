@@ -1,11 +1,12 @@
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/accessibility_service_description"
     android:packageNames="com.example.android.apis"
-    android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFlags="flagDefault"
+    android:accessibilityEventTypes="typeViewClicked|typeViewScrolled|typeViewLongClicked|typeViewSelected|typeNotificationStateChanged|typeGestureDetectionStart|typeGestureDetectionEnd"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
     android:notificationTimeout="100"
     android:canRetrieveWindowContent="true"
     android:settingsActivity="com.example.android.accessibility.ServiceSettingsActivity"
-    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFeedbackType="feedbackAllMask"
     android:canPerformGestures="true"
-    android:canTakeScreenshot="true"/>
+    android:canTakeScreenshot="true"
+    />

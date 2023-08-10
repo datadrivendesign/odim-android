@@ -1,7 +1,12 @@
 package edu.illinois.odim
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Point
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -48,7 +53,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         visibility = View.VISIBLE
     }
 
-    fun convertXToImageScale(x: Int) : Int {
+    private fun convertXToImageScale(x: Int) : Int {
         val bitmapWidth = this.drawable.intrinsicWidth  // original image width, height
         val bitmapHeight = this.drawable.intrinsicHeight
         val canvasImageHeight = this.measuredHeight  // canvas height space available
@@ -62,7 +67,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return convertedX.roundToInt()
     }
 
-    fun convertYToImageScale(y: Int) : Int {
+    private fun convertYToImageScale(y: Int) : Int {
         val bitmapHeight = this.drawable.intrinsicHeight
         val canvasImageHeight = this.measuredHeight  // canvas height space available
         val convertedY = (bitmapHeight.toDouble() / canvasImageHeight) * y
@@ -128,9 +133,9 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
-            val newrect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
-            val rectmatch = getMatchingVH(vhRects, newrect)
-            this.canvas?.drawRect(rectmatch, tempPaint)
+            val newRect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
+            val rectMatch = getMatchingVH(vhRects, newRect)
+            this.canvas?.drawRect(rectMatch, tempPaint)
             p1 = null
             p2 = null
         }
@@ -165,7 +170,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         // Base Case
         if (nodeIsMatch(root, newRect)) {
             // matching child is found to the rectangle
-            return Triple(true, false, null)  // return pair of isFound flag, isDeleted flag
+            return Triple(true, false, root)  // return pair of isFound flag, isContentRemoved flag, currentVHTreeRoot in recursive case
         }
         // Recursive Case
         val gson = GsonBuilder().create()
@@ -174,21 +179,23 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
         for (i in childrenArr.indices) {
             // skip children already redacted
-            if (childrenArr[i]["content"] != null && childrenArr[i]["content"] == "redacted") {
+            if (childrenArr[i]["content-desc"] != null && childrenArr[i]["content-desc"] == "description redacted.") {
                 continue
             }
             val isMatch = traverse(childrenArr[i], newRect)  //if true, delete child convert back to string
-            if (isMatch.first) {
-                childrenArr[i] = hashMapOf("content" to "redacted")
+            if (isMatch.first && !isMatch.second) {
+                if ("text_field" in childrenArr[i]) {
+                    childrenArr[i]["text_field"] = "text redacted."
+                }
+                childrenArr[i]["content-desc"] = "description redacted."
+//                childrenArr[i] = hashMapOf("content" to "redacted")
                 root["children"] = gson.toJson(childrenArr)
                 this.canvas?.drawRect(newRect, confirmPaint)
-                return Triple(false, true, root)
-            }
-            // if already deleted just return and move back up
-            if (isMatch.second) {
+                return Triple(true, true, root)
+            } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
                 childrenArr[i] = isMatch.third!!
                 root["children"] = gson.toJson(childrenArr)
-                return Triple(false, true, root)
+                return Triple(true, true, root)
             }
         }
         // something went wrong?
@@ -196,17 +203,9 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     }
 
     private fun nodeIsMatch(node: Map<String, String>?, newRect: Rect): Boolean {
-        var rectStr = node?.get("bounds_in_screen")
-        if (rectStr != null) {  // convert bounds: "Rect(0, 1926 - 1080, 6228)" format to unflatten
-            rectStr = rectStr.substring(5, rectStr.length - 1).trim()
-            rectStr = rectStr.replace(", "," ")  // TODO: optimize
-            rectStr = rectStr.replace(" - ", " ")
-            val currRect = Rect.unflattenFromString(rectStr)
-            if (newRect == currRect){
-                return true
-            }
-        }
-        return false
+        val nodeRectString = node?.get("bounds_in_screen")
+        val newRectString = newRect.toString()
+        return nodeRectString.equals(newRectString)
     }
 
     private fun getArea(rect: Rect): Float {

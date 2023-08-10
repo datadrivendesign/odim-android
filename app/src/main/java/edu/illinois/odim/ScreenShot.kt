@@ -17,12 +17,15 @@ class ScreenShot {
 
     var actionType : Int
 
+    var scrollCoords : Pair<Int, Int>?  // (x scroll delta, y scroll delta)
+
     var vh: ArrayList<Rect>?
 
-    constructor(bitmap: Bitmap?, rect: Rect?, action_type: Int, vh: ArrayList<Rect>?) {
+    constructor(bitmap: Bitmap?, rect: Rect?, action_type: Int, scroll_coords: Pair<Int, Int>?, vh: ArrayList<Rect>?) {
         this.bitmap = bitmap
         this.rect = rect
         this.actionType = action_type
+        this.scrollCoords = scroll_coords
         this.vh = vh
     }
 }

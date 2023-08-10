@@ -22,6 +22,7 @@ class EventActivity : AppCompatActivity() {
     private var chosenPackageName: String? = null
     private var chosenTraceName: String? = null
     private var uploadTraceButton: Button? = null
+    private val screenPreview : ArrayList<ScreenShotPreview> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +35,6 @@ class EventActivity : AppCompatActivity() {
         // use gridview instead of linear
         recyclerView?.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
         // want both screenshot and event information for trace
-        val screenPreview : ArrayList<ScreenShotPreview> = ArrayList()
         val eventsInTrace : ArrayList<String> = getEvents(chosenPackageName, chosenTraceName)
         for (event in eventsInTrace) {
             val screenshot = getScreenshot(chosenPackageName, chosenTraceName, event)
@@ -67,7 +67,7 @@ class EventActivity : AppCompatActivity() {
             builder.setTitle("WARNING")
             builder.setMessage(R.string.event_upload_warning)
             builder.setPositiveButton("UPLOAD") { _, _ ->
-                for ((i, event) in eventsInTrace.withIndex()) {
+                for (event in eventsInTrace) {
                     val vhStringArr = getVh(chosenPackageName, chosenTraceName, event)
                     val uploadSuccess = uploadFile(
                         chosenPackageName!!,
@@ -97,5 +97,21 @@ class EventActivity : AppCompatActivity() {
             builder.show()
 
         }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        screenPreview.clear()
+        val eventsInTrace : ArrayList<String> = getEvents(chosenPackageName, chosenTraceName)
+        for (event in eventsInTrace) {
+            val screenshot = getScreenshot(chosenPackageName, chosenTraceName, event)
+            val eventDelimiter = "; "
+            val eventInfo = event.split(eventDelimiter)
+            val eventTime = eventInfo[0]
+            val eventType = eventInfo[1]
+            val screenshotPreview = ScreenShotPreview(screenshot.bitmap!!, eventType, eventTime)
+            screenPreview.add(screenshotPreview)
+        }
+        notifyEventAdapter()
     }
 }
