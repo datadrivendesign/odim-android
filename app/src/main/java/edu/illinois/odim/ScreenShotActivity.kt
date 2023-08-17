@@ -24,31 +24,16 @@ class ScreenShotActivity : AppCompatActivity() {
     private var canvas: Canvas? = null
     private var originalBitmap: Bitmap? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        this.supportActionBar?.hide()
-        setContentView(R.layout.activity_screenshot)
-        chosenPackageName = intent.extras!!["package_name"].toString()
-        chosenTraceName = intent.extras!!["trace_name"].toString()
-        chosenEventName = intent.extras!!["event_name"].toString()
-        title = "ScreenShot (Click Image for VH)"
-        imageView = findViewById<View>(R.id.screenshot) as ScrubbingView
-        val screenshot: ScreenShot =
-            getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
-
-        val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
-        val jsonString: String = jsonArray[0] as String
-        var vhMap: HashMap<String, String> = HashMap()
-        vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
-
-        imageView!!.vhRects = screenshot.vh
-        val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)  //tempBit
-        canvas = Canvas(myBit)
-        imageView!!.canvas = canvas
-        imageView!!.vhs = vhMap
-        val rect: Rect? = screenshot.rect
-        // TODO: find a way to fix gestures
-//        Log.i("gesture rect:", rect.toString())
+    /**
+     * Draw gestures onto the screen, depending on what type of user interaction
+     * was done. TODO: this should be temporary as we store gesture location and
+     * can render it in the web app instead.
+     * Input takes in screenshot object to get screen action type, interacted vh
+     * element coordinates, and scroll deltas.
+     * A color is drawn on the canvas for the screenshot.
+     */
+    fun drawGestures(screenshot: ScreenShot) {
+        val rect = screenshot.rect
         if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
             val paint = Paint()
             paint.color = Color.rgb(255, 165, 0)
@@ -118,9 +103,14 @@ class ScreenShotActivity : AppCompatActivity() {
                 )
             }
         }
-        this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
+    }
 
-        val boxes: ArrayList<Rect>? = screenshot.vh
+    /**
+     * Draw red bounding boxes where VH elements are, based on screenshot view hierarchy
+     * input takes boxes as an array of rectangles representing locations of VH elements
+     * red box borders are drawn on the canvas.
+     */
+    fun drawVHBoxes(boxes: ArrayList<Rect>?) {
         if (boxes != null) {
             for (i in 0 until boxes.size) {
                 val paint = Paint()
@@ -130,6 +120,50 @@ class ScreenShotActivity : AppCompatActivity() {
                 canvas!!.drawRect(boxes[i], paint)
             }
         }
+    }
+
+    /**
+     * Remove the red bounding boxes when uploading to AWS. We simply erase the
+     * areas drawn by drawing over them with the original bitmap (copied before
+     * red boxes were drawn).
+     */
+    fun removeVHBoxes(boxes: ArrayList<Rect>?, originalBitmap: Bitmap?) {
+        if (boxes != null) {
+            for (i in 0 until boxes.size) {
+                canvas!!.drawBitmap(originalBitmap!!, boxes[i], boxes[i], null)
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        this.supportActionBar?.hide()
+        setContentView(R.layout.activity_screenshot)
+        chosenPackageName = intent.extras!!["package_name"].toString()
+        chosenTraceName = intent.extras!!["trace_name"].toString()
+        chosenEventName = intent.extras!!["event_name"].toString()
+        title = "ScreenShot (Click Image for VH)"
+        imageView = findViewById<View>(R.id.screenshot) as ScrubbingView
+        val screenshot: ScreenShot =
+            getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
+
+        val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
+        val jsonString: String = jsonArray[0] as String
+        var vhMap: HashMap<String, String> = HashMap()
+        vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
+
+        imageView!!.vhRects = screenshot.vh
+        val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)  //tempBit
+        canvas = Canvas(myBit)
+        imageView!!.canvas = canvas
+        imageView!!.vhs = vhMap
+
+        drawGestures(screenshot)
+        // Save the original bitmap with gesture so we can remove mistake redactions
+        this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
+
+        drawVHBoxes(screenshot.vh)
+
         imageView!!.baseBitMap = myBit.copy(Bitmap.Config.ARGB_8888, true)
         // set the full drawings as primary bitmap for scrubbingView
         imageView!!.setImageBitmap(myBit)
@@ -138,18 +172,12 @@ class ScreenShotActivity : AppCompatActivity() {
         val gson = GsonBuilder().create()
         saveFAB.setOnClickListener { fabView ->
             // remove red paint strokes from bitmap
-            if (boxes != null) {
-                for (i in 0 until boxes.size) {
-                    canvas!!.drawBitmap(this.originalBitmap!!, boxes[i], boxes[i], null)
-                }
-            }
+            removeVHBoxes(screenshot.vh, this.originalBitmap)
             // loop through imageView.rectangles
             for (drawnRect: Rect in imageView!!.rectangles) {
                 // traverse each rectangle
                 imageView!!.traverse(imageView!!.vhs, drawnRect)
                 setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
-//                Log.i("rects toString", drawnRect.toString())
-//                Log.i("rects flatten", drawnRect.flattenToString())
                 if (redactionMap.containsKey(chosenTraceName)) {
                     if (redactionMap[chosenTraceName]!!.containsKey(chosenEventName)) {
                         redactionMap[chosenTraceName]!![chosenEventName!!] += "\n${drawnRect.flattenToString().replace(" ", ",")}" //";${drawnRect.toShortString()}"
@@ -187,8 +215,8 @@ class ScreenShotActivity : AppCompatActivity() {
                 successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
                     .setTextColor(ContextCompat.getColor(this, R.color.white))
                 successSnackbar.show()
-                notifyEventAdapter()
             }
+            notifyEventAdapter()
         }
 
         // Delete Listener

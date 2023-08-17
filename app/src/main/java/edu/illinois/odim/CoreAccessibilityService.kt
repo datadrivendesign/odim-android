@@ -98,7 +98,6 @@ fun uploadFile(
     // try to upload VH content to AWS
     val uploadScope = CoroutineScope(Dispatchers.IO)
     val client = OkHttpClient()
-    val bucket = "mobileodimbucket155740-dev"  // TODO: will retrieve from project api
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     var isSuccessUpload = true
     try {
@@ -106,7 +105,7 @@ fun uploadFile(
         uploadScope.launch {
             val vhMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/view_hierarchies/$event_name")
+                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/view_hierarchies/$event_name")
                 .header("Connection", "close")
                 .post(vh_content.toRequestBody(vhMediaType))
                 .build()
@@ -133,7 +132,7 @@ fun uploadFile(
         uploadScope.launch {
             val gestureMediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/gestures")
+                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/gestures")
                 .header("Connection", "close")
                 .post(json.toRequestBody(gestureMediaType))
                 .build()
@@ -159,7 +158,7 @@ fun uploadFile(
             val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
             val screenshotMediaType = "text/plain".toMediaType()
             val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/screenshots/$event_name")
+                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/screenshots/$event_name")
                 .addHeader("Content-Transfer-Encoding", "base64")
                 .addHeader("Content-Type", "text/plain")
                 .header("Connection", "close")
@@ -188,7 +187,7 @@ fun uploadFile(
                 val redactionMediaType = "text/plain".toMediaType()
                 val output = "startX,startY,endX,endY\n" + redactionMap[trace_name]!![event_name]!!
                 val request = Request.Builder()
-                    .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/redactions/$event_name")
+                    .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/redactions/$event_name")
                     .addHeader("Content-Type", "text/plain")
                     .header("Connection", "close")
                     .post(output.toRequestBody(redactionMediaType))
@@ -408,7 +407,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
 
             // add the event
-            addEvent(node, packageName, isNewTrace, eventDescription, scrollCoords, currentScreenshot!!, vh) 
+            addEvent(node, packageName, isNewTrace, eventDescription, scrollCoords, currentScreenshot!!, vh)
             lastPackageName = packageName
         }
     }
