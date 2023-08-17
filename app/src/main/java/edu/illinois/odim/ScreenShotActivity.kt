@@ -148,16 +148,18 @@ class ScreenShotActivity : AppCompatActivity() {
                 // traverse each rectangle
                 imageView!!.traverse(imageView!!.vhs, drawnRect)
                 setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
+//                Log.i("rects toString", drawnRect.toString())
+//                Log.i("rects flatten", drawnRect.flattenToString())
                 if (redactionMap.containsKey(chosenTraceName)) {
                     if (redactionMap[chosenTraceName]!!.containsKey(chosenEventName)) {
-                        redactionMap[chosenTraceName]!![chosenEventName!!] += ";${drawnRect.toShortString()}"
+                        redactionMap[chosenTraceName]!![chosenEventName!!] += "\n${drawnRect.flattenToString().replace(" ", ",")}" //";${drawnRect.toShortString()}"
                     } else {
-                        redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.toShortString()
+                        redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.flattenToString().replace(" ", ",")
                     }
 
                 } else {
                     redactionMap[chosenTraceName!!] = HashMap()
-                    redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.toShortString()
+                    redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.flattenToString().replace(" ", ",")
                 }
 
             }
@@ -185,6 +187,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
                     .setTextColor(ContextCompat.getColor(this, R.color.white))
                 successSnackbar.show()
+                notifyEventAdapter()
             }
         }
 

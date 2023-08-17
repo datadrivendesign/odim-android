@@ -186,10 +186,12 @@ fun uploadFile(
             // upload redactions
             uploadScope.launch {
                 val redactionMediaType = "text/plain".toMediaType()
+                val output = "startX,startY,endX,endY\n" + redactionMap[trace_name]!![event_name]!!
                 val request = Request.Builder()
                     .url("http://10.0.2.2:3000/aws/upload/$bucket/$workerId/$packageId/$trace_name/redactions/$event_name")
                     .addHeader("Content-Type", "text/plain")
-                    .post(redactionMap[trace_name]!![event_name]!!.toRequestBody(redactionMediaType))
+                    .header("Connection", "close")
+                    .post(output.toRequestBody(redactionMediaType))
                     .build()
 
                 val response: Response = client.newCall(request).await()
@@ -359,7 +361,6 @@ class MyAccessibilityService : AccessibilityService() {
 
 
             // Screenshot
-            var scroll_coords : Pair<Int, Int>? = null
             val actionType: Int = when (event.eventType) {
                 AccessibilityEvent.TYPE_VIEW_CLICKED -> {
                     ScreenShot.TYPE_CLICK
@@ -374,8 +375,9 @@ class MyAccessibilityService : AccessibilityService() {
                     ScreenShot.TYPE_SELECT
                 }
             }
+            var scrollCoords : Pair<Int, Int>? = null
             if (actionType == ScreenShot.TYPE_SCROLL) {
-                scroll_coords = Pair(event.scrollDeltaX, event.scrollDeltaY)
+                scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
             }
 
             // parse view hierarchy
@@ -397,7 +399,7 @@ class MyAccessibilityService : AccessibilityService() {
 
 
             // add vh to screenshot
-            currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scroll_coords, boxes)
+            currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scrollCoords, boxes)
 
             // all nodes
             var vh = currVHString
@@ -405,9 +407,8 @@ class MyAccessibilityService : AccessibilityService() {
                 vh = parseVHToJson(currRootWindow!!)
             }
 
-
             // add the event
-            addEvent(node, packageName, isNewTrace, eventDescription, scroll_coords, currentScreenshot!!, vh)  // TODO: add scrolls to gesture
+            addEvent(node, packageName, isNewTrace, eventDescription, scrollCoords, currentScreenshot!!, vh) 
             lastPackageName = packageName
         }
     }
@@ -486,7 +487,7 @@ class MyAccessibilityService : AccessibilityService() {
         packageName: String,
         isNewTrace: Boolean,
         eventDescription: String,
-        scroll_coords: Pair<Int, Int>?,
+        scrollCoords: Pair<Int, Int>?,
         currentScreenShot: ScreenShot,
         viewHierarchy: String
     ) {
@@ -522,10 +523,8 @@ class MyAccessibilityService : AccessibilityService() {
         notifyTraceAdapter()
 
         // add the event
-        val eventName: String
         val eventLayer = traceMap[traceName] ?: return
         val eventList = eventLayer.list
-        eventName = java.lang.String.valueOf(eventList.size + 1)
         eventList.add(eventDescription)
         eventLayer.list = eventList
         val eventMap = eventLayer.map
@@ -535,13 +534,19 @@ class MyAccessibilityService : AccessibilityService() {
         notifyEventAdapter()
 
         // update gesture map
+        val eventName = eventDescription.substringBefore(";")
         val outbounds = Rect()
         node?.getBoundsInScreen(outbounds)
         var coordinates = "[[${outbounds.centerX()},${outbounds.centerY()}"
-        if (scroll_coords != null) {
-            coordinates + ",${scroll_coords.first},${scroll_coords.second}"
+
+        Log.i("event", eventName)
+        Log.i("isScroll", scrollCoords.toString())
+        if (scrollCoords != null) {
+            coordinates += ",${scrollCoords.first},${scrollCoords.second}"
         }
         coordinates = "$coordinates]]"
+        Log.i("coordinates", coordinates)
+
         if (gesturesMap!!.containsKey(traceName)) {
             gesturesMap!![traceName]?.set(eventName, coordinates)
         } else {
