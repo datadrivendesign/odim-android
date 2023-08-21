@@ -185,7 +185,7 @@ fun uploadFile(
             // upload redactions
             uploadScope.launch {
                 val redactionMediaType = "text/plain".toMediaType()
-                val output = "startX,startY,endX,endY\n" + redactionMap[trace_name]!![event_name]!!
+                val output = "startX,startY,endX,endY,label\n" + redactionMap[trace_name]!![event_name]!!
                 val request = Request.Builder()
                     .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/redactions/$event_name")
                     .addHeader("Content-Type", "text/plain")

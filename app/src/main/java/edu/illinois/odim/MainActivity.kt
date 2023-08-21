@@ -33,15 +33,15 @@ class MainActivity : AppCompatActivity() {
         workerIdInput = viewForm.findViewById(R.id.dialog_worker_id_input)
         projectCodeInput = viewForm.findViewById(R.id.dialog_project_code_input)
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-        builder.setTitle("Worker Credentials")
-        builder.setCancelable(false)
-        builder.setView(viewForm)
-        builder.setPositiveButton("DONE") { _, _ ->
-            workerId = workerIdInput?.text.toString()
-            projectCode = projectCodeInput?.text.toString()
-            // TODO: check if trace and project exist
-            // TODO: get the cloud storage location
-        }
+            .setTitle("Worker Credentials")
+            .setCancelable(false)
+            .setView(viewForm)
+            .setPositiveButton("DONE") { _, _ ->
+                workerId = workerIdInput?.text.toString()
+                projectCode = projectCodeInput?.text.toString()
+                // TODO: check if trace and project exist
+                // TODO: get the cloud storage location
+            }
         val alertDialog = builder.show()
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
         workerIdInput?.addTextChangedListener(object : TextWatcher {

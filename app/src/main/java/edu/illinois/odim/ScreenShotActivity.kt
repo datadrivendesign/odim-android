@@ -135,6 +135,12 @@ class ScreenShotActivity : AppCompatActivity() {
         }
     }
 
+    fun redactionToString(redaction: Redaction): String {
+        val redactRect = redaction.rect
+        val redactLabel = redaction.label
+        return "${redactRect!!.left},${redactRect.top},${redactRect.right},${redactRect.bottom},${redactLabel}"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide()
@@ -174,27 +180,27 @@ class ScreenShotActivity : AppCompatActivity() {
             // remove red paint strokes from bitmap
             removeVHBoxes(screenshot.vh, this.originalBitmap)
             // loop through imageView.rectangles
-            for (drawnRect: Rect in imageView!!.rectangles) {
+            for (drawnRedaction: Redaction in imageView!!.currentRedacts) {
                 // traverse each rectangle
-                imageView!!.traverse(imageView!!.vhs, drawnRect)
+                imageView!!.traverse(imageView!!.vhs, drawnRedaction.rect!!)
                 setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
                 if (redactionMap.containsKey(chosenTraceName)) {
                     if (redactionMap[chosenTraceName]!!.containsKey(chosenEventName)) {
-                        redactionMap[chosenTraceName]!![chosenEventName!!] += "\n${drawnRect.flattenToString().replace(" ", ",")}" //";${drawnRect.toShortString()}"
+                        redactionMap[chosenTraceName]!![chosenEventName!!] += "\n${redactionToString(drawnRedaction)}"
                     } else {
-                        redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.flattenToString().replace(" ", ",")
+                        redactionMap[chosenTraceName]!![chosenEventName!!] = redactionToString(drawnRedaction)
                     }
 
                 } else {
                     redactionMap[chosenTraceName!!] = HashMap()
-                    redactionMap[chosenTraceName]!![chosenEventName!!] = drawnRect.flattenToString().replace(" ", ",")
+                    redactionMap[chosenTraceName]!![chosenEventName!!] = redactionToString(drawnRedaction)
                 }
 
             }
             // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
             screenshot.bitmap = myBit
             // clear imageView.rectangles
-            imageView!!.rectangles.clear()
+            imageView!!.currentRedacts.clear()
 
             val uploadSuccess = uploadFile(
                 chosenPackageName!!,

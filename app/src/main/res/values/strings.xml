@@ -15,4 +15,5 @@
     <string name="appNameStringSize">20sp</string>
     <string name="MainTextHeader">Apps</string>
     <string name="traceNumScreens">%1$d Screens</string>
+    <string name="redact_input_hint">Give a label for the type of content redacted</string>
 </resources>

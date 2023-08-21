@@ -1,5 +1,6 @@
 package edu.illinois.odim
 
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -7,9 +8,13 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.widget.EditText
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import kotlin.math.max
@@ -23,7 +28,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     private val tempPaint = Paint()
     private val confirmPaint = Paint()
     var canvas: Canvas? = null
-    var rectangles = mutableListOf<Rect>()
+    var currentRedacts = mutableListOf<Redaction>()
     var vhRects: ArrayList<Rect>? = null
     var vhs: HashMap<String, String> = HashMap()
     var drawMode: Boolean = true
@@ -94,10 +99,11 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 
                 // Delete rectangle if in Delete Mode
                 if (!drawMode) {
-                    for (rect in rectangles) {
-                        if (rect.contains(convertedX, convertedY)) {
-                            rectangles.remove(rect)
-                            this.canvas?.drawBitmap(baseBitMap!!, rect, rect, null)
+                    for (redaction in currentRedacts) {
+                        val redactRect = redaction.rect
+                        if (redactRect!!.contains(convertedX, convertedY)) {
+                            currentRedacts.remove(redaction)
+                            this.canvas?.drawBitmap(baseBitMap!!, redactRect, redactRect, null)
                             postInvalidate()
                             return true
                         }
@@ -134,8 +140,30 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
             val newRect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
+            // create a popup to get redaction label
+            val inputForm = inflate(context, R.layout.layout_redaction_label, null)
+            val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
             val rectMatch = getMatchingVH(vhRects, newRect)
             this.canvas?.drawRect(rectMatch, tempPaint)
+            val labelDialog: AlertDialog = AlertDialog.Builder(context)
+                .setTitle("Set Label")
+                .setView(inputForm)
+                .setPositiveButton("DONE") { _, _ ->
+                    val label = redactInputLabel.text.toString()
+                    val redaction = Redaction(rectMatch, label)
+                    this.currentRedacts.add(redaction)
+                }
+                .show()
+            labelDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+            redactInputLabel?.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                override fun afterTextChanged(str: Editable?) {
+                    labelDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
+                }
+            })
+            labelDialog.setCancelable(false)
+            labelDialog.setCanceledOnTouchOutside(false)
             p1 = null
             p2 = null
         }
@@ -154,7 +182,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 }
             }
         }
-        rectangles.add(matched)
+//        val redact = Redaction(matched, label)
+//        currentRedacts.add(redact)
         return matched
     }
 
@@ -188,7 +217,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                     childrenArr[i]["text_field"] = "text redacted."
                 }
                 childrenArr[i]["content-desc"] = "description redacted."
-//                childrenArr[i] = hashMapOf("content" to "redacted")
                 root["children"] = gson.toJson(childrenArr)
                 this.canvas?.drawRect(newRect, confirmPaint)
                 return Triple(true, true, root)
