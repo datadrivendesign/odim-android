@@ -88,6 +88,26 @@ fun setVh(
         .map[event_name]!!.list[0] = json_string!!
 }
 
+fun editTraceName(packageName: String, traceName: String, newTraceName: String) {
+    // check if current trace and new trace name are same
+    if (traceName == newTraceName) {
+        return
+    }
+    // change gesturesMap, redactionMap
+    if (MyAccessibilityService.gesturesMap!!.containsKey(traceName)) {
+        MyAccessibilityService.gesturesMap!![newTraceName] = MyAccessibilityService.gesturesMap!!.remove(traceName)!!
+    }
+    if (redactionMap.containsKey(traceName)) {
+        redactionMap[newTraceName] = redactionMap.remove(traceName)!!
+    }
+    // change list in package layer and move map
+    val traceIdx = packageLayer.map[packageName]!!.list.indexOf(traceName)
+    if (traceIdx > -1) {
+        packageLayer.map[packageName]!!.list[traceIdx] = newTraceName
+        packageLayer.map[packageName]!!.map[newTraceName] = packageLayer.map[packageName]!!.map.remove(traceName)!!
+    }
+}
+
 fun uploadFile(
     packageId: String,
     trace_name: String,
@@ -267,7 +287,7 @@ class MyAccessibilityService : AccessibilityService() {
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
                 currRootWindow = rootInActiveWindow
-                if (!currVHBoxes.isEmpty()) {
+                if (currVHBoxes.isNotEmpty()) {
                     currVHBoxes.clear()
                 }
                 currVHString = null

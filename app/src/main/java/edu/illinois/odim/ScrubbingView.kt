@@ -1,5 +1,6 @@
 package edu.illinois.odim
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Bitmap
@@ -84,6 +85,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     }
 
     // Get coordinates on user touch
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         when (event!!.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -140,11 +142,19 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         super.onDraw(canvas)
         if (p1 != null && p2 != null) {
             val newRect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
-            // create a popup to get redaction label
+            val rectMatch = getMatchingVH(vhRects, newRect)
+            if (rectMatch.top == 0
+                && rectMatch.bottom == 0
+                && rectMatch.left == 0
+                && rectMatch.right == 0) {
+                return
+            }
+            // start creating the label form
             val inputForm = inflate(context, R.layout.layout_redaction_label, null)
             val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
-            val rectMatch = getMatchingVH(vhRects, newRect)
+            // draw the rectangle
             this.canvas?.drawRect(rectMatch, tempPaint)
+            // create the popup
             val labelDialog: AlertDialog = AlertDialog.Builder(context)
                 .setTitle("Set Label")
                 .setView(inputForm)
