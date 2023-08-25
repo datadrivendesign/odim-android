@@ -21,6 +21,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
+import android.widget.Toast
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -106,6 +107,8 @@ fun editTraceName(packageName: String, traceName: String, newTraceName: String) 
         packageLayer.map[packageName]!!.list[traceIdx] = newTraceName
         packageLayer.map[packageName]!!.map[newTraceName] = packageLayer.map[packageName]!!.map.remove(traceName)!!
     }
+    // add toast saying trace has been updated
+    Toast.makeText(MyAccessibilityService.appContext, "Trace name is updated!", Toast.LENGTH_SHORT).show()
 }
 
 fun uploadFile(
@@ -117,8 +120,8 @@ fun uploadFile(
 ) : Boolean {
     // try to upload VH content to AWS
     val uploadScope = CoroutineScope(Dispatchers.IO)
-    val client = OkHttpClient()
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
+    val client = OkHttpClient()
     var isSuccessUpload = true
     try {
         // Upload VH file
@@ -129,21 +132,21 @@ fun uploadFile(
                 .header("Connection", "close")
                 .post(vh_content.toRequestBody(vhMediaType))
                 .build()
+            // check if api request was successful and log result
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
-                Log.i("api", "success upload gestures")
+                Log.i("api", "success upload VH")
             } else {
-                Log.e("api", "fail upload gestures")
+                Log.e("api", "fail upload VH")
                 isSuccessUpload = false
             }
             response.body?.close()
         }
-
+        // exit function if upload was not successful and log
         if (!isSuccessUpload) {
-            Log.e("upload", "upload failure in the api")
+            Log.e("upload", "upload VH failure in the api")
             return false
         }
-
         // Write json gestures to upload
         val gson = Gson()
         var json: String = gson.toJson(MyAccessibilityService.gesturesMap!![trace_name])
@@ -156,21 +159,21 @@ fun uploadFile(
                 .header("Connection", "close")
                 .post(json.toRequestBody(gestureMediaType))
                 .build()
+            // check if api request was successful and log result
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
-                Log.i("api", "success upload view hierarchies")
+                Log.i("api", "success upload gestures")
             } else {
-                Log.i("api", "fail upload view hierarchies")
+                Log.i("api", "fail upload gestures")
                 isSuccessUpload = false
             }
             response.body?.close()
         }
-
+        // exit function if upload was not successful and log
         if (!isSuccessUpload) {
             Log.e("upload", "upload failure in the api")
             return false
         }
-
         // upload screenshots
         uploadScope.launch {
             val byteOut = ByteArrayOutputStream()
@@ -184,7 +187,7 @@ fun uploadFile(
                 .header("Connection", "close")
                 .post(bitmapBase64.toRequestBody(screenshotMediaType))
                 .build()
-
+            // check if api request was successful and log result
             val response: Response = client.newCall(request).await()
             if (response.isSuccessful) {
                 Log.i("api", "success upload screenshot")
@@ -194,12 +197,11 @@ fun uploadFile(
             }
             response.body?.close()
         }
-
+        // exit function if upload was not successful and log
         if (!isSuccessUpload) {
             Log.e("upload", "upload failure in the api")
             return false
         }
-
         // upload redactions
         if (redactionMap.containsKey(trace_name) && redactionMap[trace_name]!!.containsKey(event_name)) {
             // upload redactions
@@ -212,7 +214,7 @@ fun uploadFile(
                     .header("Connection", "close")
                     .post(output.toRequestBody(redactionMediaType))
                     .build()
-
+                // check if api request was successful and log result
                 val response: Response = client.newCall(request).await()
                 if (response.isSuccessful) {
                     Log.i("api", "success upload redactions")
@@ -232,17 +234,11 @@ fun uploadFile(
 }
 
 class MyAccessibilityService : AccessibilityService() {
-
     private var lastPackageName: String? = null
-
     private var currentBitmap: Bitmap? = null
-
     private var currentScreenshot: ScreenShot? = null
-
-    private var windowManager: WindowManager? = null
-
     private var isScreenEventPaired: Boolean = false
-
+    private var windowManager: WindowManager? = null
     var currRootWindow: AccessibilityNodeInfo? = null
     var currVHBoxes: ArrayList<Rect> = ArrayList()
     var currVHString: String? = null
@@ -293,11 +289,11 @@ class MyAccessibilityService : AccessibilityService() {
         )
         params.gravity = Gravity.TOP
         windowManager!!.addView(layout, params)
+        // record screenshot and view hierarchy when screen touch is detected
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
                 // do not update screenshot or vh immediately after home button pressed
                 currRootWindow = rootInActiveWindow
-
                 // validate if home button pressed, root window different from last touch
                 if (currTouchPackage != null &&
                     lastPackageName == currTouchPackage &&
@@ -305,13 +301,13 @@ class MyAccessibilityService : AccessibilityService() {
                             (currRootWindow!!.packageName == "com.google.android.apps.nexuslauncher" &&
                             currRootWindow!!.packageName != currTouchPackage))
                 ) {
-                    // record event type
+                    // record event type as home button press
                     val eventTime = currTouchTime
                     val eventType = "TYPE_HOME_PRESSED"
                     val eventDescription = "$eventTime; $eventType"
                     // record screen type
                     val actionType = ScreenShot.TYPE_HOME
-                    // record rect
+                    // create gesture for home button press
                     val windowMetrics = windowManager!!.currentWindowMetrics
                     val gestureX = windowMetrics.bounds.width() / 2 // assume home button is at bottom middle
                     val gestureY = windowMetrics.bounds.height()
@@ -329,7 +325,6 @@ class MyAccessibilityService : AccessibilityService() {
                     lastPackageName = currRootWindow!!.packageName.toString()
                     return false
                 }
-
                 // reset vh and boxes to record next screen touch
                 if (currVHBoxes.isNotEmpty()) {
                     currVHBoxes.clear()
@@ -342,11 +337,11 @@ class MyAccessibilityService : AccessibilityService() {
                 ) {
                     return false
                 }
-
-                currVHBoxes = getBoxes(currRootWindow!!)
+                // get view hierarchy at this time
                 currVHString = parseVHToJson(currRootWindow!!)
+                currVHBoxes = ArrayList(getBoxes(currRootWindow!!))
                 Log.i("currRootWindow", "update window")
-
+                // take screenshot and record current bitmap globally
                 takeScreenshot(
                     DEFAULT_DISPLAY,
                     appContext.mainExecutor,
@@ -371,29 +366,25 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val connMgr: ConnectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
         // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
         // specifically answered by @AliSh
         // check if connected to wifi or mobile
+        val connMgr: ConnectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkCapabilities = connMgr.activeNetwork ?: return
         val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
         val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-
         if (!isWifiConn) {
             return
         }
-
+        // do not record unnecessary app packages
+        // however, record the last screeen of a trace (app package -> nexuslauncher)
         if (event == null || event.packageName == null) {
             return
         }
-
         val packageName = event.packageName.toString()
-        // do not record unnecessary app packages
-        // however, record the last screeen of a trace (app package -> nexuslauncher)
         if (event.packageName == "edu.illinois.odim" ||
-            (event.packageName == "com.google.android.apps.nexuslauncher") //&& lastPackageName == event.packageName)
+            (event.packageName == "com.google.android.apps.nexuslauncher")
         ) {
             lastPackageName = event.packageName.toString()
             return
@@ -406,7 +397,7 @@ class MyAccessibilityService : AccessibilityService() {
         if (isScreenEventPaired) {  // ignore following non user events
             return
         }
-
+        // construct interaction event
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
@@ -418,10 +409,7 @@ class MyAccessibilityService : AccessibilityService() {
             // Parse event description
             val eventTime = getInteractionTime()
             val eventType = eventTypeToString(event.eventType)
-
             val eventDescription = "$eventTime; $eventType"
-
-
             // Screenshot
             val actionType: Int = when (event.eventType) {
                 AccessibilityEvent.TYPE_VIEW_CLICKED -> {
@@ -440,19 +428,15 @@ class MyAccessibilityService : AccessibilityService() {
                     ScreenShot.TYPE_SELECT
                 }
             }
-
-
+            // check if event scroll, add delta coordinates
             var scrollCoords : Pair<Int, Int>? = null
             if (actionType == ScreenShot.TYPE_SCROLL) {
                 scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
             }
-
-            // parse view hierarchy
-            // current node
+            // get vh element interacted with and parse view hierarchy of current screen if null
             val node = event.source ?: return
             val outbounds = Rect()
             node.getBoundsInScreen(outbounds)
-
             if (currRootWindow == null) {
                 Log.i("window", "refresh window root")
                 currRootWindow = rootInActiveWindow ?: return
@@ -463,16 +447,13 @@ class MyAccessibilityService : AccessibilityService() {
             } else {
                 boxes.addAll(currVHBoxes)
             }
-
-            // add vh to screenshot
+            // construct screenshot
             currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scrollCoords, boxes)
-
-            // all nodes
+            // create json string of VH
             var vh = currVHString
             if (vh == null) {
                 vh = parseVHToJson(currRootWindow!!)
             }
-
             // add the event
             addEvent(node, packageName, isNewTrace, eventDescription, scrollCoords, currentScreenshot!!, vh)
             lastPackageName = packageName
@@ -543,7 +524,7 @@ class MyAccessibilityService : AccessibilityService() {
         }
         childrenVH += "]"
         map["children"] = childrenVH
-
+        // convert to json string
         val gson = Gson()
         return gson.toJson(map)
     }
@@ -578,7 +559,7 @@ class MyAccessibilityService : AccessibilityService() {
         viewHierarchy: String
     ) {
 
-        // add the package
+        // add the package and notify adapter the list has made changes
         val packageMap = packageLayer.map
         if (!packageMap.containsKey(packageName)) {
             // this is a new package
@@ -590,8 +571,7 @@ class MyAccessibilityService : AccessibilityService() {
             packageLayer.map = packageMap
         }
         notifyPackageAdapter()
-
-        // add the trace
+        // add the trace and notify adapter the list has made changes
         val traceName: String
         val traceLayer = packageMap[packageName] ?: return
         val traceMap = traceLayer.map
@@ -607,8 +587,7 @@ class MyAccessibilityService : AccessibilityService() {
             traceName = traceList.last()
         }
         notifyTraceAdapter()
-
-        // add the event
+        // add the event and notify adapter the list has made changes
         val eventLayer = traceMap[traceName] ?: return
         val eventList = eventLayer.list
         eventList.add(eventDescription)
@@ -616,10 +595,8 @@ class MyAccessibilityService : AccessibilityService() {
         val eventMap = eventLayer.map
         eventMap[eventDescription] = Layer()
         eventLayer.map = eventMap
-
         notifyEventAdapter()
-
-        // update gesture map
+        // update gesture map with new gesture
         val coordinates = getGestureCoordinates(node, scrollCoords)
         val eventName = eventDescription.substringBefore(";")
         if (gesturesMap!!.containsKey(traceName)) {
@@ -628,15 +605,13 @@ class MyAccessibilityService : AccessibilityService() {
             gesturesMap!![traceName] = HashMap()
             gesturesMap!![traceName]?.set(eventName, coordinates)
         }
-
-        // add the screenshot
+        // add a new screenshot to list of traces
         val screenshotLayer = eventMap[eventDescription] ?: return
         screenshotLayer.screenShot = currentScreenShot
         val screenshotMap = screenshotLayer.map
         screenshotMap[eventDescription] = Layer()
         screenshotLayer.map = screenshotMap
-
-        // add the view hierarchy
+        // add the view hierarchy to list of traces
         val viewHierarchyLayer = screenshotMap[eventDescription] ?: return
         val viewHierarchyList = ArrayList<String>()
         viewHierarchyList.add(viewHierarchy)
