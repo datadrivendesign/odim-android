@@ -9,4 +9,4 @@
     android:accessibilityFeedbackType="feedbackAllMask"
     android:canPerformGestures="true"
     android:canTakeScreenshot="true"
-    />
+/>

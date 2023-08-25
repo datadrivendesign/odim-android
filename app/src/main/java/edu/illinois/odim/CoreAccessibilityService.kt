@@ -246,10 +246,19 @@ class MyAccessibilityService : AccessibilityService() {
     var currRootWindow: AccessibilityNodeInfo? = null
     var currVHBoxes: ArrayList<Rect> = ArrayList()
     var currVHString: String? = null
+    var currTouchPackage: String? = null
+    var currTouchTime: String? = null
 
     companion object {
         lateinit var appContext: Context
         var gesturesMap: HashMap<String, HashMap<String, String>>? = null
+    }
+
+    fun getInteractionTime(): String {
+        val date = Date(System.currentTimeMillis()) //event.eventTime)
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        return formatter.format(date)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -286,14 +295,48 @@ class MyAccessibilityService : AccessibilityService() {
         windowManager!!.addView(layout, params)
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
+                // do not update screenshot or vh immediately after home button pressed
                 currRootWindow = rootInActiveWindow
+
+                // validate if home button pressed, root window different from last touch
+                if (currTouchPackage != null &&
+                    lastPackageName == currTouchPackage &&
+                    (currRootWindow == null ||
+                            (currRootWindow!!.packageName == "com.google.android.apps.nexuslauncher" &&
+                            currRootWindow!!.packageName != currTouchPackage))
+                ) {
+                    // record event type
+                    val eventTime = currTouchTime
+                    val eventType = "TYPE_HOME_PRESSED"
+                    val eventDescription = "$eventTime; $eventType"
+                    // record screen type
+                    val actionType = ScreenShot.TYPE_HOME
+                    // record rect
+                    val windowMetrics = windowManager!!.currentWindowMetrics
+                    val gestureX = windowMetrics.bounds.width() / 2 // assume home button is at bottom middle
+                    val gestureY = windowMetrics.bounds.height()
+                    val outbounds = Rect(gestureX-20, gestureY-50, gestureX+20, gestureY-10)  // give no source node if home button pressed
+                    val vhString = currVHString
+                    val vhBoxes = ArrayList(currVHBoxes)
+                    // record vh and boxes
+                    currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, null, vhBoxes)
+                    // add home button press to event
+                    addEvent(null, currTouchPackage!!, false, eventDescription, null, currentScreenshot!!, vhString!!)
+                    // reset everything
+                    currVHString = null
+                    currVHBoxes.clear()
+                    currTouchPackage = null //currRootWindow!!.packageName.toString()
+                    lastPackageName = currRootWindow!!.packageName.toString()
+                    return false
+                }
+
+                // reset vh and boxes to record next screen touch
                 if (currVHBoxes.isNotEmpty()) {
                     currVHBoxes.clear()
                 }
                 currVHString = null
 
                 if (currRootWindow == null ||
-                    currRootWindow!!.packageName == "edu.illinois.recordingservice" ||
                     currRootWindow!!.packageName == "edu.illinois.odim" ||
                     currRootWindow!!.packageName == "com.google.android.apps.nexuslauncher"
                 ) {
@@ -313,6 +356,8 @@ class MyAccessibilityService : AccessibilityService() {
                             currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
                             result.hardwareBuffer.close()
                             Log.i("screenshot", "update screen")
+                            currTouchPackage = currRootWindow!!.packageName.toString()
+                            currTouchTime = getInteractionTime()
                         }
 
                         override fun onFailure(errCode: Int) {
@@ -339,14 +384,16 @@ class MyAccessibilityService : AccessibilityService() {
         if (!isWifiConn) {
             return
         }
+
         if (event == null || event.packageName == null) {
             return
         }
 
         val packageName = event.packageName.toString()
-        if (event.packageName == "edu.illinois.recordingservice" ||
-            event.packageName == "edu.illinois.odim" ||
-            event.packageName == "com.google.android.apps.nexuslauncher"
+        // do not record unnecessary app packages
+        // however, record the last screeen of a trace (app package -> nexuslauncher)
+        if (event.packageName == "edu.illinois.odim" ||
+            (event.packageName == "com.google.android.apps.nexuslauncher") //&& lastPackageName == event.packageName)
         ) {
             lastPackageName = event.packageName.toString()
             return
@@ -363,19 +410,15 @@ class MyAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
-        ) {
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)) {
             if (currentBitmap == null) {
                 return
             }
-
             isScreenEventPaired = true
             // Parse event description
-            val date = Date(System.currentTimeMillis()) //event.eventTime)
-            val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
-            formatter.timeZone = TimeZone.getTimeZone("UTC")
-            val eventTime = formatter.format(date)
+            val eventTime = getInteractionTime()
             val eventType = eventTypeToString(event.eventType)
+
             val eventDescription = "$eventTime; $eventType"
 
 
@@ -390,10 +433,15 @@ class MyAccessibilityService : AccessibilityService() {
                 AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
                     ScreenShot.TYPE_LONG_CLICK
                 }
+                AccessibilityEvent.TYPE_VIEW_SELECTED -> {
+                    ScreenShot.TYPE_SELECT
+                }
                 else -> {
                     ScreenShot.TYPE_SELECT
                 }
             }
+
+
             var scrollCoords : Pair<Int, Int>? = null
             if (actionType == ScreenShot.TYPE_SCROLL) {
                 scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
@@ -415,7 +463,6 @@ class MyAccessibilityService : AccessibilityService() {
             } else {
                 boxes.addAll(currVHBoxes)
             }
-
 
             // add vh to screenshot
             currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scrollCoords, boxes)
@@ -501,6 +548,26 @@ class MyAccessibilityService : AccessibilityService() {
         return gson.toJson(map)
     }
 
+    private fun getGestureCoordinates(node: AccessibilityNodeInfo?, scrollCoords: Pair<Int, Int>?) : String {
+        var coordinates = "[["
+        if (node == null) {
+            // take into account when node is empty (when home button is pressed)
+            val windowMetrics = windowManager!!.currentWindowMetrics
+            val gestureX = windowMetrics.bounds.width() / 2 // assume home button is at bottom middle
+            val gestureY = windowMetrics.bounds.height()
+            coordinates += "${gestureX},${gestureY-30}"
+        } else {
+            val outbounds = Rect()
+            node.getBoundsInScreen(outbounds)
+            coordinates += "${outbounds.centerX()},${outbounds.centerY()}"
+            if (scrollCoords != null) {
+                coordinates += ",${scrollCoords.first},${scrollCoords.second}"
+            }
+        }
+        coordinates += "]]"
+        return coordinates
+    }
+
     private fun addEvent(
         node: AccessibilityNodeInfo?,
         packageName: String,
@@ -553,19 +620,8 @@ class MyAccessibilityService : AccessibilityService() {
         notifyEventAdapter()
 
         // update gesture map
+        val coordinates = getGestureCoordinates(node, scrollCoords)
         val eventName = eventDescription.substringBefore(";")
-        val outbounds = Rect()
-        node?.getBoundsInScreen(outbounds)
-        var coordinates = "[[${outbounds.centerX()},${outbounds.centerY()}"
-
-        Log.i("event", eventName)
-        Log.i("isScroll", scrollCoords.toString())
-        if (scrollCoords != null) {
-            coordinates += ",${scrollCoords.first},${scrollCoords.second}"
-        }
-        coordinates = "$coordinates]]"
-        Log.i("coordinates", coordinates)
-
         if (gesturesMap!!.containsKey(traceName)) {
             gesturesMap!![traceName]?.set(eventName, coordinates)
         } else {

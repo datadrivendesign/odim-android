@@ -15,6 +15,7 @@ class ScreenShot(
         const val TYPE_SCROLL = 1
         const val TYPE_LONG_CLICK = 2
         const val TYPE_SELECT = 3
+        const val TYPE_HOME = 4
     }
 
     var actionType : Int = action_type

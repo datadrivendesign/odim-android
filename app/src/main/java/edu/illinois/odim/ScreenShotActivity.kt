@@ -102,6 +102,18 @@ class ScreenShotActivity : AppCompatActivity() {
                     paint
                 )
             }
+        } else if (screenshot.actionType == ScreenShot.TYPE_HOME) {
+            val paint = Paint()
+            paint.color = Color.rgb(0, 255, 165)
+            paint.alpha = 100
+            if (rect != null) {
+                canvas!!.drawCircle(
+                    rect.centerX().toFloat(),
+                    rect.centerY().toFloat(),
+                    50F,
+                    paint
+                )
+            }
         }
     }
 
