@@ -47,7 +47,6 @@ class TraceActivity : AppCompatActivity(){
                 val intent = Intent(applicationContext, EventActivity::class.java)
                 intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_name", traceName)
-
                 startActivity(intent)
             }
         })
