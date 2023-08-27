@@ -46,47 +46,46 @@ val packageSet: MutableSet<String> = HashSet()
 val packageLayer = Layer()
 val redactionMap: HashMap<String, HashMap<String, String>> = HashMap()
 internal var workerId = "test_user"
-internal var projectCode = "test"  // TODO: use this to query cloud bucket and traces
 
 fun getPackages(): ArrayList<String> {
     return packageList
 }
 
-fun getTraces(package_name: String?): ArrayList<String> {
-    return packageLayer.map[package_name]!!.list
+fun getTraces(packageName: String?): ArrayList<String> {
+    return packageLayer.map[packageName]!!.list
 }
 
-fun getEvents(package_name: String?, trace_name: String?): ArrayList<String> {
-    return packageLayer.map[package_name]!!.map[trace_name]!!.list
+fun getEvents(packageName: String?, traceName: String?): ArrayList<String> {
+    return packageLayer.map[packageName]!!.map[traceName]!!.list
 }
 
 fun getScreenshot(
-    package_name: String?,
-    trace_name: String?,
-    event_name: String?
+    packageName: String?,
+    traceName: String?,
+    eventName: String?
 ): ScreenShot {
-    return packageLayer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.screenShot
+    return packageLayer.map[packageName]!!.map[traceName]!!.map[eventName]!!.screenShot
 }
 
 fun getVh(
-    package_name: String?,
-    trace_name: String?,
-    event_name: String?
+    packageName: String?,
+    traceName: String?,
+    eventName: String?
 ): ArrayList<String> {
-    return packageLayer.map[package_name]!!.map[trace_name]!!.map[event_name]!!.map[event_name]!!.list
+    return packageLayer.map[packageName]!!.map[traceName]!!.map[eventName]!!.map[eventName]!!.list
 }
 
 fun setVh(
-    package_name: String?,
-    trace_name: String?,
-    event_name: String?,
-    json_string: String?
+    packageName: String?,
+    traceName: String?,
+    eventName: String?,
+    vhJsonString: String?
 ) {
     packageLayer
-        .map[package_name]!!
-        .map[trace_name]!!
-        .map[event_name]!!
-        .map[event_name]!!.list[0] = json_string!!
+        .map[packageName]!!
+        .map[traceName]!!
+        .map[eventName]!!
+        .map[eventName]!!.list[0] = vhJsonString!!
 }
 
 fun editTraceName(packageName: String, traceName: String, newTraceName: String) {
@@ -111,11 +110,64 @@ fun editTraceName(packageName: String, traceName: String, newTraceName: String) 
     Toast.makeText(MyAccessibilityService.appContext, "Trace name is updated!", Toast.LENGTH_SHORT).show()
 }
 
+suspend fun uploadVH(client: OkHttpClient,
+                     packageName: String,
+                     traceName: String,
+                     eventName: String,
+                     vhContent: String): Boolean {
+    // TODO: leave this uploading view hierarchy as is
+    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+    val vhPostRequest = Request.Builder()
+        .url("https://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/view_hierarchies/$eventName")
+        .header("Connection", "close")
+        .post(vhContent.toRequestBody(jsonMediaType))
+        .build()
+    // check if api request was successful and log result
+    val vhPostResponse: Response = client.newCall(vhPostRequest).await()
+    return if (vhPostResponse.isSuccessful) {
+        vhPostResponse.body?.close()
+        Log.i("api", "success upload VH")
+        true
+    } else {
+        vhPostResponse.body?.close()
+        Log.e("api", "fail upload VH")
+        false
+    }
+}
+
+suspend fun uploadScreen(client: OkHttpClient,
+                         packageName: String,
+                         traceName: String,
+                         eventName: String,
+                         bitmap: Bitmap?): Boolean {
+    val plainMediaType = "text/plain".toMediaType()
+    val byteOut = ByteArrayOutputStream()
+    bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
+    val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
+    val screenPostRequest = Request.Builder()
+        .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/screenshots/$eventName")
+        .addHeader("Content-Transfer-Encoding", "base64")
+        .addHeader("Content-Type", "text/plain")
+        .header("Connection", "close")
+        .post(bitmapBase64.toRequestBody(plainMediaType))
+        .build()
+    val screenPostResponse: Response = client.newCall(screenPostRequest).await()
+    return if (screenPostResponse.isSuccessful) {
+        screenPostResponse.body?.close()
+        Log.i("api", "success upload screenshot")
+        true
+    } else {
+        screenPostResponse.body?.close()
+        Log.e("api", "fail upload screenshot")
+        false
+    }
+}
+
 fun uploadFile(
-    packageId: String,
-    trace_name: String,
-    event_name: String,
-    vh_content: String,
+    packageName: String,
+    traceName: String,
+    eventName: String,
+    vhContent: String,
     bitmap: Bitmap?
 ) : Boolean {
     // try to upload VH content to AWS
@@ -125,106 +177,79 @@ fun uploadFile(
     var isSuccessUpload = true
     try {
         // Upload VH file
+        val s3UrlPrefix = "https://mobileodimbucket155740-dev.s3.us-east-2.amazonaws.com/private/us-east-2:797b0301-91c4-4036-8311-368bfb31e252"
+        val vhUrl = "$s3UrlPrefix/$workerId/$packageName/$traceName/view_hierarchies/$eventName"
+        val screenUrl = "$s3UrlPrefix/$workerId/$packageName/$traceName/screenshots/$eventName"
+        val gson = Gson()
+        val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+        val plainMediaType = "text/plain".toMediaType()
+
         uploadScope.launch {
-            val vhMediaType = "application/json; charset=utf-8".toMediaType()
-            val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/view_hierarchies/$event_name")
-                .header("Connection", "close")
-                .post(vh_content.toRequestBody(vhMediaType))
-                .build()
-            // check if api request was successful and log result
-            val response: Response = client.newCall(request).await()
-            if (response.isSuccessful) {
-                Log.i("api", "success upload VH")
-            } else {
-                Log.e("api", "fail upload VH")
-                isSuccessUpload = false
-            }
-            response.body?.close()
+//            // TODO: leave this uploading view hierarchy as is
+            isSuccessUpload = uploadVH(client, packageName, traceName, eventName, vhContent)
         }
-        // exit function if upload was not successful and log
         if (!isSuccessUpload) {
             Log.e("upload", "upload VH failure in the api")
             return false
         }
         // Write json gestures to upload
-        val gson = Gson()
-        var json: String = gson.toJson(MyAccessibilityService.gesturesMap!![trace_name])
-        json = json.replace("\\\\".toRegex(), "")
+        val gesturesJson: String = gson.toJson(MyAccessibilityService.gesturesMap!![traceName])
         // upload gestures file
         uploadScope.launch {
-            val gestureMediaType = "application/json; charset=utf-8".toMediaType()
-            val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/gestures")
+            val gesturesPostRequest = Request.Builder()
+                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/gestures")
                 .header("Connection", "close")
-                .post(json.toRequestBody(gestureMediaType))
+                .post(gesturesJson.toRequestBody(jsonMediaType))
                 .build()
-            // check if api request was successful and log result
-            val response: Response = client.newCall(request).await()
-            if (response.isSuccessful) {
+            val gesturePostResponse: Response = client.newCall(gesturesPostRequest).await()
+            if (gesturePostResponse.isSuccessful) {
                 Log.i("api", "success upload gestures")
             } else {
                 Log.i("api", "fail upload gestures")
                 isSuccessUpload = false
             }
-            response.body?.close()
+            gesturePostResponse.body?.close()
         }
         // exit function if upload was not successful and log
         if (!isSuccessUpload) {
             Log.e("upload", "upload failure in the api")
             return false
         }
-        // upload screenshots
+        // upload screenshots  // TODO: use api url instead s3 url, probably way more secure this way
         uploadScope.launch {
-            val byteOut = ByteArrayOutputStream()
-            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
-            val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
-            val screenshotMediaType = "text/plain".toMediaType()
-            val request = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/screenshots/$event_name")
-                .addHeader("Content-Transfer-Encoding", "base64")
-                .addHeader("Content-Type", "text/plain")
-                .header("Connection", "close")
-                .post(bitmapBase64.toRequestBody(screenshotMediaType))
-                .build()
-            // check if api request was successful and log result
-            val response: Response = client.newCall(request).await()
-            if (response.isSuccessful) {
-                Log.i("api", "success upload screenshot")
-            } else {
-                Log.e("api", "fail upload screenshot")
-                isSuccessUpload = false
-            }
-            response.body?.close()
+            isSuccessUpload = uploadScreen(client, packageName, traceName, eventName, bitmap)
         }
         // exit function if upload was not successful and log
         if (!isSuccessUpload) {
             Log.e("upload", "upload failure in the api")
             return false
         }
+        // TODO: add POST request for screens (includes gestures)
+
+        // TODO: add POST request for redactions
         // upload redactions
-        if (redactionMap.containsKey(trace_name) && redactionMap[trace_name]!!.containsKey(event_name)) {
+        if (redactionMap.containsKey(traceName) && redactionMap[traceName]!!.containsKey(eventName)) {
             // upload redactions
             uploadScope.launch {
-                val redactionMediaType = "text/plain".toMediaType()
-                val output = "startX,startY,endX,endY,label\n" + redactionMap[trace_name]!![event_name]!!
-                val request = Request.Builder()
-                    .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageId/$trace_name/redactions/$event_name")
+                val output = "startX,startY,endX,endY,label\n" + redactionMap[traceName]!![eventName]!!
+                val redactionPostRequest = Request.Builder()
+                    .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/redactions/$eventName")
                     .addHeader("Content-Type", "text/plain")
                     .header("Connection", "close")
-                    .post(output.toRequestBody(redactionMediaType))
+                    .post(output.toRequestBody(plainMediaType))
                     .build()
-                // check if api request was successful and log result
-                val response: Response = client.newCall(request).await()
-                if (response.isSuccessful) {
+                val redactionPostResponse: Response = client.newCall(redactionPostRequest).await()
+                if (redactionPostResponse.isSuccessful) {
                     Log.i("api", "success upload redactions")
                 } else {
                     Log.i("api", "fail upload redactions")
                     isSuccessUpload = false
                 }
-                response.body?.close()
+                redactionPostResponse.body?.close()
             }
         }
+
+        // TODO: add POST request for traces
 
     } catch (exception: Exception) {
         Log.e("ODIMUpload", "Upload filed", exception)
@@ -531,18 +556,22 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun getGestureCoordinates(node: AccessibilityNodeInfo?, scrollCoords: Pair<Int, Int>?) : String {
         var coordinates = "[["
+        val windowMetrics = windowManager!!.currentWindowMetrics
+        val screenWidth = windowMetrics.bounds.width().toFloat()
+        val screenHeight = windowMetrics.bounds.height().toFloat()
         if (node == null) {
             // take into account when node is empty (when home button is pressed)
-            val windowMetrics = windowManager!!.currentWindowMetrics
-            val gestureX = windowMetrics.bounds.width() / 2 // assume home button is at bottom middle
-            val gestureY = windowMetrics.bounds.height()
-            coordinates += "${gestureX},${gestureY-30}"
+            val gestureX = (screenWidth/2)
+            val gestureY = (screenHeight-30)
+            coordinates += "${gestureX/screenWidth},${gestureY/screenHeight}" // assume home button is at bottom middle
         } else {
             val outbounds = Rect()
             node.getBoundsInScreen(outbounds)
-            coordinates += "${outbounds.centerX()},${outbounds.centerY()}"
+            val gestureX = outbounds.centerX()
+            val gestureY = outbounds.centerY()
+            coordinates += "${gestureX/screenWidth},${gestureY/screenHeight}"
             if (scrollCoords != null) {
-                coordinates += ",${scrollCoords.first},${scrollCoords.second}"
+                coordinates += ",${scrollCoords.first/screenWidth},${scrollCoords.second/screenHeight}"
             }
         }
         coordinates += "]]"
@@ -597,8 +626,8 @@ class MyAccessibilityService : AccessibilityService() {
         eventLayer.map = eventMap
         notifyEventAdapter()
         // update gesture map with new gesture
-        val coordinates = getGestureCoordinates(node, scrollCoords)
         val eventName = eventDescription.substringBefore(";")
+        val coordinates = getGestureCoordinates(node, scrollCoords)
         if (gesturesMap!!.containsKey(traceName)) {
             gesturesMap!![traceName]?.set(eventName, coordinates)
         } else {

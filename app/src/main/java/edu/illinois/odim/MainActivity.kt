@@ -25,22 +25,17 @@ fun notifyPackageAdapter() {
 class MainActivity : AppCompatActivity() {
     private var recyclerView : RecyclerView? = null
     private var workerIdInput : EditText? = null
-    private var projectCodeInput : EditText? = null
 
     private fun createWorkerInputForm() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
         val viewForm = layoutInflater.inflate(R.layout.layout_dialog, null)
         workerIdInput = viewForm.findViewById(R.id.dialog_worker_id_input)
-        projectCodeInput = viewForm.findViewById(R.id.dialog_project_code_input)
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             .setTitle("Worker Credentials")
             .setCancelable(false)
             .setView(viewForm)
             .setPositiveButton("DONE") { _, _ ->
                 workerId = workerIdInput?.text.toString()
-                projectCode = projectCodeInput?.text.toString()
-                // TODO: check if trace and project exist
-                // TODO: get the cloud storage location
             }
         val alertDialog = builder.show()
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
@@ -49,15 +44,6 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(str: Editable?) {
                 alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
-                                                                                && !TextUtils.isEmpty(projectCodeInput?.text)
-            }
-        })
-        projectCodeInput?.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun afterTextChanged(str: Editable?) {
-                alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
-                                                                                && !TextUtils.isEmpty(workerIdInput?.text)
             }
         })
     }

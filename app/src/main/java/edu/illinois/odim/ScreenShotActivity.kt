@@ -12,8 +12,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.json.JSONArray
-import kotlin.math.min
-import kotlin.math.pow
 
 class ScreenShotActivity : AppCompatActivity() {
 
@@ -25,104 +23,11 @@ class ScreenShotActivity : AppCompatActivity() {
     private var originalBitmap: Bitmap? = null
 
     /**
-     * Draw gestures onto the screen, depending on what type of user interaction
-     * was done. TODO: this should be temporary as we store gesture location and
-     * can render it in the web app instead.
-     * Input takes in screenshot object to get screen action type, interacted vh
-     * element coordinates, and scroll deltas.
-     * A color is drawn on the canvas for the screenshot.
-     */
-    fun drawGestures(screenshot: ScreenShot) {
-        val rect = screenshot.rect
-        if (screenshot.actionType == ScreenShot.TYPE_CLICK) {
-            val paint = Paint()
-            paint.color = Color.rgb(255, 165, 0)
-            paint.alpha = 100
-            if (rect != null) {
-                canvas!!.drawCircle(
-                    rect.centerX().toFloat(),
-                    rect.centerY().toFloat(),
-                    (min(rect.height(), rect.width()) * 0.5).toFloat(), //(((rect.height() + rect.width()) * 0.25).toFloat()),
-                    paint
-                )
-            }
-        } else if (screenshot.actionType == ScreenShot.TYPE_SCROLL) {
-            val paint = Paint()
-            paint.color = Color.rgb(255, 165, 0)
-            paint.alpha = 100
-            val scrollCoords = screenshot.scrollCoords
-            if (rect != null) {
-                if (scrollCoords != null) {
-                    val deltaXIncr = scrollCoords.first / 4
-                    val deltaYIncr = scrollCoords.second / 4
-                    val centerX = rect.centerX() + 0.5*deltaXIncr
-                    val centerY = rect.centerY() + 0.5*deltaYIncr
-                    val multiplier = 0.8
-                    val radius = 100
-                    for (i in 0..4) {
-                        canvas!!.drawCircle(
-                            (centerX - i*deltaXIncr).toFloat(),
-                            (centerY - i*deltaYIncr).toFloat(),
-                            ((radius * multiplier.pow(i)).toFloat()),
-                            paint
-                        )
-                    }
-                } else {
-                    canvas!!.drawOval(
-                        (rect.centerX() - 50).toFloat(),
-                        (rect.centerY() - 100).toFloat(),
-                        (rect.centerX() + 50).toFloat(),
-                        (rect.centerY() + 100).toFloat(),
-                        paint
-                    )
-                }
-
-            }
-        } else if (screenshot.actionType == ScreenShot.TYPE_LONG_CLICK) {
-            val paint = Paint()
-            paint.color = Color.rgb(0, 165, 255)
-            paint.alpha = 100
-            if (rect != null) {
-                canvas!!.drawCircle(
-                    rect.centerX().toFloat(),
-                    rect.centerY().toFloat(),
-                    (min(rect.height(), rect.width()) * 0.5).toFloat(), // ((rect.height() + rect.width()) * 0.25).toFloat(),
-                    paint
-                )
-            }
-        } else if (screenshot.actionType == ScreenShot.TYPE_SELECT) {
-            val paint = Paint()
-            paint.color = Color.rgb(165, 0, 255)
-            paint.alpha = 100
-            if (rect != null) {
-                canvas!!.drawCircle(
-                    rect.centerX().toFloat(),
-                    rect.centerY().toFloat(),
-                    (min(rect.height(), rect.width()) * 0.5).toFloat(), //((rect.height() + rect.width()) * 0.25).toFloat(),
-                    paint
-                )
-            }
-        } else if (screenshot.actionType == ScreenShot.TYPE_HOME) {
-            val paint = Paint()
-            paint.color = Color.rgb(0, 255, 165)
-            paint.alpha = 100
-            if (rect != null) {
-                canvas!!.drawCircle(
-                    rect.centerX().toFloat(),
-                    rect.centerY().toFloat(),
-                    50F,
-                    paint
-                )
-            }
-        }
-    }
-
-    /**
      * Draw red bounding boxes where VH elements are, based on screenshot view hierarchy
      * input takes boxes as an array of rectangles representing locations of VH elements
      * red box borders are drawn on the canvas.
      */
-    fun drawVHBoxes(boxes: ArrayList<Rect>?) {
+    private fun drawVHBoxes(boxes: ArrayList<Rect>?) {
         if (boxes != null) {
             for (i in 0 until boxes.size) {
                 val paint = Paint()
@@ -139,7 +44,7 @@ class ScreenShotActivity : AppCompatActivity() {
      * areas drawn by drawing over them with the original bitmap (copied before
      * red boxes were drawn).
      */
-    fun removeVHBoxes(boxes: ArrayList<Rect>?, originalBitmap: Bitmap?) {
+    private fun removeVHBoxes(boxes: ArrayList<Rect>?, originalBitmap: Bitmap?) {
         if (boxes != null) {
             for (i in 0 until boxes.size) {
                 canvas!!.drawBitmap(originalBitmap!!, boxes[i], boxes[i], null)
@@ -147,7 +52,7 @@ class ScreenShotActivity : AppCompatActivity() {
         }
     }
 
-    fun redactionToString(redaction: Redaction): String {
+    private fun redactionToString(redaction: Redaction): String {
         val redactRect = redaction.rect
         val redactLabel = redaction.label
         return "${redactRect!!.left},${redactRect.top},${redactRect.right},${redactRect.bottom},${redactLabel}"
@@ -176,7 +81,7 @@ class ScreenShotActivity : AppCompatActivity() {
         imageView!!.canvas = canvas
         imageView!!.vhs = vhMap
 
-        drawGestures(screenshot)
+//        drawGestures(screenshot)
         // Save the original bitmap with gesture so we can remove mistake redactions
         this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
 

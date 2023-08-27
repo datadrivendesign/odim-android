@@ -11,28 +11,16 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:textStyle="bold"
-        android:text="Worker Id"
-        android:layout_gravity="center" />
+        android:text="@string/worker_id_placeholder"
+        android:layout_gravity="center"
+        android:labelFor="@+id/dialog_worker_id_input"/>
 
     <EditText
         android:id="@+id/dialog_worker_id_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:layout_marginBottom="20sp"/>
-
-    <TextView
-        android:id="@+id/dialog_project_code_label"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:textStyle="bold"
-        android:text="Project Code"
-        android:layout_gravity="center" />
-
-    <EditText
-        android:id="@+id/dialog_project_code_input"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="20sp"/>
+        android:layout_marginBottom="20sp"
+        android:autofillHints="Add an id to label this trace as yours!"
+        android:inputType="text" />
 </LinearLayout>
