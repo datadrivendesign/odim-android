@@ -4,13 +4,11 @@ import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Bundle
 import android.view.View
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
 import org.json.JSONArray
 
 class ScreenShotActivity : AppCompatActivity() {
@@ -52,12 +50,6 @@ class ScreenShotActivity : AppCompatActivity() {
         }
     }
 
-    private fun redactionToString(redaction: Redaction): String {
-        val redactRect = redaction.rect
-        val redactLabel = redaction.label
-        return "${redactRect!!.left},${redactRect.top},${redactRect.right},${redactRect.bottom},${redactLabel}"
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide()
@@ -81,7 +73,6 @@ class ScreenShotActivity : AppCompatActivity() {
         imageView!!.canvas = canvas
         imageView!!.vhs = vhMap
 
-//        drawGestures(screenshot)
         // Save the original bitmap with gesture so we can remove mistake redactions
         this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
 
@@ -91,26 +82,31 @@ class ScreenShotActivity : AppCompatActivity() {
         // set the full drawings as primary bitmap for scrubbingView
         imageView!!.setImageBitmap(myBit)
         // Save Listener
-        val saveFAB: MovableFloatingActionButton = findViewById(R.id.fab)
+        val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_fab)
         val gson = GsonBuilder().create()
-        saveFAB.setOnClickListener { fabView ->
+        saveFAB.setOnClickListener {
+            // don't save if no redactions have been drawn
+            if (imageView!!.currentRedacts.isEmpty()) {
+                return@setOnClickListener
+            }
             // remove red paint strokes from bitmap
             removeVHBoxes(screenshot.vh, this.originalBitmap)
             // loop through imageView.rectangles
             for (drawnRedaction: Redaction in imageView!!.currentRedacts) {
                 // traverse each rectangle
                 imageView!!.traverse(imageView!!.vhs, drawnRedaction.rect!!)
+                imageView!!.postInvalidate()
                 setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
                 if (redactionMap.containsKey(chosenTraceName)) {
                     if (redactionMap[chosenTraceName]!!.containsKey(chosenEventName)) {
-                        redactionMap[chosenTraceName]!![chosenEventName!!] += "\n${redactionToString(drawnRedaction)}"
+                        redactionMap[chosenTraceName]!![chosenEventName!!]?.add(drawnRedaction)
                     } else {
-                        redactionMap[chosenTraceName]!![chosenEventName!!] = redactionToString(drawnRedaction)
+                        redactionMap[chosenTraceName]!![chosenEventName!!]?.add(drawnRedaction)
                     }
 
                 } else {
                     redactionMap[chosenTraceName!!] = HashMap()
-                    redactionMap[chosenTraceName]!![chosenEventName!!] = redactionToString(drawnRedaction)
+                    redactionMap[chosenTraceName]!![chosenEventName!!]?.add(drawnRedaction)
                 }
 
             }
@@ -118,40 +114,19 @@ class ScreenShotActivity : AppCompatActivity() {
             screenshot.bitmap = myBit
             // clear imageView.rectangles
             imageView!!.currentRedacts.clear()
-
-            val uploadSuccess = uploadFile(
-                chosenPackageName!!,
-                chosenTraceName!!,
-                chosenEventName!!,
-                getVh(chosenPackageName, chosenTraceName, chosenEventName)[0],
-                getScreenshot(chosenPackageName, chosenTraceName, chosenEventName).bitmap
-            )
-            if (!uploadSuccess) {
-                val errSnackbar = Snackbar.make(fabView, R.string.upload_fail, Snackbar.LENGTH_LONG)
-                errSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
-                errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                    .setTextColor(ContextCompat.getColor(this, R.color.white))
-                errSnackbar.show()
-            } else {
-                val successSnackbar = Snackbar.make(fabView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
-                successSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
-                successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                    .setTextColor(ContextCompat.getColor(this, R.color.white))
-                successSnackbar.show()
-            }
             notifyEventAdapter()
         }
 
         // Delete Listener
-        val deletefab: FloatingActionButton = findViewById(R.id.fabdelete)
+        val deletefab: FloatingActionButton = findViewById(R.id.draw_delete_fab)
         deletefab.setOnClickListener { view ->
-            val deleteColor = Color.argb(250, 255, 100, 150)
-            val drawColor = Color.argb(250, 181, 202, 215)
             imageView!!.drawMode = !imageView!!.drawMode
             if (imageView!!.drawMode) {
+                val drawColor = Color.argb(250, 181, 202, 215)
                 view.backgroundTintList = ColorStateList.valueOf(drawColor)
                 (view as FloatingActionButton).setImageResource(android.R.drawable.ic_menu_edit)
             } else {
+                val deleteColor = Color.argb(250, 255, 100, 150)
                 view.backgroundTintList = ColorStateList.valueOf(deleteColor)
                 (view as FloatingActionButton).setImageResource(android.R.drawable.ic_delete)
             }

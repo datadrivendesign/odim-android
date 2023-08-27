@@ -29,7 +29,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     private val tempPaint = Paint()
     private val confirmPaint = Paint()
     var canvas: Canvas? = null
-    var currentRedacts = mutableListOf<Redaction>()
+    var currentRedacts = mutableSetOf<Redaction>()
     var vhRects: ArrayList<Rect>? = null
     var vhs: HashMap<String, String> = HashMap()
     var drawMode: Boolean = true
@@ -95,7 +95,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 val convertedX = convertXToImageScale(pointX)
                 val convertedY = convertYToImageScale(pointY)
                 if (convertedX == -1 || convertedY == -1) {
-                    postInvalidate()
                     return false
                 }
 
@@ -106,7 +105,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                         if (redactRect!!.contains(convertedX, convertedY)) {
                             currentRedacts.remove(redaction)
                             this.canvas?.drawBitmap(baseBitMap!!, redactRect, redactRect, null)
-                            postInvalidate()
                             return true
                         }
                     }
@@ -123,17 +121,16 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 val convertedX = convertXToImageScale(pointX)
                 val convertedY = convertYToImageScale(pointY)
                 if (convertedX == -1 || convertedY == -1) {
-                    postInvalidate()
                     return false
                 }
 
                 p2 = Point(convertedX, convertedY)
-                postInvalidate()
             }
             else -> {
                 return false
             }
         }
+        postInvalidate()
         return true
     }
 
@@ -143,10 +140,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         if (p1 != null && p2 != null) {
             val newRect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
             val rectMatch = getMatchingVH(vhRects, newRect)
-            if (rectMatch.top == 0
-                && rectMatch.bottom == 0
-                && rectMatch.left == 0
-                && rectMatch.right == 0) {
+            // quit early if rectangle isn't visible
+            if (rectMatch.height() == 0 || rectMatch.width() == 0) {
                 return
             }
             // start creating the label form
@@ -221,7 +216,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             if (childrenArr[i]["content-desc"] != null && childrenArr[i]["content-desc"] == "description redacted.") {
                 continue
             }
-            val isMatch = traverse(childrenArr[i], newRect)  //if true, delete child convert back to string
+            val isMatch = traverse(childrenArr[i], newRect)
             if (isMatch.first && !isMatch.second) {
                 if ("text_field" in childrenArr[i]) {
                     childrenArr[i]["text_field"] = "text redacted."

@@ -13,8 +13,7 @@
         android:textStyle="bold"
         android:text="@string/worker_id_placeholder"
         android:layout_marginTop="20dp"
-        android:layout_gravity="center"
-        android:labelFor="@+id/dialog_worker_id_input"/>
+        android:layout_gravity="center" />
 
     <EditText
         android:id="@+id/dialog_worker_id_input"
@@ -24,7 +23,8 @@
         android:layout_marginBottom="20sp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:autofillHints="Add an id to label this trace as yours!"
+        android:hint="@string/worker_id_input_hint"
         android:inputType="text"
-        android:minHeight="48dp" />
+        android:minHeight="48dp"
+        android:autofillHints="@string/worker_id_input_hint" />
 </LinearLayout>

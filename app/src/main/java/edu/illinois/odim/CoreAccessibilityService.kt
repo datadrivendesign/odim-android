@@ -43,7 +43,6 @@ import java.util.logging.Logger
 val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
 val packageLayer = Layer()
-val redactionMap: HashMap<String, HashMap<String, String>> = HashMap()
 internal var workerId = "test_user"
 
 fun getPackages(): ArrayList<String> {
@@ -92,7 +91,6 @@ suspend fun uploadVH(client: OkHttpClient,
                      traceName: String,
                      eventName: String,
                      vhContent: String): Boolean {
-    // TODO: leave this uploading view hierarchy as is
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     val vhPostRequest = Request.Builder()
         .url("https://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/view_hierarchies/$eventName")
@@ -154,9 +152,6 @@ fun uploadFile(
     var isSuccessUpload = true
     try {
         // Upload VH file
-        val s3UrlPrefix = "https://mobileodimbucket155740-dev.s3.us-east-2.amazonaws.com/private/us-east-2:797b0301-91c4-4036-8311-368bfb31e252"
-        val vhUrl = "$s3UrlPrefix/$workerId/$packageName/$traceName/view_hierarchies/$eventName"
-        val screenUrl = "$s3UrlPrefix/$workerId/$packageName/$traceName/screenshots/$eventName"
         val gson = Gson()
         val jsonMediaType = "application/json; charset=utf-8".toMediaType()
         val plainMediaType = "text/plain".toMediaType()
@@ -205,10 +200,11 @@ fun uploadFile(
 
         // TODO: add POST request for redactions
         // upload redactions
-        if (redactionMap.containsKey(traceName) && redactionMap[traceName]!!.containsKey(eventName)) {
+        if (MyAccessibilityService.redactionMap.containsKey(traceName) &&
+            MyAccessibilityService.redactionMap[traceName]!!.containsKey(eventName)) {
             // upload redactions
             uploadScope.launch {
-                val output = "startX,startY,endX,endY,label\n" + redactionMap[traceName]!![eventName]!!
+                val output = MyAccessibilityService.redactionMap[traceName]!![eventName]!!.forEach{it.toString()}.toString()
                 val redactionPostRequest = Request.Builder()
                     .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/redactions/$eventName")
                     .addHeader("Content-Type", "text/plain")
@@ -250,6 +246,7 @@ class MyAccessibilityService : AccessibilityService() {
     companion object {
         lateinit var appContext: Context
         var gesturesMap: HashMap<String, HashMap<String, String>>? = null
+        val redactionMap: HashMap<String, HashMap<String, MutableSet<Redaction>>> = HashMap()
     }
 
     fun getInteractionTime(): String {
