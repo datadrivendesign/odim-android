@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -28,12 +29,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun createWorkerInputForm() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
-        val viewForm = layoutInflater.inflate(R.layout.layout_dialog, null)
-        workerIdInput = viewForm.findViewById(R.id.dialog_worker_id_input)
+        val workerForm = View.inflate(this, R.layout.worker_input_dialog, null)
+        workerIdInput = workerForm.findViewById(R.id.dialog_worker_id_input)
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             .setTitle("Worker Credentials")
             .setCancelable(false)
-            .setView(viewForm)
+            .setView(workerForm)
             .setPositiveButton("DONE") { _, _ ->
                 workerId = workerIdInput?.text.toString()
             }

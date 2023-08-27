@@ -8,10 +8,6 @@
     <string name="upload_trace_button_text">Upload Trace to AWS</string>
     <string name="upload_all_toast_success">All event data uploaded</string>
     <string name="upload_fail">Upload Interaction Failed</string>
-    <string name="event_upload_warning">
-        This button will NOT record the edit redactions that you have made to the
-        screens. Use the save button in the screen scrubbing interface to save those.
-    </string>
     <string name="appNameStringSize">20sp</string>
     <string name="MainTextHeader">Apps</string>
     <string name="traceNumScreens">%1$d Screens</string>
@@ -23,4 +19,6 @@
     <string name="worker_id_placeholder">Worker Id</string>
     <string name="trace_content_desc">Icon of app of current traces page</string>
     <string name="app_name_placeholder">App Name</string>
+    <string name="trace_upload_title">Add Trace Description</string>
+    <string name="upload_trace_hint">Add a description for your trace</string>
 </resources>

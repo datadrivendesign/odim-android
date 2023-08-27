@@ -2,6 +2,7 @@ package edu.illinois.odim
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -10,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
 import edu.illinois.odim.databinding.CardCellBinding
 
 // these were static in java
@@ -63,39 +65,40 @@ class EventActivity : AppCompatActivity() {
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
+            val traceDescInput = View.inflate(this, R.layout.upload_trace_dialog, null)
             val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-            builder.setTitle("WARNING")
-            builder.setMessage(R.string.event_upload_warning)
-            builder.setPositiveButton("UPLOAD") { _, _ ->
-                for (event in eventsInTrace) {
-                    val vhStringArr = getVh(chosenPackageName, chosenTraceName, event)
-                    val uploadSuccess = uploadFile(
-                        chosenPackageName!!,
-                        chosenTraceName!!,
-                        event,
-                        vhStringArr[0],
-                        getScreenshot(chosenPackageName, chosenTraceName, event).bitmap
-                    )
-                    if (!uploadSuccess) {
-                        val errSnackbar = Snackbar.make(buttonView, R.string.upload_fail, Snackbar.LENGTH_LONG)
-                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
-                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                            .setTextColor(ContextCompat.getColor(this, R.color.white))
-                        errSnackbar.show()
-                        break
+                .setTitle("Upload Trace")
+                .setView(traceDescInput)
+                .setPositiveButton("UPLOAD") { _, _ ->
+                    for (event in eventsInTrace) {
+                        val vhStringArr = getVh(chosenPackageName, chosenTraceName, event)
+                        val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
+                        val uploadSuccess = uploadFile(
+                            chosenPackageName!!,
+                            chosenTraceName!!,
+                            event,
+                            vhStringArr[0],
+                            getScreenshot(chosenPackageName, chosenTraceName, event).bitmap
+                        )
+                        if (!uploadSuccess) {
+                            val errSnackbar = Snackbar.make(buttonView, R.string.upload_fail, Snackbar.LENGTH_LONG)
+                            errSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
+                            errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                                .setTextColor(ContextCompat.getColor(this, R.color.white))
+                            errSnackbar.show()
+                            break
+                        }
                     }
+                    val successSnackbar = Snackbar.make(buttonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                    successSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+                    successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                        .setTextColor(ContextCompat.getColor(this, R.color.white))
+                    successSnackbar.show()
                 }
-                val successSnackbar = Snackbar.make(buttonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
-                successSnackbar.view.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
-                successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                    .setTextColor(ContextCompat.getColor(this, R.color.white))
-                successSnackbar.show()
-            }
-            builder.setNegativeButton("CANCEL") { dialogInterface, _ ->
-                dialogInterface.cancel()
-            }
+                .setNegativeButton("CANCEL") { dialogInterface, _ ->
+                    dialogInterface.cancel()
+                }
             builder.show()
-
         }
     }
 
