@@ -19,8 +19,9 @@
         android:id="@+id/dialog_worker_id_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="30dp"
         android:layout_marginBottom="20sp"
         android:autofillHints="Add an id to label this trace as yours!"
-        android:inputType="text" />
+        android:inputType="text"
+        android:minHeight="48dp" />
 </LinearLayout>

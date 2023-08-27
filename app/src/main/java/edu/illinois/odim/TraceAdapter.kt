@@ -4,8 +4,6 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -33,16 +31,9 @@ class TraceAdapter(context: Context,
         val traceName = itemList[position]
         val events = getEvents(packageName, traceName)
 
-        holder.itemName = traceName
-        holder.traceName.setText(traceName)
+        holder.traceName.text = traceName
 //        holder.traceDateTextView.text = traceName  // if (events.size > 0) events[0].substringBefore(";") else "Empty Trace"  // should never be empty, trace created at first event
         holder.traceScreensTextView.text = this.inflater.context.getString(R.string.traceNumScreens, events.size)
-        holder.editTraceButton.setOnClickListener{buttonView ->
-            val currentTraceName = holder.itemName
-            val newTraceName = holder.traceName.text.toString()
-            editTraceName(packageName, currentTraceName, newTraceName)
-            holder.itemName = holder.traceName.text.toString()
-        }
 
     }
 
@@ -53,14 +44,12 @@ class TraceAdapter(context: Context,
 
 class MyViewHolder(itemView: View, listener: TraceAdapter.OnItemClickListener) : RecyclerView.ViewHolder(itemView)
 {
-    lateinit var itemName : String
-    var traceName : EditText = itemView.findViewById(R.id.trace_name)
+    var traceName : TextView = itemView.findViewById(R.id.trace_name)
     val traceScreensTextView : TextView = itemView.findViewById(R.id.num_trace_screens)
-    val editTraceButton : Button = itemView.findViewById(R.id.trace_edit_btn)
 
     init {
         itemView.setOnClickListener {
-            listener.onItemClick(itemName)
+            listener.onItemClick(traceName.text.toString())
         }
     }
 }

@@ -12,5 +12,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:layout_marginBottom="20sp"
-        android:hint="@string/redact_input_hint" />
+        android:hint="@string/redact_input_hint"
+        android:minHeight="48dp"
+        android:autofillHints="@string/redact_input_hint"
+        android:inputType="text" />
 </LinearLayout>

@@ -21,7 +21,6 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
-import android.widget.Toast
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -86,28 +85,6 @@ fun setVh(
         .map[traceName]!!
         .map[eventName]!!
         .map[eventName]!!.list[0] = vhJsonString!!
-}
-
-fun editTraceName(packageName: String, traceName: String, newTraceName: String) {
-    // check if current trace and new trace name are same
-    if (traceName == newTraceName) {
-        return
-    }
-    // change gesturesMap, redactionMap
-    if (MyAccessibilityService.gesturesMap!!.containsKey(traceName)) {
-        MyAccessibilityService.gesturesMap!![newTraceName] = MyAccessibilityService.gesturesMap!!.remove(traceName)!!
-    }
-    if (redactionMap.containsKey(traceName)) {
-        redactionMap[newTraceName] = redactionMap.remove(traceName)!!
-    }
-    // change list in package layer and move map
-    val traceIdx = packageLayer.map[packageName]!!.list.indexOf(traceName)
-    if (traceIdx > -1) {
-        packageLayer.map[packageName]!!.list[traceIdx] = newTraceName
-        packageLayer.map[packageName]!!.map[newTraceName] = packageLayer.map[packageName]!!.map.remove(traceName)!!
-    }
-    // add toast saying trace has been updated
-    Toast.makeText(MyAccessibilityService.appContext, "Trace name is updated!", Toast.LENGTH_SHORT).show()
 }
 
 suspend fun uploadVH(client: OkHttpClient,

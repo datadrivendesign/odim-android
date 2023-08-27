@@ -21,4 +21,6 @@
     <string name="chevron_content_desc">Chevron icon indicating there is further information about the trace once selection is clicked.</string>
     <string name="trace_name_hint">Trace Name</string>
     <string name="worker_id_placeholder">Worker Id</string>
+    <string name="trace_content_desc">Icon of app of current traces page</string>
+    <string name="app_name_placeholder">App Name</string>
 </resources>
