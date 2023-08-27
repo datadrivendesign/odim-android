@@ -45,8 +45,7 @@ val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
 val packageLayer = Layer()
 internal var workerId = "test_user"
-const val apiUrlPrefix = "https://35.224.147.233/api"
-//const val localApiUrlPrefix = "http://10.0.2.2:3000/api"
+const val apiUrlPrefix = "https://api.denizarsan.com"
 
 fun getPackages(): ArrayList<String> {
     return packageList
@@ -72,13 +71,11 @@ fun setVh(packageName: String?, traceLabel: String?, eventLabel: String?, vhJson
     packageLayer.map[packageName]!!.map[traceLabel]!!.map[eventLabel]!!.map[eventLabel]!!.list[0] = vhJsonString!!
 }
 
-// Upload screen POST: req.body -> vh, img (bit64 string), created date, gestures
-// make sure to record the screen _ids for traces
-suspend fun uploadScreen(client: OkHttpClient,
-                         gson: Gson,
-                         packageName: String,
-                         traceLabel: String,
-                         eventLabel: String): Response {
+private suspend fun uploadScreen(client: OkHttpClient,
+                                 gson: Gson,
+                                 packageName: String,
+                                 traceLabel: String,
+                                 eventLabel: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     // get bitmap as bit64 string
     val byteOut = ByteArrayOutputStream()
@@ -108,11 +105,10 @@ suspend fun uploadScreen(client: OkHttpClient,
     return client.newCall(screenPostRequest).await()
 }
 
-// Upload redaction POST - screen: objectId
-suspend fun uploadRedaction(client: OkHttpClient,
-                            gson: Gson,
-                            redaction: Redaction,
-                            screenId: String): Response {
+private suspend fun uploadRedaction(client: OkHttpClient,
+                                    gson: Gson,
+                                    redaction: Redaction,
+                                    screenId: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     val reqBodyJSONObj: JsonObject = gson.toJsonTree(redaction) as JsonObject
     reqBodyJSONObj.addProperty("screen", screenId)
@@ -126,13 +122,12 @@ suspend fun uploadRedaction(client: OkHttpClient,
     return client.newCall(vhPostRequest).await()
 }
 
-// Upload trace POST - also include app: packageName, screens: [objectIds]
-suspend fun uploadTrace(client: OkHttpClient,
-                        gson: Gson,
-                        screenIds: ArrayList<String>,
-                        packageName: String,
-                        traceLabel: String,
-                        traceDescription: String): Response {
+private suspend fun uploadTrace(client: OkHttpClient,
+                                gson: Gson,
+                                screenIds: ArrayList<String>,
+                                packageName: String,
+                                traceLabel: String,
+                                traceDescription: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     val reqBodyJSONObj = JsonObject()
     reqBodyJSONObj.add("screens", gson.toJsonTree(screenIds) as JsonArray)
@@ -149,7 +144,6 @@ suspend fun uploadTrace(client: OkHttpClient,
         .build()
     return client.newCall(tracePostRequest).await()
 }
-
 suspend fun uploadFullTraceContent(
     packageName: String,
     traceLabel: String,
@@ -208,7 +202,7 @@ suspend fun uploadFullTraceContent(
             Log.e("api", "fail upload trace")
         }
     } catch (exception: Exception) {
-        Log.e("ODIMUpload", "Upload filed", exception)
+        Log.e("ODIMUpload", "Upload failed", exception)
         return false
     }
     return isSuccessUpload
