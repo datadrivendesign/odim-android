@@ -22,9 +22,10 @@ import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import edu.illinois.odim.MyAccessibilityService.Companion.gesturesMap
+import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -44,6 +45,8 @@ val packageList: ArrayList<String> = ArrayList()
 val packageSet: MutableSet<String> = HashSet()
 val packageLayer = Layer()
 internal var workerId = "test_user"
+const val apiUrlPrefix = "https://35.224.147.233/api"
+//const val localApiUrlPrefix = "http://10.0.2.2:3000/api"
 
 fun getPackages(): ArrayList<String> {
     return packageList
@@ -53,177 +56,157 @@ fun getTraces(packageName: String?): ArrayList<String> {
     return packageLayer.map[packageName]!!.list
 }
 
-fun getEvents(packageName: String?, traceName: String?): ArrayList<String> {
-    return packageLayer.map[packageName]!!.map[traceName]!!.list
+fun getEvents(packageName: String?, traceLabel: String?): ArrayList<String> {
+    return packageLayer.map[packageName]!!.map[traceLabel]!!.list
 }
 
-fun getScreenshot(
-    packageName: String?,
-    traceName: String?,
-    eventName: String?
-): ScreenShot {
-    return packageLayer.map[packageName]!!.map[traceName]!!.map[eventName]!!.screenShot
+fun getScreenshot(packageName: String?, traceLabel: String?, eventLabel: String?): ScreenShot {
+    return packageLayer.map[packageName]!!.map[traceLabel]!!.map[eventLabel]!!.screenShot
 }
 
-fun getVh(
-    packageName: String?,
-    traceName: String?,
-    eventName: String?
-): ArrayList<String> {
-    return packageLayer.map[packageName]!!.map[traceName]!!.map[eventName]!!.map[eventName]!!.list
+fun getVh(packageName: String?, traceLabel: String?, eventLabel: String?): ArrayList<String> {
+    return packageLayer.map[packageName]!!.map[traceLabel]!!.map[eventLabel]!!.map[eventLabel]!!.list
 }
 
-fun setVh(
-    packageName: String?,
-    traceName: String?,
-    eventName: String?,
-    vhJsonString: String?
-) {
-    packageLayer
-        .map[packageName]!!
-        .map[traceName]!!
-        .map[eventName]!!
-        .map[eventName]!!.list[0] = vhJsonString!!
+fun setVh(packageName: String?, traceLabel: String?, eventLabel: String?, vhJsonString: String?) {
+    packageLayer.map[packageName]!!.map[traceLabel]!!.map[eventLabel]!!.map[eventLabel]!!.list[0] = vhJsonString!!
 }
 
-suspend fun uploadVH(client: OkHttpClient,
-                     packageName: String,
-                     traceName: String,
-                     eventName: String,
-                     vhContent: String): Boolean {
-    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-    val vhPostRequest = Request.Builder()
-        .url("https://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/view_hierarchies/$eventName")
-        .header("Connection", "close")
-        .post(vhContent.toRequestBody(jsonMediaType))
-        .build()
-    // check if api request was successful and log result
-    val vhPostResponse: Response = client.newCall(vhPostRequest).await()
-    return if (vhPostResponse.isSuccessful) {
-        vhPostResponse.body?.close()
-        Log.i("api", "success upload VH")
-        true
-    } else {
-        vhPostResponse.body?.close()
-        Log.e("api", "fail upload VH")
-        false
-    }
-}
-
+// Upload screen POST: req.body -> vh, img (bit64 string), created date, gestures
+// make sure to record the screen _ids for traces
 suspend fun uploadScreen(client: OkHttpClient,
+                         gson: Gson,
                          packageName: String,
-                         traceName: String,
-                         eventName: String,
-                         bitmap: Bitmap?): Boolean {
-    val plainMediaType = "text/plain".toMediaType()
+                         traceLabel: String,
+                         eventLabel: String): Response {
+    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+    // get bitmap as bit64 string
     val byteOut = ByteArrayOutputStream()
+    val bitmap = getScreenshot(packageName, traceLabel, eventLabel).bitmap
     bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteOut)
     val bitmapBase64 = Base64.encodeToString(byteOut.toByteArray(), Base64.DEFAULT)
+    // retrieve vh
+    val vhString = getVh(packageName, traceLabel, eventLabel)[0]
+    // retrieve screen timestamp
+    val screenCreatedAt = eventLabel.substringBefore(";")
+    // retrieve gesture for screen
+    val gesture: Gesture = gesturesMap[traceLabel]?.get(eventLabel) ?: Gesture()
+    // construct request body
+    val reqBodyJSONObj = JsonObject()
+    reqBodyJSONObj.addProperty("vh", vhString)
+    reqBodyJSONObj.addProperty("img", bitmapBase64)
+    reqBodyJSONObj.addProperty("created", screenCreatedAt)
+    reqBodyJSONObj.add("gestures", gson.toJsonTree(gesture) as JsonObject)
+    val reqBody = gson.toJson(reqBodyJSONObj)
+    // run the POST request
     val screenPostRequest = Request.Builder()
-        .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/screenshots/$eventName")
-        .addHeader("Content-Transfer-Encoding", "base64")
-        .addHeader("Content-Type", "text/plain")
+        .url("$apiUrlPrefix/screens")
+        .addHeader("Content-Type", "application/json; charset=utf-8")
         .header("Connection", "close")
-        .post(bitmapBase64.toRequestBody(plainMediaType))
+        .post(reqBody.toRequestBody(jsonMediaType))
         .build()
-    val screenPostResponse: Response = client.newCall(screenPostRequest).await()
-    return if (screenPostResponse.isSuccessful) {
-        screenPostResponse.body?.close()
-        Log.i("api", "success upload screenshot")
-        true
-    } else {
-        screenPostResponse.body?.close()
-        Log.e("api", "fail upload screenshot")
-        false
-    }
+    return client.newCall(screenPostRequest).await()
 }
 
-fun uploadFile(
+// Upload redaction POST - screen: objectId
+suspend fun uploadRedaction(client: OkHttpClient,
+                            gson: Gson,
+                            redaction: Redaction,
+                            screenId: String): Response {
+    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+    val reqBodyJSONObj: JsonObject = gson.toJsonTree(redaction) as JsonObject
+    reqBodyJSONObj.addProperty("screen", screenId)
+    val reqBody = gson.toJson(reqBodyJSONObj)
+    val vhPostRequest = Request.Builder()
+        .url("$apiUrlPrefix/redactions")
+        .addHeader("Content-Type", "application/json; charset=utf-8")
+        .header("Connection", "close")
+        .post(reqBody.toRequestBody(jsonMediaType))
+        .build()
+    return client.newCall(vhPostRequest).await()
+}
+
+// Upload trace POST - also include app: packageName, screens: [objectIds]
+suspend fun uploadTrace(client: OkHttpClient,
+                        gson: Gson,
+                        screenIds: ArrayList<String>,
+                        packageName: String,
+                        traceLabel: String,
+                        traceDescription: String): Response {
+    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+    val reqBodyJSONObj = JsonObject()
+    reqBodyJSONObj.add("screens", gson.toJsonTree(screenIds) as JsonArray)
+    reqBodyJSONObj.addProperty("app", packageName)
+    reqBodyJSONObj.addProperty("created", traceLabel)
+    reqBodyJSONObj.addProperty("description", traceDescription)
+    reqBodyJSONObj.addProperty("worker", workerId)
+    val reqBody = gson.toJson(reqBodyJSONObj)
+    val tracePostRequest = Request.Builder()
+        .url("$apiUrlPrefix/traces")
+        .addHeader("Content-Type", "application/json; charset=utf-8")
+        .header("Connection", "close")
+        .post(reqBody.toRequestBody(jsonMediaType))
+        .build()
+    return client.newCall(tracePostRequest).await()
+}
+
+suspend fun uploadFullTraceContent(
     packageName: String,
-    traceName: String,
-    eventName: String,
-    vhContent: String,
-    bitmap: Bitmap?
+    traceLabel: String,
+    traceDescription: String
 ) : Boolean {
     // try to upload VH content to AWS
-    val uploadScope = CoroutineScope(Dispatchers.IO)
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     val client = OkHttpClient()
-    var isSuccessUpload = true
+    var isSuccessUpload: Boolean
+    Log.i("full trace", "called!")
     try {
         // Upload VH file
         val gson = Gson()
-        val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-        val plainMediaType = "text/plain".toMediaType()
-
-        uploadScope.launch {
-//            // TODO: leave this uploading view hierarchy as is
-            isSuccessUpload = uploadVH(client, packageName, traceName, eventName, vhContent)
-        }
-        if (!isSuccessUpload) {
-            Log.e("upload", "upload VH failure in the api")
-            return false
-        }
-        // Write json gestures to upload
-        val gesturesJson: String = gson.toJson(MyAccessibilityService.gesturesMap!![traceName])
-        // upload gestures file
-        uploadScope.launch {
-            val gesturesPostRequest = Request.Builder()
-                .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/gestures")
-                .header("Connection", "close")
-                .post(gesturesJson.toRequestBody(jsonMediaType))
-                .build()
-            val gesturePostResponse: Response = client.newCall(gesturesPostRequest).await()
-            if (gesturePostResponse.isSuccessful) {
-                Log.i("api", "success upload gestures")
+        val screenIds = ArrayList<String>()
+        val traceEvents: ArrayList<String> = getEvents(packageName, traceLabel)
+        for (event: String in traceEvents) {
+            // add POST request for screens
+            var screenId: String
+            val screenResBody = uploadScreen(client, gson, packageName, traceLabel, event)
+            isSuccessUpload = screenResBody.isSuccessful
+            val screenResBodyStr = screenResBody.body?.string() ?: ""
+            val returnedScreen =
+                gson.fromJson(screenResBodyStr, HashMap<String, Any?>()::class.java)
+            screenId = (returnedScreen["_id"] as String?)!!
+            screenResBody.body?.close()
+            if (isSuccessUpload) {
+                Log.i("api", "success upload screenshot")
+                screenIds.add(screenId)
             } else {
-                Log.i("api", "fail upload gestures")
-                isSuccessUpload = false
+                Log.e("api", "fail upload screenshot")
+                return false
             }
-            gesturePostResponse.body?.close()
-        }
-        // exit function if upload was not successful and log
-        if (!isSuccessUpload) {
-            Log.e("upload", "upload failure in the api")
-            return false
-        }
-        // upload screenshots  // TODO: use api url instead s3 url, probably way more secure this way
-        uploadScope.launch {
-            isSuccessUpload = uploadScreen(client, packageName, traceName, eventName, bitmap)
-        }
-        // exit function if upload was not successful and log
-        if (!isSuccessUpload) {
-            Log.e("upload", "upload failure in the api")
-            return false
-        }
-        // TODO: add POST request for screens (includes gestures)
-
-        // TODO: add POST request for redactions
-        // upload redactions
-        if (MyAccessibilityService.redactionMap.containsKey(traceName) &&
-            MyAccessibilityService.redactionMap[traceName]!!.containsKey(eventName)) {
-            // upload redactions
-            uploadScope.launch {
-                val output = MyAccessibilityService.redactionMap[traceName]!![eventName]!!.forEach{it.toString()}.toString()
-                val redactionPostRequest = Request.Builder()
-                    .url("http://10.0.2.2:3000/aws/upload/$workerId/$packageName/$traceName/redactions/$eventName")
-                    .addHeader("Content-Type", "text/plain")
-                    .header("Connection", "close")
-                    .post(output.toRequestBody(plainMediaType))
-                    .build()
-                val redactionPostResponse: Response = client.newCall(redactionPostRequest).await()
-                if (redactionPostResponse.isSuccessful) {
-                    Log.i("api", "success upload redactions")
+            // add POST request for redactions
+            val redactions: MutableSet<Redaction> =
+                redactionMap[traceLabel]?.get(event) ?: mutableSetOf()
+            for (redaction: Redaction in redactions) {
+                val redactionResBody = uploadRedaction(client, gson, redaction, screenId)
+                isSuccessUpload = redactionResBody.isSuccessful
+                redactionResBody.body?.close()
+                if (isSuccessUpload) {
+                    Log.i("api", "success upload redaction")
                 } else {
-                    Log.i("api", "fail upload redactions")
-                    isSuccessUpload = false
+                    Log.e("api", "fail upload redaction")
+                    return false
                 }
-                redactionPostResponse.body?.close()
             }
         }
-
-        // TODO: add POST request for traces
-
+        // add POST request for traces
+        val traceResBody =
+            uploadTrace(client, gson, screenIds, packageName, traceLabel, traceDescription)
+        isSuccessUpload = traceResBody.isSuccessful
+        traceResBody.body?.close()
+        if (isSuccessUpload) {
+            Log.i("api", "success upload trace")
+        } else {
+            Log.e("api", "fail upload trace")
+        }
     } catch (exception: Exception) {
         Log.e("ODIMUpload", "Upload filed", exception)
         return false
@@ -245,7 +228,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     companion object {
         lateinit var appContext: Context
-        var gesturesMap: HashMap<String, HashMap<String, String>>? = null
+        var gesturesMap: HashMap<String, HashMap<String, Gesture>> = HashMap()
         val redactionMap: HashMap<String, HashMap<String, MutableSet<Redaction>>> = HashMap()
     }
 
@@ -271,8 +254,6 @@ class MyAccessibilityService : AccessibilityService() {
         info.notificationTimeout = 50
         info.packageNames = null
         serviceInfo = info
-        // initialize map to capture gestures
-        gesturesMap = HashMap()
         // add invisible layout to get touches to screen
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager?
         val layout = FrameLayout(appContext)
@@ -303,20 +284,14 @@ class MyAccessibilityService : AccessibilityService() {
                     // record event type as home button press
                     val eventTime = currTouchTime
                     val eventType = "TYPE_HOME_PRESSED"
-                    val eventDescription = "$eventTime; $eventType"
-                    // record screen type
-                    val actionType = ScreenShot.TYPE_HOME
-                    // create gesture for home button press
-                    val windowMetrics = windowManager!!.currentWindowMetrics
-                    val gestureX = windowMetrics.bounds.width() / 2 // assume home button is at bottom middle
-                    val gestureY = windowMetrics.bounds.height()
-                    val outbounds = Rect(gestureX-20, gestureY-50, gestureX+20, gestureY-10)  // give no source node if home button pressed
+                    val eventLabel = "$eventTime; $eventType"
+                    // record vh and boxes
                     val vhString = currVHString
                     val vhBoxes = ArrayList(currVHBoxes)
-                    // record vh and boxes
-                    currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, null, vhBoxes)
+                    // create screenshot
+                    currentScreenshot = ScreenShot(currentBitmap!!, vhBoxes)
                     // add home button press to event
-                    addEvent(null, currTouchPackage!!, false, eventDescription, null, currentScreenshot!!, vhString!!)
+                    addEvent(null, currTouchPackage!!, false, eventLabel, null, currentScreenshot!!, vhString!!)
                     // reset everything
                     currVHString = null
                     currVHBoxes.clear()
@@ -408,28 +383,10 @@ class MyAccessibilityService : AccessibilityService() {
             // Parse event description
             val eventTime = getInteractionTime()
             val eventType = eventTypeToString(event.eventType)
-            val eventDescription = "$eventTime; $eventType"
-            // Screenshot
-            val actionType: Int = when (event.eventType) {
-                AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                    ScreenShot.TYPE_CLICK
-                }
-                AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                    ScreenShot.TYPE_SCROLL
-                }
-                AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
-                    ScreenShot.TYPE_LONG_CLICK
-                }
-                AccessibilityEvent.TYPE_VIEW_SELECTED -> {
-                    ScreenShot.TYPE_SELECT
-                }
-                else -> {
-                    ScreenShot.TYPE_SELECT
-                }
-            }
+            val eventLabel = "$eventTime; $eventType"
             // check if event scroll, add delta coordinates
             var scrollCoords : Pair<Int, Int>? = null
-            if (actionType == ScreenShot.TYPE_SCROLL) {
+            if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
                 scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
             }
             // get vh element interacted with and parse view hierarchy of current screen if null
@@ -447,14 +404,14 @@ class MyAccessibilityService : AccessibilityService() {
                 boxes.addAll(currVHBoxes)
             }
             // construct screenshot
-            currentScreenshot = ScreenShot(currentBitmap!!, outbounds, actionType, scrollCoords, boxes)
+            currentScreenshot = ScreenShot(currentBitmap!!, boxes)
             // create json string of VH
             var vh = currVHString
             if (vh == null) {
                 vh = parseVHToJson(currRootWindow!!)
             }
             // add the event
-            addEvent(node, packageName, isNewTrace, eventDescription, scrollCoords, currentScreenshot!!, vh)
+            addEvent(node, packageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
             lastPackageName = packageName
         }
     }
@@ -528,35 +485,36 @@ class MyAccessibilityService : AccessibilityService() {
         return gson.toJson(map)
     }
 
-    private fun getGestureCoordinates(node: AccessibilityNodeInfo?, scrollCoords: Pair<Int, Int>?) : String {
-        var coordinates = "[["
+    private fun createGesture(node: AccessibilityNodeInfo?, scrollCoords: Pair<Int, Int>?) : Gesture {
         val windowMetrics = windowManager!!.currentWindowMetrics
         val screenWidth = windowMetrics.bounds.width().toFloat()
         val screenHeight = windowMetrics.bounds.height().toFloat()
+        val centerX: Float
+        val centerY: Float
+        var scrollDX = 0F
+        var scrollDY = 0F
         if (node == null) {
             // take into account when node is empty (when home button is pressed)
-            val gestureX = (screenWidth/2)
-            val gestureY = (screenHeight-30)
-            coordinates += "${gestureX/screenWidth},${gestureY/screenHeight}" // assume home button is at bottom middle
+            centerX = (screenWidth/2) / screenWidth
+            centerY = (screenHeight-30) / screenHeight
         } else {
             val outbounds = Rect()
             node.getBoundsInScreen(outbounds)
-            val gestureX = outbounds.centerX()
-            val gestureY = outbounds.centerY()
-            coordinates += "${gestureX/screenWidth},${gestureY/screenHeight}"
+            centerX = outbounds.centerX()/screenWidth
+            centerY = outbounds.centerY()/screenHeight
             if (scrollCoords != null) {
-                coordinates += ",${scrollCoords.first/screenWidth},${scrollCoords.second/screenHeight}"
+                scrollDX = scrollCoords.first/screenWidth
+                scrollDY = scrollCoords.second/screenHeight
             }
         }
-        coordinates += "]]"
-        return coordinates
+        return Gesture(centerX, centerY, scrollDX, scrollDY)
     }
 
     private fun addEvent(
         node: AccessibilityNodeInfo?,
         packageName: String,
         isNewTrace: Boolean,
-        eventDescription: String,
+        eventLabel: String,
         scrollCoords: Pair<Int, Int>?,
         currentScreenShot: ScreenShot,
         viewHierarchy: String
@@ -575,47 +533,46 @@ class MyAccessibilityService : AccessibilityService() {
         }
         notifyPackageAdapter()
         // add the trace and notify adapter the list has made changes
-        val traceName: String
+        val traceLabel: String
         val traceLayer = packageMap[packageName] ?: return
         val traceMap = traceLayer.map
         val traceList = traceLayer.list
         if (isNewTrace) {
             // this is a new trace
-            traceName = eventDescription.substringBefore(";")
-            traceList.add(traceName)
+            traceLabel = eventLabel.substringBefore(";")
+            traceList.add(traceLabel)
             traceLayer.list = traceList
-            traceMap[traceName] = Layer()
+            traceMap[traceLabel] = Layer()
             traceLayer.map = traceMap
         } else {
-            traceName = traceList.last()
+            traceLabel = traceList.last()
         }
         notifyTraceAdapter()
         // add the event and notify adapter the list has made changes
-        val eventLayer = traceMap[traceName] ?: return
+        val eventLayer = traceMap[traceLabel] ?: return
         val eventList = eventLayer.list
-        eventList.add(eventDescription)
+        eventList.add(eventLabel)
         eventLayer.list = eventList
         val eventMap = eventLayer.map
-        eventMap[eventDescription] = Layer()
+        eventMap[eventLabel] = Layer()
         eventLayer.map = eventMap
         notifyEventAdapter()
         // update gesture map with new gesture
-        val eventName = eventDescription.substringBefore(";")
-        val coordinates = getGestureCoordinates(node, scrollCoords)
-        if (gesturesMap!!.containsKey(traceName)) {
-            gesturesMap!![traceName]?.set(eventName, coordinates)
+        val gesture = createGesture(node, scrollCoords)
+        if (gesturesMap.containsKey(traceLabel)) {
+            gesturesMap[traceLabel]?.set(eventLabel, gesture)
         } else {
-            gesturesMap!![traceName] = HashMap()
-            gesturesMap!![traceName]?.set(eventName, coordinates)
+            gesturesMap[traceLabel] = HashMap()
+            gesturesMap[traceLabel]?.set(eventLabel, gesture)
         }
         // add a new screenshot to list of traces
-        val screenshotLayer = eventMap[eventDescription] ?: return
+        val screenshotLayer = eventMap[eventLabel] ?: return
         screenshotLayer.screenShot = currentScreenShot
         val screenshotMap = screenshotLayer.map
-        screenshotMap[eventDescription] = Layer()
+        screenshotMap[eventLabel] = Layer()
         screenshotLayer.map = screenshotMap
         // add the view hierarchy to list of traces
-        val viewHierarchyLayer = screenshotMap[eventDescription] ?: return
+        val viewHierarchyLayer = screenshotMap[eventLabel] ?: return
         val viewHierarchyList = ArrayList<String>()
         viewHierarchyList.add(viewHierarchy)
         viewHierarchyLayer.list = viewHierarchyList

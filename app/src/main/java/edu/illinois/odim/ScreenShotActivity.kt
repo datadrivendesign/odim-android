@@ -15,8 +15,8 @@ class ScreenShotActivity : AppCompatActivity() {
 
     private var imageView: ScrubbingView? = null
     private var chosenPackageName: String? = null
-    private var chosenTraceName: String? = null
-    private var chosenEventName: String? = null
+    private var chosenTraceLabel: String? = null
+    private var chosenEventLabel: String? = null
     private var canvas: Canvas? = null
     private var originalBitmap: Bitmap? = null
 
@@ -55,14 +55,14 @@ class ScreenShotActivity : AppCompatActivity() {
         this.supportActionBar?.hide()
         setContentView(R.layout.activity_screenshot)
         chosenPackageName = intent.extras!!["package_name"].toString()
-        chosenTraceName = intent.extras!!["trace_name"].toString()
-        chosenEventName = intent.extras!!["event_name"].toString()
+        chosenTraceLabel = intent.extras!!["trace_label"].toString()
+        chosenEventLabel = intent.extras!!["event_label"].toString()
         title = "ScreenShot (Click Image for VH)"
         imageView = findViewById<View>(R.id.screenshot) as ScrubbingView
         val screenshot: ScreenShot =
-            getScreenshot(chosenPackageName, chosenTraceName, chosenEventName)
+            getScreenshot(chosenPackageName, chosenTraceLabel, chosenEventLabel)
 
-        val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceName, chosenEventName))
+        val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceLabel, chosenEventLabel))
         val jsonString: String = jsonArray[0] as String
         var vhMap: HashMap<String, String> = HashMap()
         vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
@@ -85,6 +85,7 @@ class ScreenShotActivity : AppCompatActivity() {
         val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_fab)
         val gson = GsonBuilder().create()
         saveFAB.setOnClickListener {
+            imageView!!.postInvalidate()
             // don't save if no redactions have been drawn
             if (imageView!!.currentRedacts.isEmpty()) {
                 return@setOnClickListener
@@ -96,17 +97,19 @@ class ScreenShotActivity : AppCompatActivity() {
                 // traverse each rectangle
                 imageView!!.traverse(imageView!!.vhs, drawnRedaction.rect!!)
                 imageView!!.postInvalidate()
-                setVh(chosenPackageName, chosenTraceName, chosenEventName, gson.toJson(imageView!!.vhs))
-                if (redactionMap.containsKey(chosenTraceName)) {
-                    if (redactionMap[chosenTraceName]!!.containsKey(chosenEventName)) {
-                        redactionMap[chosenTraceName]!![chosenEventName!!]?.add(drawnRedaction)
+                setVh(chosenPackageName, chosenTraceLabel, chosenEventLabel, gson.toJson(imageView!!.vhs))
+                if (redactionMap.containsKey(chosenTraceLabel)) {
+                    if (redactionMap[chosenTraceLabel]!!.containsKey(chosenEventLabel)) {
+                        redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)
                     } else {
-                        redactionMap[chosenTraceName]!![chosenEventName!!]?.add(drawnRedaction)
+                        redactionMap[chosenTraceLabel]!![chosenEventLabel!!] = mutableSetOf()
+                        redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)
                     }
 
                 } else {
-                    redactionMap[chosenTraceName!!] = HashMap()
-                    redactionMap[chosenTraceName]!![chosenEventName!!]?.add(drawnRedaction)
+                    redactionMap[chosenTraceLabel!!] = HashMap()
+                    redactionMap[chosenTraceLabel]!![chosenEventLabel!!] = mutableSetOf()
+                    redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)
                 }
 
             }

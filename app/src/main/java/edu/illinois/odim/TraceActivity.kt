@@ -43,10 +43,10 @@ class TraceActivity : AppCompatActivity(){
 
         recyclerView!!.adapter = recyclerAdapter
         recyclerAdapter!!.setOnItemClickListener(object : TraceAdapter.OnItemClickListener {
-            override fun onItemClick(traceName: String) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemClick(traceLabel: String) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                 val intent = Intent(applicationContext, EventActivity::class.java)
                 intent.putExtra("package_name", chosenPackageName)
-                intent.putExtra("trace_name", traceName)
+                intent.putExtra("trace_label", traceLabel)
                 startActivity(intent)
             }
         })

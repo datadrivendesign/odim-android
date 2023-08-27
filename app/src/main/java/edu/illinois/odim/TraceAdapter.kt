@@ -15,7 +15,7 @@ class TraceAdapter(context: Context,
     private lateinit var itemClickListener : OnItemClickListener
 
     interface  OnItemClickListener {
-        fun onItemClick(traceName: String)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
+        fun onItemClick(traceLabel: String)
     }
 
     fun setOnItemClickListener(listener : OnItemClickListener) {
@@ -28,11 +28,10 @@ class TraceAdapter(context: Context,
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        val traceName = itemList[position]
-        val events = getEvents(packageName, traceName)
+        val traceLabel = itemList[position]
+        val events = getEvents(packageName, traceLabel)
 
-        holder.traceName.text = traceName
-//        holder.traceDateTextView.text = traceName  // if (events.size > 0) events[0].substringBefore(";") else "Empty Trace"  // should never be empty, trace created at first event
+        holder.traceLabel.text = traceLabel
         holder.traceScreensTextView.text = this.inflater.context.getString(R.string.traceNumScreens, events.size)
 
     }
@@ -44,12 +43,12 @@ class TraceAdapter(context: Context,
 
 class MyViewHolder(itemView: View, listener: TraceAdapter.OnItemClickListener) : RecyclerView.ViewHolder(itemView)
 {
-    var traceName : TextView = itemView.findViewById(R.id.trace_name)
+    var traceLabel : TextView = itemView.findViewById(R.id.trace_label)
     val traceScreensTextView : TextView = itemView.findViewById(R.id.num_trace_screens)
 
     init {
         itemView.setOnClickListener {
-            listener.onItemClick(traceName.text.toString())
+            listener.onItemClick(traceLabel.text.toString())
         }
     }
 }

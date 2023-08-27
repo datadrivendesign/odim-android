@@ -35,20 +35,20 @@ class MovableFloatingActionButton : FloatingActionButton,
     }
 
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
-        val layoutParams = view.getLayoutParams() as MarginLayoutParams
+        val layoutParams = view.layoutParams as MarginLayoutParams
         val action = motionEvent.action
         return if (action == MotionEvent.ACTION_DOWN) {
             downRawX = motionEvent.rawX
             downRawY = motionEvent.rawY
-            dX = view.getX() - downRawX
-            dY = view.getY() - downRawY
+            dX = view.x - downRawX
+            dY = view.y - downRawY
             true // Consumed
         } else if (action == MotionEvent.ACTION_MOVE) {
-            val viewWidth: Int = view.getWidth()
-            val viewHeight: Int = view.getHeight()
-            val viewParent: View = view.getParent() as View
-            val parentWidth: Int = viewParent.getWidth()
-            val parentHeight: Int = viewParent.getHeight()
+            val viewWidth: Int = view.width
+            val viewHeight: Int = view.height
+            val viewParent: View = view.parent as View
+            val parentWidth: Int = viewParent.width
+            val parentHeight: Int = viewParent.height
             var newX = motionEvent.rawX + dX
             newX = Math.max(
                 layoutParams.leftMargin.toFloat(),

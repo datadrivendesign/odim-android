@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
 
 
         recyclerAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
-            override fun onItemClick(appPackage: String) {//parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemClick(appPackage: String) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
                 intent.putExtra("package_name", appPackage)
                 startActivity(intent)
