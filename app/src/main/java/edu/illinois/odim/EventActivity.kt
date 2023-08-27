@@ -69,7 +69,7 @@ class EventActivity : AppCompatActivity() {
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
             val traceDescInput = View.inflate(this, R.layout.upload_trace_dialog, null)
-            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+            AlertDialog.Builder(this)
                 .setTitle("Upload Trace")
                 .setView(traceDescInput)
                 .setPositiveButton("UPLOAD") { _, _ ->
@@ -96,7 +96,7 @@ class EventActivity : AppCompatActivity() {
                 .setNegativeButton("CANCEL") { dialogInterface, _ ->
                     dialogInterface.cancel()
                 }
-            builder.show()
+                .show()
         }
     }
 

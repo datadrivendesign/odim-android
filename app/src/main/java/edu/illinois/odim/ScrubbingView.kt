@@ -98,7 +98,9 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                     return false
                 }
 
-                // Delete rectangle if in Delete Mode
+
+
+                // Delete rectangle if in Delete Mode and touch rectangle
                 if (!drawMode) {
                     for (redaction in currentRedacts) {
                         val redactRect = redaction.rect
@@ -109,6 +111,27 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                         }
                     }
                     return true
+                } else { // edit redaction label if in Draw mode and touch rectangle
+                    for (redaction in currentRedacts) {
+                        if (redaction.rect!!.contains(convertedX, convertedY)) {
+                            // start creating the label form
+                            val inputForm = inflate(context, R.layout.layout_redaction_label, null)
+                            val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
+                            redactInputLabel.setText(redaction.label)
+                            // create the popup
+                            AlertDialog.Builder(context)
+                                .setTitle("Set Label")
+                                .setView(inputForm)
+                                .setPositiveButton("DONE") { _, _ ->
+                                    val label = redactInputLabel.text.toString()
+                                    redaction.label = label
+                                }
+                                .setNegativeButton("EXIT") { dialogInterface, _ ->
+                                    dialogInterface.cancel()
+                                }
+                                .show()
+                        }
+                    }
                 }
 
                 p1 = Point(convertedX, convertedY)
@@ -187,8 +210,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 }
             }
         }
-//        val redact = Redaction(matched, label)
-//        currentRedacts.add(redact)
         return matched
     }
 
