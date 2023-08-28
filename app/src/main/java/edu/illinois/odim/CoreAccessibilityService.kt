@@ -93,7 +93,7 @@ private suspend fun uploadScreen(client: OkHttpClient,
     reqBodyJSONObj.addProperty("vh", vhString)
     reqBodyJSONObj.addProperty("img", bitmapBase64)
     reqBodyJSONObj.addProperty("created", screenCreatedAt)
-    reqBodyJSONObj.add("gestures", gson.toJsonTree(gesture) as JsonObject)
+    reqBodyJSONObj.add("gesture", gson.toJsonTree(gesture) as JsonObject)
     val reqBody = gson.toJson(reqBodyJSONObj)
     // run the POST request
     val screenPostRequest = Request.Builder()
@@ -153,7 +153,6 @@ suspend fun uploadFullTraceContent(
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     val client = OkHttpClient()
     var isSuccessUpload: Boolean
-    Log.i("full trace", "called!")
     try {
         // Upload VH file
         val gson = Gson()
@@ -164,12 +163,12 @@ suspend fun uploadFullTraceContent(
             var screenId: String
             val screenResBody = uploadScreen(client, gson, packageName, traceLabel, event)
             isSuccessUpload = screenResBody.isSuccessful
-            val screenResBodyStr = screenResBody.body?.string() ?: ""
+            val screenResBodyStr = screenResBody.body?.string() ?: "{}"
             val returnedScreen =
-                gson.fromJson(screenResBodyStr, HashMap<String, Any?>()::class.java)
-            screenId = (returnedScreen["_id"] as String?)!!
+                gson.fromJson(screenResBodyStr, JsonObject::class.java)
+            screenId = returnedScreen.getAsJsonPrimitive("_id").asString
             screenResBody.body?.close()
-            if (isSuccessUpload) {
+            if (isSuccessUpload && screenId.isNotEmpty()) {
                 Log.i("api", "success upload screenshot")
                 screenIds.add(screenId)
             } else {
