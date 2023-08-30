@@ -232,13 +232,14 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         val children = root?.get("children") ?: return Triple(false, false, null)
         val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
         val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
-        for (i in childrenArr.indices) {
+        for (i in 0 until childrenArr.size) {
             // skip children already redacted
-            if (childrenArr[i]["content-desc"] != null && childrenArr[i]["content-desc"] == "description redacted.") {
+            if (childrenArr[i].containsKey("content-desc") && childrenArr[i]["content-desc"] == "description redacted.") {
                 continue
             }
             val isMatch = traverse(childrenArr[i], newRect)
             if (isMatch.first && !isMatch.second) {
+                postInvalidate()
                 if ("text_field" in childrenArr[i]) {
                     childrenArr[i]["text_field"] = "text redacted."
                 }
@@ -247,6 +248,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 this.canvas?.drawRect(newRect, confirmPaint)
                 return Triple(true, true, root)
             } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
+                postInvalidate()
                 childrenArr[i] = isMatch.third!!
                 root["children"] = gson.toJson(childrenArr)
                 return Triple(true, true, root)

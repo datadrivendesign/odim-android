@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.PixelFormat
@@ -21,9 +22,12 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
+import androidx.core.content.pm.PackageInfoCompat
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.google.gson.reflect.TypeToken
+import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.gesturesMap
 import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
 import okhttp3.MediaType.Companion.toMediaType
@@ -122,6 +126,11 @@ private suspend fun uploadRedaction(client: OkHttpClient,
     return client.newCall(vhPostRequest).await()
 }
 
+private fun getAppVersion(packageName: String): Long {
+    val pInfo: PackageInfo = appContext.packageManager.getPackageInfo(packageName, 0)
+    return PackageInfoCompat.getLongVersionCode(pInfo)
+}
+
 private suspend fun uploadTrace(client: OkHttpClient,
                                 gson: Gson,
                                 screenIds: ArrayList<String>,
@@ -135,6 +144,7 @@ private suspend fun uploadTrace(client: OkHttpClient,
     reqBodyJSONObj.addProperty("created", traceLabel)
     reqBodyJSONObj.addProperty("description", traceDescription)
     reqBodyJSONObj.addProperty("worker", workerId)
+    reqBodyJSONObj.addProperty("version", getAppVersion(packageName))
     val reqBody = gson.toJson(reqBodyJSONObj)
     val tracePostRequest = Request.Builder()
         .url("$apiUrlPrefix/traces")
@@ -304,16 +314,19 @@ class MyAccessibilityService : AccessibilityService() {
                 ) {
                     return false
                 }
-                // get view hierarchy at this time
-                currVHString = parseVHToJson(currRootWindow!!)
-                currVHBoxes = ArrayList(getBoxes(currRootWindow!!))
-                Log.i("currRootWindow", "update window")
                 // take screenshot and record current bitmap globally
                 takeScreenshot(
                     DEFAULT_DISPLAY,
                     appContext.mainExecutor,
                     object : TakeScreenshotCallback {
                         override fun onSuccess(result: ScreenshotResult) {
+                            // get view hierarchy at this time
+                            currVHString = parseVHToJson(currRootWindow!!)
+                            val vhRoot: HashMap<String, String> = Gson().fromJson(currVHString!!.trim(), HashMap<String, String>().javaClass)
+                            currVHBoxes = ArrayList()
+                            getVHBoxes(vhRoot, currVHBoxes)
+                            Log.i("currRootWindow", "update window")
+                            // update screen
                             isScreenEventPaired = false
                             currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
                             result.hardwareBuffer.close()
@@ -390,37 +403,44 @@ class MyAccessibilityService : AccessibilityService() {
                 Log.i("window", "refresh window root")
                 currRootWindow = rootInActiveWindow ?: return
             }
-            val boxes: ArrayList<Rect> = ArrayList()
-            if (currVHBoxes.isEmpty()) {
-                boxes.addAll(getBoxes(currRootWindow!!))
-            } else {
-                boxes.addAll(currVHBoxes)
-            }
-            // construct screenshot
-            currentScreenshot = ScreenShot(currentBitmap!!, boxes)
             // create json string of VH
             var vh = currVHString
             if (vh == null) {
                 vh = parseVHToJson(currRootWindow!!)
             }
+            val boxes: ArrayList<Rect> = ArrayList()
+            if (currVHBoxes.isEmpty()) {
+                val vhRoot: HashMap<String, String> = Gson().fromJson(vh.trim(), HashMap<String, String>().javaClass)
+                getVHBoxes(vhRoot, boxes)
+            } else {
+                boxes.addAll(currVHBoxes)
+            }
+            // construct screenshot
+            currentScreenshot = ScreenShot(currentBitmap!!, boxes)
             // add the event
             addEvent(node, packageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
             lastPackageName = packageName
         }
     }
-
-    private fun getBoxes(node: AccessibilityNodeInfo): ArrayList<Rect> {
-        val boxes: ArrayList<Rect> = ArrayList()
-        val rect = Rect()
-        node.getBoundsInScreen(rect)
-        boxes.add(rect)
-        for (i in 0 until node.childCount) {
-            val currentNode = node.getChild(i)
-            if (currentNode != null) {
-                boxes.addAll(getBoxes(currentNode))
-            }
+    private fun stringToRect(rectString: String): Rect {  // convert bounds: "Rect(0, 1926 - 1080, 6228)" format to unflatten
+        var convertRectStr = rectString.substring(5, rectString.length - 1).trim()
+        convertRectStr = convertRectStr.replace(", ", " ") 
+        convertRectStr = convertRectStr.replace(" - ", " ")
+        return Rect.unflattenFromString(convertRectStr)!!
+    }
+    private fun getVHBoxes(vhRoot: HashMap<String, String>, boxes: ArrayList<Rect>) {
+        val gson = Gson()
+        if (vhRoot["children_count"]!!.toInt() == 0) {  // recursive case
+            boxes.add(stringToRect(vhRoot["bounds_in_screen"]!!))
+            return
         }
-        return boxes
+        boxes.add(stringToRect(vhRoot["bounds_in_screen"]!!))
+        val children = vhRoot["children"]
+        val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
+        val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
+        for (i in 0 until childrenArr.size) {
+            getVHBoxes(childrenArr[i], boxes)
+        }
     }
 
     private fun parseVHToJson(node: AccessibilityNodeInfo): String {

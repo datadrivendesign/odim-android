@@ -3,6 +3,7 @@ package edu.illinois.odim
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -85,18 +86,17 @@ class ScreenShotActivity : AppCompatActivity() {
         val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_fab)
         val gson = GsonBuilder().create()
         saveFAB.setOnClickListener {
-            imageView!!.postInvalidate()
             // don't save if no redactions have been drawn
             if (imageView!!.currentRedacts.isEmpty()) {
+                Log.i("redact", "empty")
                 return@setOnClickListener
             }
-            // remove red paint strokes from bitmap
-            removeVHBoxes(screenshot.vh, this.originalBitmap)
             // loop through imageView.rectangles
+            removeVHBoxes(screenshot.vh, this.originalBitmap)
             for (drawnRedaction: Redaction in imageView!!.currentRedacts) {
                 // traverse each rectangle
+                Log.i("redact", drawnRedaction.toString())
                 imageView!!.traverse(imageView!!.vhs, drawnRedaction.rect!!)
-                imageView!!.postInvalidate()
                 setVh(chosenPackageName, chosenTraceLabel, chosenEventLabel, gson.toJson(imageView!!.vhs))
                 if (redactionMap.containsKey(chosenTraceLabel)) {
                     if (redactionMap[chosenTraceLabel]!!.containsKey(chosenEventLabel)) {
@@ -115,6 +115,9 @@ class ScreenShotActivity : AppCompatActivity() {
             }
             // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
             screenshot.bitmap = myBit
+            this.originalBitmap?.recycle()
+            this.originalBitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
+            drawVHBoxes(screenshot.vh)
             // clear imageView.rectangles
             imageView!!.currentRedacts.clear()
             notifyEventAdapter()
@@ -153,5 +156,19 @@ class ScreenShotActivity : AppCompatActivity() {
 //        val navBarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
 //        val navBarHeight = resources.getDimensionPixelSize(navBarHeightId)
 //        Log.i("nav bar h:", navBarHeight.toString())
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val screenshot: ScreenShot =
+            getScreenshot(chosenPackageName, chosenTraceLabel, chosenEventLabel)
+        removeVHBoxes(screenshot.vh, this.originalBitmap)
+        notifyEventAdapter()
+        super.onBackPressed()
+    }
+
+    override fun onDestroy() {
+        originalBitmap?.recycle()
+        super.onDestroy()
     }
 }
