@@ -322,9 +322,10 @@ class MyAccessibilityService : AccessibilityService() {
                         override fun onSuccess(result: ScreenshotResult) {
                             // get view hierarchy at this time
                             currVHString = parseVHToJson(currRootWindow!!)
-                            val vhRoot: HashMap<String, String> = Gson().fromJson(currVHString!!.trim(), HashMap<String, String>().javaClass)
+                            val gson = Gson()
+                            val vhRoot: HashMap<String, String> = gson.fromJson(currVHString!!.trim(), HashMap<String, String>().javaClass)
                             currVHBoxes = ArrayList()
-                            getVHBoxes(vhRoot, currVHBoxes)
+                            getVHBoxes(gson, vhRoot, currVHBoxes)
                             Log.i("currRootWindow", "update window")
                             // update screen
                             isScreenEventPaired = false
@@ -410,8 +411,9 @@ class MyAccessibilityService : AccessibilityService() {
             }
             val boxes: ArrayList<Rect> = ArrayList()
             if (currVHBoxes.isEmpty()) {
-                val vhRoot: HashMap<String, String> = Gson().fromJson(vh.trim(), HashMap<String, String>().javaClass)
-                getVHBoxes(vhRoot, boxes)
+                val gson = Gson()
+                val vhRoot: HashMap<String, String> = gson.fromJson(vh.trim(), HashMap<String, String>().javaClass)
+                getVHBoxes(gson, vhRoot, boxes)
             } else {
                 boxes.addAll(currVHBoxes)
             }
@@ -424,22 +426,26 @@ class MyAccessibilityService : AccessibilityService() {
     }
     private fun stringToRect(rectString: String): Rect {  // convert bounds: "Rect(0, 1926 - 1080, 6228)" format to unflatten
         var convertRectStr = rectString.substring(5, rectString.length - 1).trim()
-        convertRectStr = convertRectStr.replace(", ", " ") 
+        convertRectStr = convertRectStr.replace(", ", " ")
         convertRectStr = convertRectStr.replace(" - ", " ")
         return Rect.unflattenFromString(convertRectStr)!!
     }
-    private fun getVHBoxes(vhRoot: HashMap<String, String>, boxes: ArrayList<Rect>) {
-        val gson = Gson()
+    private fun getVHBoxes(gson: Gson, vhRoot: HashMap<String, String>, boxes: ArrayList<Rect>) {
         if (vhRoot["children_count"]!!.toInt() == 0) {  // recursive case
             boxes.add(stringToRect(vhRoot["bounds_in_screen"]!!))
             return
         }
         boxes.add(stringToRect(vhRoot["bounds_in_screen"]!!))
         val children = vhRoot["children"]
+
         val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
-        val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
+        val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>?>>(children, jsonChildType)
+
         for (i in 0 until childrenArr.size) {
-            getVHBoxes(childrenArr[i], boxes)
+            if (childrenArr[i] == null) {
+                continue
+            }
+            getVHBoxes(gson, childrenArr[i]!!, boxes)
         }
     }
 
@@ -490,6 +496,9 @@ class MyAccessibilityService : AccessibilityService() {
                     childrenVH += ","
                 }
             }
+        }
+        if (childrenVH.last() == ',') {
+            childrenVH.dropLast(1)
         }
         childrenVH += "]"
         map["children"] = childrenVH
