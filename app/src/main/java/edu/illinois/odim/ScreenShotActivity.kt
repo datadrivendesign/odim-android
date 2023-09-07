@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
 import org.json.JSONArray
 
@@ -65,14 +66,16 @@ class ScreenShotActivity : AppCompatActivity() {
 
         val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceLabel, chosenEventLabel))
         val jsonString: String = jsonArray[0] as String
-        var vhMap: HashMap<String, String> = HashMap()
-        vhMap = Gson().fromJson(jsonString.trim(), vhMap.javaClass)
+//        Log.i("vh string size", jsonString.length.toString())
+//        Log.i("vh", "num boxes: " + screenshot.vh?.size.toString())
+        var vhJsonObject = JsonObject()
+        vhJsonObject = Gson().fromJson(jsonString.trim(), vhJsonObject.javaClass)
 
         imageView!!.vhRects = screenshot.vh
         val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)  //tempBit
         canvas = Canvas(myBit)
         imageView!!.canvas = canvas
-        imageView!!.vhs = vhMap
+        imageView!!.vhs = vhJsonObject
 
         // Save the original bitmap with gesture so we can remove mistake redactions
         this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
@@ -97,7 +100,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 // traverse each rectangle
                 Log.i("redact", drawnRedaction.toString())
                 imageView!!.traverse(imageView!!.vhs, drawnRedaction.rect!!)
-                setVh(chosenPackageName, chosenTraceLabel, chosenEventLabel, gson.toJson(imageView!!.vhs))
+                setVh(chosenPackageName, chosenTraceLabel, chosenEventLabel, gson.toJson(imageView!!.vhs))  // TODO: stream back to string if needed
                 if (redactionMap.containsKey(chosenTraceLabel)) {
                     if (redactionMap[chosenTraceLabel]!!.containsKey(chosenEventLabel)) {
                         redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)

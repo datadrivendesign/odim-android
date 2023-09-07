@@ -17,6 +17,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import kotlin.math.max
 import kotlin.math.min
@@ -31,7 +33,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     var canvas: Canvas? = null
     var currentRedacts = mutableSetOf<Redaction>()
     var vhRects: ArrayList<Rect>? = null
-    var vhs: HashMap<String, String> = HashMap()
+    var vhs: JsonObject = JsonObject()
     var drawMode: Boolean = true
     var baseBitMap: Bitmap? = null
 
@@ -221,7 +223,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-    fun traverse(root: HashMap<String, String>?, newRect: Rect): Triple<Boolean, Boolean, HashMap<String, String>?> {
+    fun traverse(root: JsonObject?, newRect: Rect): Triple<Boolean, Boolean, JsonObject?> {
         // Base Case
         if (nodeIsMatch(root, newRect)) {
             // matching child is found to the rectangle
@@ -230,27 +232,31 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         // Recursive Case
         val gson = GsonBuilder().create()
         val children = root?.get("children") ?: return Triple(false, false, null)
-        val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
-        val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>>>(children, jsonChildType)
-        for (i in 0 until childrenArr.size) {
+//        val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
+        val jsonChildType = object : TypeToken<JsonArray>() {}.type
+        val childrenArr = gson.fromJson<JsonArray>(children, jsonChildType)
+        for (i in 0 until childrenArr.size()) {
+            val child = childrenArr[i].asJsonObject
             // skip children already redacted
-            if (childrenArr[i].containsKey("content-desc") && childrenArr[i]["content-desc"] == "description redacted.") {
+            if (child.has("content-desc") && child["content-desc"].asString == "description redacted.") {
                 continue
             }
-            val isMatch = traverse(childrenArr[i], newRect)
+            val isMatch = traverse(child, newRect)
             if (isMatch.first && !isMatch.second) {
                 postInvalidate()
-                if ("text_field" in childrenArr[i]) {
-                    childrenArr[i]["text_field"] = "text redacted."
+                if (child.has("text_field")) {
+                    child.remove("text_field")
+                    child.addProperty("text_field", "text redacted.")
                 }
-                childrenArr[i]["content-desc"] = "description redacted."
-                root["children"] = gson.toJson(childrenArr)
+                child.remove("content-desc")
+                child.addProperty("content-desc", "description redacted.")
+//                root["children"] = gson.toJson(childrenArr)  // TODO: should not need to update children
                 this.canvas?.drawRect(newRect, confirmPaint)
                 return Triple(true, true, root)
             } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
                 postInvalidate()
                 childrenArr[i] = isMatch.third!!
-                root["children"] = gson.toJson(childrenArr)
+//                root["children"] = gson.toJson(childrenArr)
                 return Triple(true, true, root)
             }
         }
@@ -258,10 +264,10 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return Triple(false, false, null)
     }
 
-    private fun nodeIsMatch(node: Map<String, String>?, newRect: Rect): Boolean {
-        val nodeRectString = node?.get("bounds_in_screen")
+    private fun nodeIsMatch(node: JsonObject?, newRect: Rect): Boolean {
+        val nodeRectString = node?.getAsJsonPrimitive("bounds_in_screen")?.asString ?: "null"
         val newRectString = newRect.toString()
-        return nodeRectString.equals(newRectString)
+        return nodeRectString == newRectString
     }
 
     private fun getArea(rect: Rect): Float {

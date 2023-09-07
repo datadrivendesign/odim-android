@@ -4,13 +4,13 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.PixelFormat
 import android.graphics.Rect
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.util.Base64
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
@@ -26,7 +26,7 @@ import androidx.core.content.pm.PackageInfoCompat
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonWriter
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.gesturesMap
 import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
@@ -37,6 +37,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import ru.gildor.coroutines.okhttp.await
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -211,14 +213,13 @@ suspend fun uploadFullTraceContent(
             Log.e("api", "fail upload trace")
         }
     } catch (exception: Exception) {
-        Log.e("ODIMUpload", "Upload failed", exception)
+        Log.e("edu.illinois.odim", "Upload failed", exception)
         return false
     }
     return isSuccessUpload
 }
 
 class MyAccessibilityService : AccessibilityService() {
-    private var lastPackageName: String? = null
     private var currentBitmap: Bitmap? = null
     private var currentScreenshot: ScreenShot? = null
     private var isScreenEventPaired: Boolean = false
@@ -226,11 +227,15 @@ class MyAccessibilityService : AccessibilityService() {
     var currRootWindow: AccessibilityNodeInfo? = null
     var currVHBoxes: ArrayList<Rect> = ArrayList()
     var currVHString: String? = null
-    var currTouchPackage: String? = null
+    private var lastEventPackageName: String = ""
+    private var lastTouchPackage: String = ""
     var currTouchTime: String? = null
+    private val odimPackageName = "edu.illinois.odim"
+    private val settingsPackageName = "com.android.settings"
 
     companion object {
         lateinit var appContext: Context
+        lateinit var appLauncherPackageName: String
         var gesturesMap: HashMap<String, HashMap<String, Gesture>> = HashMap()
         val redactionMap: HashMap<String, HashMap<String, MutableSet<Redaction>>> = HashMap()
     }
@@ -254,9 +259,17 @@ class MyAccessibilityService : AccessibilityService() {
                         AccessibilityEvent.TYPE_VIEW_SELECTED or
                         AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-        info.notificationTimeout = 50
+        info.notificationTimeout = 500
         info.packageNames = null
         serviceInfo = info
+
+        val intent = Intent("android.intent.action.MAIN")
+        intent.addCategory("android.intent.category.HOME")
+        appLauncherPackageName = packageManager.resolveActivity(
+                                    intent,
+                                    PackageManager.MATCH_DEFAULT_ONLY
+                                )!!.activityInfo.packageName
+
         // add invisible layout to get touches to screen
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager?
         val layout = FrameLayout(appContext)
@@ -276,30 +289,37 @@ class MyAccessibilityService : AccessibilityService() {
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
                 // do not update screenshot or vh immediately after home button pressed
+                Log.i("odim", "touch")
                 currRootWindow = rootInActiveWindow
                 // validate if home button pressed, root window different from last touch
-                if (currTouchPackage != null &&
-                    lastPackageName == currTouchPackage &&
-                    (currRootWindow == null ||
-                            (currRootWindow!!.packageName == "com.google.android.apps.nexuslauncher" &&
-                            currRootWindow!!.packageName != currTouchPackage))
-                ) {
+                if (lastTouchPackage.isNotEmpty() &&
+                    lastEventPackageName.isNotEmpty() &&
+                    lastEventPackageName == lastTouchPackage &&
+                    lastTouchPackage != odimPackageName &&
+                    lastTouchPackage != settingsPackageName &&
+                    lastTouchPackage != appLauncherPackageName &&
+                    currRootWindow?.packageName.toString() != lastTouchPackage &&
+                    (currRootWindow?.packageName.toString() == "null" ||
+                            currRootWindow?.packageName.toString() == appLauncherPackageName)) {
+                    Log.i("home", "button pressed")
                     // record event type as home button press
                     val eventTime = currTouchTime
                     val eventType = "TYPE_HOME_PRESSED"
                     val eventLabel = "$eventTime; $eventType"
                     // record vh and boxes
                     val vhString = currVHString
+                    // we need this line, if we use currVHBoxes in screenshot it will passed by
+                    // reference and boxes will be lost when clear() is called
                     val vhBoxes = ArrayList(currVHBoxes)
                     // create screenshot
                     currentScreenshot = ScreenShot(currentBitmap!!, vhBoxes)
                     // add home button press to event
-                    addEvent(null, currTouchPackage!!, false, eventLabel, null, currentScreenshot!!, vhString!!)
+                    addEvent(null, lastTouchPackage, false, eventLabel, null, currentScreenshot!!, vhString!!)
                     // reset everything
                     currVHString = null
                     currVHBoxes.clear()
-                    currTouchPackage = null //currRootWindow!!.packageName.toString()
-                    lastPackageName = currRootWindow!!.packageName.toString()
+                    lastTouchPackage = "null" //currRootWindow!!.packageName.toString()
+                    lastEventPackageName = currRootWindow?.packageName.toString()
                     return false
                 }
                 // reset vh and boxes to record next screen touch
@@ -307,37 +327,47 @@ class MyAccessibilityService : AccessibilityService() {
                     currVHBoxes.clear()
                 }
                 currVHString = null
-
+                Log.i("odim", "touch package " + (currRootWindow?.packageName ?: "null"))
                 if (currRootWindow == null ||
-                    currRootWindow!!.packageName == "edu.illinois.odim" ||
-                    currRootWindow!!.packageName == "com.google.android.apps.nexuslauncher"
+                    currRootWindow!!.packageName == odimPackageName ||
+                    currRootWindow!!.packageName == appLauncherPackageName ||
+                    currRootWindow!!.packageName == settingsPackageName
                 ) {
+                    lastTouchPackage = currRootWindow?.packageName.toString()
                     return false
                 }
-                // take screenshot and record current bitmap globally
+
+                // get view hierarchy at this time
+                val byteStream = ByteArrayOutputStream()
+                val jsonWriter = JsonWriter(OutputStreamWriter(byteStream, "UTF-8"))
+                Log.i("odim", "before parse")
+                currVHBoxes = ArrayList()
+                currVHString = currRootWindow.toString()
+                parseVHToJson(currRootWindow!!, currVHBoxes, jsonWriter)
+                jsonWriter.flush()
+                Log.i("odim", "after parse")
+                currVHString = String(byteStream.toByteArray())
+                Log.i("currRootWindow", "update window")
+                byteStream.close()
+                jsonWriter.close()
+
                 takeScreenshot(
                     DEFAULT_DISPLAY,
                     appContext.mainExecutor,
                     object : TakeScreenshotCallback {
                         override fun onSuccess(result: ScreenshotResult) {
-                            // get view hierarchy at this time
-                            currVHString = parseVHToJson(currRootWindow!!)
-                            val gson = Gson()
-                            val vhRoot: HashMap<String, String> = gson.fromJson(currVHString!!.trim(), HashMap<String, String>().javaClass)
-                            currVHBoxes = ArrayList()
-                            getVHBoxes(gson, vhRoot, currVHBoxes)
-                            Log.i("currRootWindow", "update window")
+                            currTouchTime = getInteractionTime()
+                            // take screenshot and record current bitmap globally
                             // update screen
                             isScreenEventPaired = false
                             currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
                             result.hardwareBuffer.close()
                             Log.i("screenshot", "update screen")
-                            currTouchPackage = currRootWindow!!.packageName.toString()
-                            currTouchTime = getInteractionTime()
+                            lastTouchPackage = currRootWindow!!.packageName.toString()
                         }
 
                         override fun onFailure(errCode: Int) {
-                            Log.e("ScreenshotFailure:", "Error code: $errCode")
+                            Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
                         }
                     }
                 )
@@ -350,28 +380,35 @@ class MyAccessibilityService : AccessibilityService() {
         // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
         // specifically answered by @AliSh
         // check if connected to wifi or mobile
-        val connMgr: ConnectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkCapabilities = connMgr.activeNetwork ?: return
-        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
-        val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-        if (!isWifiConn) {
-            return
-        }
+        // TODO: move this upload function
+//        val connMgr: ConnectivityManager =
+//            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+//        val networkCapabilities = connMgr.activeNetwork ?: return
+//        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
+//        val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+//        if (!isWifiConn) {
+//            return
+//        }
+
         // do not record unnecessary app packages
         // however, record the last screeen of a trace (app package -> nexuslauncher)
-        if (event == null || event.packageName == null) {
+
+        Log.i("event", event?.packageName.toString())
+        if (event == null) {
             return
         }
         val packageName = event.packageName.toString()
-        if (event.packageName == "edu.illinois.odim" ||
-            (event.packageName == "com.google.android.apps.nexuslauncher")
+        if (packageName == "null" ||
+            packageName == odimPackageName ||
+            packageName == appLauncherPackageName ||
+            packageName == settingsPackageName
         ) {
-            lastPackageName = event.packageName.toString()
+            lastEventPackageName = packageName
             return
         }
+
         var isNewTrace = false
-        if (lastPackageName == null || packageName != lastPackageName) {
+        if (packageName != lastEventPackageName) {
             isNewTrace = true
         }
 
@@ -388,7 +425,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
             isScreenEventPaired = true
             // Parse event description
-            val eventTime = getInteractionTime()
+            val eventTime = currTouchTime //getInteractionTime()
             val eventType = eventTypeToString(event.eventType)
             val eventLabel = "$eventTime; $eventType"
             // check if event scroll, add delta coordinates
@@ -407,104 +444,82 @@ class MyAccessibilityService : AccessibilityService() {
             // create json string of VH
             var vh = currVHString
             if (vh == null) {
-                vh = parseVHToJson(currRootWindow!!)
+                val byteStream = ByteArrayOutputStream()
+                val jsonWriter = JsonWriter(OutputStreamWriter(byteStream, "UTF-8"))
+                Log.i("odim", "before parse")
+                currVHBoxes.clear()
+                parseVHToJson(currRootWindow!!, currVHBoxes, jsonWriter)
+                jsonWriter.flush()
+                Log.i("odim", "after parse")
+                vh = String(byteStream.toByteArray())
+                jsonWriter.close()
+                byteStream.close()
             }
-            val boxes: ArrayList<Rect> = ArrayList()
-            if (currVHBoxes.isEmpty()) {
-                val gson = Gson()
-                val vhRoot: HashMap<String, String> = gson.fromJson(vh.trim(), HashMap<String, String>().javaClass)
-                getVHBoxes(gson, vhRoot, boxes)
-            } else {
-                boxes.addAll(currVHBoxes)
-            }
-            // construct screenshot
+            // we need this line, if we use currVHBoxes in Screenshot it will passed by reference
+            // and boxes will be lost when clear() is called
+            val boxes = ArrayList(currVHBoxes)
             currentScreenshot = ScreenShot(currentBitmap!!, boxes)
             // add the event
             addEvent(node, packageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
-            lastPackageName = packageName
-        }
-    }
-    private fun stringToRect(rectString: String): Rect {  // convert bounds: "Rect(0, 1926 - 1080, 6228)" format to unflatten
-        var convertRectStr = rectString.substring(5, rectString.length - 1).trim()
-        convertRectStr = convertRectStr.replace(", ", " ")
-        convertRectStr = convertRectStr.replace(" - ", " ")
-        return Rect.unflattenFromString(convertRectStr)!!
-    }
-    private fun getVHBoxes(gson: Gson, vhRoot: HashMap<String, String>, boxes: ArrayList<Rect>) {
-        if (vhRoot["children_count"]!!.toInt() == 0) {  // recursive case
-            boxes.add(stringToRect(vhRoot["bounds_in_screen"]!!))
-            return
-        }
-        boxes.add(stringToRect(vhRoot["bounds_in_screen"]!!))
-        val children = vhRoot["children"]
-
-        val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
-        val childrenArr = gson.fromJson<ArrayList<HashMap<String,String>?>>(children, jsonChildType)
-
-        for (i in 0 until childrenArr.size) {
-            if (childrenArr[i] == null) {
-                continue
-            }
-            getVHBoxes(gson, childrenArr[i]!!, boxes)
+            lastEventPackageName = packageName
         }
     }
 
-    private fun parseVHToJson(node: AccessibilityNodeInfo): String {
-        val map: MutableMap<String, String> = HashMap()
-        map["package_name"] = node.packageName.toString()
-        map["class_name"] = node.className.toString()
-        map["scrollable"] = java.lang.String.valueOf(node.isScrollable)
-        if (node.parent != null) {
-            val cs = node.parent.className
-            if (cs != null) {
-                map["parent"] = node.parent.className.toString()
-            }
-        } else {
-            map["parent"] = "none"
-        }
-        map["clickable"] = java.lang.String.valueOf(node.isClickable)
-        map["focusable"] = java.lang.String.valueOf(node.isFocusable)
-        map["long-clickable"] = java.lang.String.valueOf(node.isLongClickable)
-        map["enabled"] = java.lang.String.valueOf(node.isEnabled)
-        val outbounds = Rect() // Rect(x1 y1, x2, y2) -> "[x1, y1, x2, y2]"
-        node.getBoundsInScreen(outbounds)
-        map["bounds_in_screen"] = outbounds.toString()
-        map["visibility"] = java.lang.String.valueOf(node.isVisibleToUser)
-        if (node.contentDescription != null) {
-            map["content-desc"] = node.contentDescription.toString()
-        } else {
-            map["content-desc"] = "none"
-        }
-        map["focused"] = java.lang.String.valueOf(node.isFocused)
-        map["selected"] = java.lang.String.valueOf(node.isSelected)
-        map["children_count"] = java.lang.String.valueOf(node.childCount)
-        map["checkable"] = java.lang.String.valueOf(node.isCheckable)
-        map["checked"] = java.lang.String.valueOf(node.isChecked)
-        val text = node.text
-        if (text != null) {
-            val textField = text.toString()
-            if (textField != "") {
-                map["text_field"] = text.toString()
-            }
-        }
-        var childrenVH = "["
-        for (i in 0 until node.childCount) {
-            val currentNode = node.getChild(i)
-            if (currentNode != null) {
-                childrenVH += parseVHToJson(currentNode)
-                if (i < node.childCount-1) {
-                    childrenVH += ","
+    private fun parseVHToJson(node: AccessibilityNodeInfo,
+                              boxes: ArrayList<Rect>,
+                              jsonWriter: JsonWriter) {
+        try {
+            jsonWriter.beginObject()
+            // add children to json
+            jsonWriter.name("children")
+            jsonWriter.beginArray()
+            for (i in 0 until node.childCount) {
+                val currentNode = node.getChild(i)
+                if (currentNode != null) {
+                    parseVHToJson(currentNode, boxes, jsonWriter)
                 }
             }
+            jsonWriter.endArray()
+            // write coordinates as string to json
+            val outbounds = Rect()
+            node.getBoundsInScreen(outbounds)
+            jsonWriter.name("bounds_in_screen").value(outbounds.toString())
+            boxes.add(outbounds)
+            // parent and class name
+            jsonWriter.name("package_name").value(node.packageName.toString())
+            jsonWriter.name("class_name").value(node.className.toString())
+            if (node.parent != null) {
+                val parentClass = node.parent.className ?: "none"
+                jsonWriter.name("parent").value(parentClass.toString())
+            } else {
+                jsonWriter.name("parent").value("none")
+            }
+            // add vh element boolean properties
+            jsonWriter.name("scrollable").value(node.isScrollable)
+            jsonWriter.name("clickable").value(node.isClickable)
+            jsonWriter.name("focusable").value(node.isFocusable)
+            jsonWriter.name("focused").value(node.isFocused)
+            jsonWriter.name("checkable").value(node.isCheckable)
+            jsonWriter.name("checked").value(node.isChecked)
+            jsonWriter.name("long-clickable").value(node.isLongClickable)
+            jsonWriter.name("enabled").value(node.isEnabled)
+            jsonWriter.name("visibility").value(node.isVisibleToUser)
+            jsonWriter.name("selected").value(node.isSelected)
+            // write text and content description to json
+            val contentDesc = node.contentDescription ?: "none"
+            jsonWriter.name("content-desc").value(contentDesc.toString())
+            val text = node.text
+            if (text != null) {
+                val textField = text.toString()
+                if (textField.isNotEmpty()) {
+                    jsonWriter.name("text_field").value(textField)
+                }
+            }
+            jsonWriter.name("children_count").value(node.childCount)
+            jsonWriter.endObject()
+        } catch (e: IOException) {
+            Log.e("edu.illinois.odim", "IOException", e)
         }
-        if (childrenVH.last() == ',') {
-            childrenVH.dropLast(1)
-        }
-        childrenVH += "]"
-        map["children"] = childrenVH
-        // convert to json string
-        val gson = Gson()
-        return gson.toJson(map)
     }
 
     private fun createGesture(node: AccessibilityNodeInfo?, scrollCoords: Pair<Int, Int>?) : Gesture {
