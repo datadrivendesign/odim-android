@@ -301,6 +301,7 @@ class MyAccessibilityService : AccessibilityService() {
                             currRootWindow?.packageName.toString() == appLauncherPackageName)) {
                     Log.i("home", "button pressed")
                     // record event type as home button press
+                    isScreenEventPaired = true
                     val eventTime = currTouchTime
                     val eventType = "TYPE_HOME_PRESSED"
                     val eventLabel = "$eventTime; $eventType"
@@ -316,8 +317,7 @@ class MyAccessibilityService : AccessibilityService() {
                     // reset everything
                     currVHString = null
                     currVHBoxes.clear()
-                    lastTouchPackage = "null" //currRootWindow!!.packageName.toString()
-                    lastEventPackageName = currRootWindow?.packageName.toString()
+                    lastTouchPackage = currRootWindow!!.packageName.toString()
                     return false
                 }
                 // reset vh and boxes to record next screen touch
