@@ -227,8 +227,8 @@ class MyAccessibilityService : AccessibilityService() {
     var currRootWindow: AccessibilityNodeInfo? = null
     var currVHBoxes: ArrayList<Rect> = ArrayList()
     var currVHString: String? = null
-    private var lastEventPackageName: String = ""
-    private var lastTouchPackage: String = ""
+    private var lastEventPackageName: String = "null"
+    private var lastTouchPackage: String = "null"
     var currTouchTime: String? = null
     private val odimPackageName = "edu.illinois.odim"
     private val settingsPackageName = "com.android.settings"
@@ -289,15 +289,13 @@ class MyAccessibilityService : AccessibilityService() {
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
                 // do not update screenshot or vh immediately after home button pressed
-                Log.i("odim", "touch")
                 currRootWindow = rootInActiveWindow
                 // validate if home button pressed, root window different from last touch
-                if (lastTouchPackage.isNotEmpty() &&
-                    lastEventPackageName.isNotEmpty() &&
-                    lastEventPackageName == lastTouchPackage &&
+                if (lastTouchPackage != "null" &&
                     lastTouchPackage != odimPackageName &&
                     lastTouchPackage != settingsPackageName &&
                     lastTouchPackage != appLauncherPackageName &&
+                    lastTouchPackage == lastEventPackageName &&
                     currRootWindow?.packageName.toString() != lastTouchPackage &&
                     (currRootWindow?.packageName.toString() == "null" ||
                             currRootWindow?.packageName.toString() == appLauncherPackageName)) {
