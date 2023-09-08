@@ -317,7 +317,7 @@ class MyAccessibilityService : AccessibilityService() {
                     // reset everything
                     currVHString = null
                     currVHBoxes.clear()
-                    lastTouchPackage = currRootWindow!!.packageName.toString()
+                    lastTouchPackage = currRootWindow?.packageName.toString()
                     return false
                 }
                 // reset vh and boxes to record next screen touch
