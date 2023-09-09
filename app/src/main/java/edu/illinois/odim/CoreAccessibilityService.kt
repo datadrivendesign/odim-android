@@ -261,6 +261,9 @@ class MyAccessibilityService : AccessibilityService() {
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
         info.notificationTimeout = 500
         info.packageNames = null
+        info.flags = AccessibilityServiceInfo.DEFAULT or
+                AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
         serviceInfo = info
 
         val intent = Intent("android.intent.action.MAIN")
@@ -291,6 +294,7 @@ class MyAccessibilityService : AccessibilityService() {
                 // do not update screenshot or vh immediately after home button pressed
                 currRootWindow = rootInActiveWindow
                 // validate if home button pressed, root window different from last touch
+                // TODO: create a list of packages to ignore
                 if (lastTouchPackage != "null" &&
                     lastTouchPackage != odimPackageName &&
                     lastTouchPackage != settingsPackageName &&
@@ -326,7 +330,7 @@ class MyAccessibilityService : AccessibilityService() {
                 }
                 currVHString = null
                 Log.i("odim", "touch package " + (currRootWindow?.packageName ?: "null"))
-                if (currRootWindow == null ||
+                if (currRootWindow?.packageName.toString() == "null" ||
                     currRootWindow!!.packageName == odimPackageName ||
                     currRootWindow!!.packageName == appLauncherPackageName ||
                     currRootWindow!!.packageName == settingsPackageName
@@ -392,6 +396,8 @@ class MyAccessibilityService : AccessibilityService() {
         // however, record the last screeen of a trace (app package -> nexuslauncher)
 
         Log.i("event", event?.packageName.toString())
+        Log.i("event", event.toString())
+        Log.i("event", event?.text.toString())
         if (event == null) {
             return
         }
@@ -399,7 +405,7 @@ class MyAccessibilityService : AccessibilityService() {
         if (packageName == "null" ||
             packageName == odimPackageName ||
             packageName == appLauncherPackageName ||
-            packageName == settingsPackageName
+            packageName == settingsPackageName 
         ) {
             lastEventPackageName = packageName
             return
