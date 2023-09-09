@@ -11,6 +11,8 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Base64
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
@@ -22,6 +24,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.core.content.pm.PackageInfoCompat
 import com.google.gson.Gson
 import com.google.gson.JsonArray
@@ -156,12 +159,42 @@ private suspend fun uploadTrace(client: OkHttpClient,
         .build()
     return client.newCall(tracePostRequest).await()
 }
+
+fun checkWiFiConnection(): Boolean {
+    val connMgr: ConnectivityManager =
+        appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager  // Context.CONNECTIVITY_SERVICE
+    val networkCapabilities = connMgr.activeNetwork //?: return false
+    if (networkCapabilities == null) {
+        Log.i("error upload", "no Wi-Fi connection")
+        return false
+    }
+    val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) //?: return false
+    if (activeNetwork == null) {
+        Log.i("error upload", "no Wi-Fi connection")
+        return false
+    }
+    val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+    if (!isWifiConn) {
+        Log.i("error upload", "no Wi-Fi connection")
+        return false
+    }
+    return true
+}
 suspend fun uploadFullTraceContent(
     packageName: String,
     traceLabel: String,
     traceDescription: String
 ) : Boolean {
     // try to upload VH content to AWS
+    // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
+    // specifically answered by @AliSh
+    // check if connected to wifi or mobile
+    val isWifiConnected = checkWiFiConnection()
+    if (!isWifiConnected) {
+        // TODO: give notification about not connected to wifi
+        Toast.makeText(appContext, "Cannot upload without connection to Wi-Fi!", Toast.LENGTH_SHORT).show()
+        return false
+    }
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     val client = OkHttpClient()
     var isSuccessUpload: Boolean
@@ -259,7 +292,7 @@ class MyAccessibilityService : AccessibilityService() {
                         AccessibilityEvent.TYPE_VIEW_SELECTED or
                         AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-        info.notificationTimeout = 500
+        info.notificationTimeout = 125
         info.packageNames = null
         info.flags = AccessibilityServiceInfo.DEFAULT or
                 AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
@@ -293,37 +326,6 @@ class MyAccessibilityService : AccessibilityService() {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
                 // do not update screenshot or vh immediately after home button pressed
                 currRootWindow = rootInActiveWindow
-                // validate if home button pressed, root window different from last touch
-                // TODO: create a list of packages to ignore
-                if (lastTouchPackage != "null" &&
-                    lastTouchPackage != odimPackageName &&
-                    lastTouchPackage != settingsPackageName &&
-                    lastTouchPackage != appLauncherPackageName &&
-                    lastTouchPackage == lastEventPackageName &&
-                    currRootWindow?.packageName.toString() != lastTouchPackage &&
-                    (currRootWindow?.packageName.toString() == "null" ||
-                            currRootWindow?.packageName.toString() == appLauncherPackageName)) {
-                    Log.i("home", "button pressed")
-                    // record event type as home button press
-                    isScreenEventPaired = true
-                    val eventTime = currTouchTime
-                    val eventType = "TYPE_HOME_PRESSED"
-                    val eventLabel = "$eventTime; $eventType"
-                    // record vh and boxes
-                    val vhString = currVHString
-                    // we need this line, if we use currVHBoxes in screenshot it will passed by
-                    // reference and boxes will be lost when clear() is called
-                    val vhBoxes = ArrayList(currVHBoxes)
-                    // create screenshot
-                    currentScreenshot = ScreenShot(currentBitmap!!, vhBoxes)
-                    // add home button press to event
-                    addEvent(null, lastTouchPackage, false, eventLabel, null, currentScreenshot!!, vhString!!)
-                    // reset everything
-                    currVHString = null
-                    currVHBoxes.clear()
-                    lastTouchPackage = currRootWindow?.packageName.toString()
-                    return false
-                }
                 // reset vh and boxes to record next screen touch
                 if (currVHBoxes.isNotEmpty()) {
                     currVHBoxes.clear()
@@ -379,44 +381,39 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
-        // specifically answered by @AliSh
-        // check if connected to wifi or mobile
-        // TODO: move this upload function
-//        val connMgr: ConnectivityManager =
-//            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-//        val networkCapabilities = connMgr.activeNetwork ?: return
-//        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) ?: return
-//        val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-//        if (!isWifiConn) {
-//            return
-//        }
-
-        // do not record unnecessary app packages
-        // however, record the last screeen of a trace (app package -> nexuslauncher)
-
         Log.i("event", event?.packageName.toString())
-        Log.i("event", event.toString())
-        Log.i("event", event?.text.toString())
         if (event == null) {
             return
         }
-        val packageName = event.packageName.toString()
-        if (packageName == "null" ||
-            packageName == odimPackageName ||
-            packageName == appLauncherPackageName ||
-            packageName == settingsPackageName 
-        ) {
-            lastEventPackageName = packageName
+        if (isScreenEventPaired) {  // ignore if screenshot already paired with event
             return
         }
-
+        var currEventPackageName = event.packageName.toString()
+        // before we decide if new trace, we should check if BACK or HOME button
+        val systemUIPackageName = "com.android.systemui"
+        val backBtnText = "[Back]"
+        val homeBtnText = "[Home]"
+        val overviewBtnTexts = listOf<String>("[Overview]", "[Recents]")
+        val isBackBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == backBtnText)
+        val isHomeBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == homeBtnText)
+        val isOverviewBtnPressed = (event.packageName == systemUIPackageName) && (overviewBtnTexts.contains(event.text.toString()))
+        // ignore new systemui package name update if home or back button pressed
         var isNewTrace = false
-        if (packageName != lastEventPackageName) {
+        if (currEventPackageName != lastEventPackageName && !isBackBtnPressed && !isHomeBtnPressed && !isOverviewBtnPressed) {
+            // continue trace even if back and home button pressed
             isNewTrace = true
         }
-
-        if (isScreenEventPaired) {  // ignore following non user events
+        if (isBackBtnPressed || isHomeBtnPressed || isOverviewBtnPressed) {
+            Log.i("pressed", "systemui buttons")
+            currEventPackageName = lastEventPackageName
+        }
+        Log.i("currEventPackageName", currEventPackageName)
+        if (currEventPackageName == "null" ||
+            currEventPackageName == odimPackageName ||
+            currEventPackageName == appLauncherPackageName ||
+            currEventPackageName == settingsPackageName
+        ) {
+            lastEventPackageName = currEventPackageName
             return
         }
         // construct interaction event
@@ -428,10 +425,6 @@ class MyAccessibilityService : AccessibilityService() {
                 return
             }
             isScreenEventPaired = true
-            // Parse event description
-            val eventTime = currTouchTime //getInteractionTime()
-            val eventType = eventTypeToString(event.eventType)
-            val eventLabel = "$eventTime; $eventType"
             // check if event scroll, add delta coordinates
             var scrollCoords : Pair<Int, Int>? = null
             if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
@@ -463,9 +456,18 @@ class MyAccessibilityService : AccessibilityService() {
             // and boxes will be lost when clear() is called
             val boxes = ArrayList(currVHBoxes)
             currentScreenshot = ScreenShot(currentBitmap!!, boxes)
+            // Parse event description
+            val eventTime = currTouchTime //getInteractionTime()
+            val eventType = eventTypeToString(event.eventType)
+            val eventLabel = "$eventTime; $eventType"
             // add the event
-            addEvent(node, packageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
-            lastEventPackageName = packageName
+            addEvent(node, currEventPackageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
+            Log.i("added", "new event")
+            if (isBackBtnPressed) {
+                lastEventPackageName = currEventPackageName
+            } else {
+                lastEventPackageName = event.packageName.toString()
+            }
         }
     }
 
