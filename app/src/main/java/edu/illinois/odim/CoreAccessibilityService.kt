@@ -462,7 +462,6 @@ class MyAccessibilityService : AccessibilityService() {
             val eventLabel = "$eventTime; $eventType"
             // add the event
             addEvent(node, currEventPackageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
-            Log.i("added", "new event")
             if (isBackBtnPressed) {
                 lastEventPackageName = currEventPackageName
             } else {
