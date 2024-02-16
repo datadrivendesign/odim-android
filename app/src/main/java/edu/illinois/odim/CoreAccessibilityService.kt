@@ -33,6 +33,9 @@ import com.google.gson.stream.JsonWriter
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.gesturesMap
 import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -48,6 +51,7 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.system.measureTimeMillis
 
 
 val packageList: ArrayList<String> = ArrayList()
@@ -81,10 +85,10 @@ fun setVh(packageName: String?, traceLabel: String?, eventLabel: String?, vhJson
 }
 
 private suspend fun uploadScreen(client: OkHttpClient,
-                                 gson: Gson,
-                                 packageName: String,
-                                 traceLabel: String,
-                                 eventLabel: String): Response {
+                         gson: Gson,
+                         packageName: String,
+                         traceLabel: String,
+                         eventLabel: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     // get bitmap as bit64 string
     val byteOut = ByteArrayOutputStream()
@@ -115,9 +119,9 @@ private suspend fun uploadScreen(client: OkHttpClient,
 }
 
 private suspend fun uploadRedaction(client: OkHttpClient,
-                                    gson: Gson,
-                                    redaction: Redaction,
-                                    screenId: String): Response {
+                            gson: Gson,
+                            redaction: Redaction,
+                            screenId: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     val reqBodyJSONObj: JsonObject = gson.toJsonTree(redaction) as JsonObject
     reqBodyJSONObj.addProperty("screen", screenId)
@@ -137,11 +141,11 @@ private fun getAppVersion(packageName: String): Long {
 }
 
 private suspend fun uploadTrace(client: OkHttpClient,
-                                gson: Gson,
-                                screenIds: ArrayList<String>,
-                                packageName: String,
-                                traceLabel: String,
-                                traceDescription: String): Response {
+                        gson: Gson,
+                        screenIds: ArrayList<String>,
+                        packageName: String,
+                        traceLabel: String,
+                        traceDescription: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     val reqBodyJSONObj = JsonObject()
     reqBodyJSONObj.add("screens", gson.toJsonTree(screenIds) as JsonArray)
@@ -185,71 +189,71 @@ suspend fun uploadFullTraceContent(
     traceLabel: String,
     traceDescription: String
 ) : Boolean {
-    // try to upload VH content to AWS
-    // found non-deprecated solution from: https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
-    // specifically answered by @AliSh
-    // check if connected to wifi or mobile
-    val isWifiConnected = checkWiFiConnection()
-    if (!isWifiConnected) {
-        // TODO: give notification about not connected to wifi
-        Toast.makeText(appContext, "Cannot upload without connection to Wi-Fi!", Toast.LENGTH_SHORT).show()
-        return false
-    }
-    Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
-    val client = OkHttpClient()
-    var isSuccessUpload: Boolean
-    try {
-        // Upload VH file
-        val gson = Gson()
-        val screenIds = ArrayList<String>()
-        val traceEvents: ArrayList<String> = getEvents(packageName, traceLabel)
-        for (event: String in traceEvents) {
-            // add POST request for screens
-            var screenId: String
-            val screenResBody = uploadScreen(client, gson, packageName, traceLabel, event)
-            isSuccessUpload = screenResBody.isSuccessful
-            val screenResBodyStr = screenResBody.body?.string() ?: "{}"
-            val returnedScreen =
-                gson.fromJson(screenResBodyStr, JsonObject::class.java)
-            screenId = returnedScreen.getAsJsonPrimitive("_id").asString
-            screenResBody.body?.close()
-            if (isSuccessUpload && screenId.isNotEmpty()) {
-                Log.i("api", "success upload screenshot")
-                screenIds.add(screenId)
-            } else {
-                Log.e("api", "fail upload screenshot")
-                return false
-            }
-            // add POST request for redactions
-            val redactions: MutableSet<Redaction> =
-                redactionMap[traceLabel]?.get(event) ?: mutableSetOf()
-            for (redaction: Redaction in redactions) {
-                val redactionResBody = uploadRedaction(client, gson, redaction, screenId)
-                isSuccessUpload = redactionResBody.isSuccessful
-                redactionResBody.body?.close()
-                if (isSuccessUpload) {
-                    Log.i("api", "success upload redaction")
+    // try to check network status, found non-deprecated solution from:
+    // https://stackoverflow.com/questions/49819923/kotlin-checking-network-status-using-connectivitymanager-returns-null-if-networ
+    // specifically answered by @AliSh to check if connected to wifi or mobile
+        val isWifiConnected = checkWiFiConnection()
+        if (!isWifiConnected) {
+            // TODO: give notification about not connected to wifi
+            Toast.makeText(appContext, "Cannot upload without connection to Wi-Fi!", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
+        Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
+        val client = OkHttpClient()
+        var isSuccessUpload: Boolean
+        try {
+            // Upload VH file
+            val gson = Gson()
+            val screenIds = ArrayList<String>()
+            val traceEvents: ArrayList<String> = getEvents(packageName, traceLabel)
+            for (event: String in traceEvents) {
+                // add POST request for screens
+                var screenId: String
+                val screenResBody = uploadScreen(client, gson, packageName, traceLabel, event)
+                isSuccessUpload = screenResBody.isSuccessful
+                val screenResBodyStr = screenResBody.body?.string() ?: "{}"
+                val returnedScreen =
+                    gson.fromJson(screenResBodyStr, JsonObject::class.java)
+                screenId = returnedScreen.getAsJsonPrimitive("_id").asString
+                screenResBody.body?.close()
+                if (isSuccessUpload && screenId.isNotEmpty()) {
+                    Log.i("api", "success upload screenshot")
+                    screenIds.add(screenId)
                 } else {
-                    Log.e("api", "fail upload redaction")
+                    Log.e("api", "fail upload screenshot")
                     return false
                 }
+                // add POST request for redactions
+                val redactions: MutableSet<Redaction> =
+                    redactionMap[traceLabel]?.get(event) ?: mutableSetOf()
+                for (redaction: Redaction in redactions) {
+                    val redactionResBody = uploadRedaction(client, gson, redaction, screenId)
+                    isSuccessUpload = redactionResBody.isSuccessful
+                    redactionResBody.body?.close()
+                    if (isSuccessUpload) {
+                        Log.i("api", "success upload redaction")
+                    } else {
+                        Log.e("api", "fail upload redaction")
+                        return false
+                    }
+                }
             }
+            // add POST request for traces
+            val traceResBody =
+                uploadTrace(client, gson, screenIds, packageName, traceLabel, traceDescription)
+            isSuccessUpload = traceResBody.isSuccessful
+            traceResBody.body?.close()
+            if (isSuccessUpload) {
+                Log.i("api", "success upload trace")
+            } else {
+                Log.e("api", "fail upload trace")
+            }
+        } catch (exception: Exception) {
+            Log.e("edu.illinois.odim", "Upload failed", exception)
+            return false
         }
-        // add POST request for traces
-        val traceResBody =
-            uploadTrace(client, gson, screenIds, packageName, traceLabel, traceDescription)
-        isSuccessUpload = traceResBody.isSuccessful
-        traceResBody.body?.close()
-        if (isSuccessUpload) {
-            Log.i("api", "success upload trace")
-        } else {
-            Log.e("api", "fail upload trace")
-        }
-    } catch (exception: Exception) {
-        Log.e("edu.illinois.odim", "Upload failed", exception)
-        return false
-    }
-    return isSuccessUpload
+        return isSuccessUpload
 }
 
 class MyAccessibilityService : AccessibilityService() {
@@ -287,12 +291,11 @@ class MyAccessibilityService : AccessibilityService() {
         appContext = applicationContext
         val info = AccessibilityServiceInfo()
         info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
-                        AccessibilityEvent.TYPE_VIEW_SCROLLED or
                         AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
-                        AccessibilityEvent.TYPE_VIEW_SELECTED or
-                        AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+                        AccessibilityEvent.TYPE_VIEW_SCROLLED or
+                        AccessibilityEvent.TYPE_VIEW_SELECTED
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-        info.notificationTimeout = 125
+        info.notificationTimeout = 300
         info.packageNames = null
         info.flags = AccessibilityServiceInfo.DEFAULT or
                 AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
@@ -322,6 +325,7 @@ class MyAccessibilityService : AccessibilityService() {
         params.gravity = Gravity.TOP
         windowManager!!.addView(layout, params)
         // record screenshot and view hierarchy when screen touch is detected
+        // TODO: separate screenshot and vh parse into coroutines for concurrency
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
                 // do not update screenshot or vh immediately after home button pressed
@@ -341,45 +345,58 @@ class MyAccessibilityService : AccessibilityService() {
                     return false
                 }
 
-                // get view hierarchy at this time
-                val byteStream = ByteArrayOutputStream()
-                val jsonWriter = JsonWriter(OutputStreamWriter(byteStream, "UTF-8"))
-                Log.i("odim", "before parse")
-                currVHBoxes = ArrayList()
-                currVHString = currRootWindow.toString()
-                parseVHToJson(currRootWindow!!, currVHBoxes, jsonWriter)
-                jsonWriter.flush()
-                Log.i("odim", "after parse")
-                currVHString = String(byteStream.toByteArray())
-                Log.i("currRootWindow", "update window")
-                byteStream.close()
-                jsonWriter.close()
-
-                takeScreenshot(
-                    DEFAULT_DISPLAY,
-                    appContext.mainExecutor,
-                    object : TakeScreenshotCallback {
-                        override fun onSuccess(result: ScreenshotResult) {
-                            currTouchTime = getInteractionTime()
-                            // take screenshot and record current bitmap globally
-                            // update screen
-                            isScreenEventPaired = false
-                            currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                            result.hardwareBuffer.close()
-                            Log.i("screenshot", "update screen")
-                            lastTouchPackage = currRootWindow!!.packageName.toString()
+//                // get view hierarchy at this time
+                GlobalScope.launch(Dispatchers.IO) {
+                    val fullTime = measureTimeMillis {
+                    val byteStream = ByteArrayOutputStream()
+                    val jsonWriter = JsonWriter(OutputStreamWriter(byteStream, "UTF-8"))
+                        currVHBoxes = ArrayList()
+                        parseVHToJson(currRootWindow!!, currVHBoxes, jsonWriter)
+                        jsonWriter.flush()
+                        currVHString = String(byteStream.toByteArray())
+                        if (currVHString.isNullOrEmpty()) {
+                            currVHString = currRootWindow.toString()
                         }
-
-                        override fun onFailure(errCode: Int) {
-                            Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
-                        }
+                        Log.i("currRootWindow", "update VH")
+//                        byteStream.close()
+                        jsonWriter.close()
                     }
-                )
+                    Log.d("MEASURE_TIME", "Parse time took ${fullTime}ms")
+                    Log.d("PARSE_STR_LEN", "Parse length ${currVHString?.length} chars")
+                    Log.d("PARSE_STR", currVHString?: "null")
+                }
+
+                GlobalScope.launch(Dispatchers.Default) {
+                    val time = measureTimeMillis {
+                        takeScreenshot(
+                            DEFAULT_DISPLAY,
+                            appContext.mainExecutor,
+                            object : TakeScreenshotCallback {
+                                override fun onSuccess(result: ScreenshotResult) {
+                                    currTouchTime = getInteractionTime()
+                                    // take screenshot and record current bitmap globally
+                                    // update screen
+                                    isScreenEventPaired = false
+                                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                                    result.hardwareBuffer.close()
+                                    Log.i("screenshot", "update screen")
+                                    lastTouchPackage = currRootWindow!!.packageName.toString()
+                                }
+
+                                override fun onFailure(errCode: Int) {
+                                    Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
+                                }
+                            }
+                        )
+                    }
+                    Log.d("MEASURE_TIME", "Screenshot time took ${time}ms")
+                }
                 return false
             }
         })
     }
 
+    // TODO: check if can break parts into coroutine and multithread
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         Log.i("event", event?.packageName.toString())
         if (event == null) {
@@ -393,7 +410,7 @@ class MyAccessibilityService : AccessibilityService() {
         val systemUIPackageName = "com.android.systemui"
         val backBtnText = "[Back]"
         val homeBtnText = "[Home]"
-        val overviewBtnTexts = listOf<String>("[Overview]", "[Recents]")
+        val overviewBtnTexts = listOf("[Overview]", "[Recents]") // TODO: do we want this button to be used?
         val isBackBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == backBtnText)
         val isHomeBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == homeBtnText)
         val isOverviewBtnPressed = (event.packageName == systemUIPackageName) && (overviewBtnTexts.contains(event.text.toString()))
@@ -418,9 +435,10 @@ class MyAccessibilityService : AccessibilityService() {
         }
         // construct interaction event
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)) {
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
+        ) {
             if (currentBitmap == null) {
                 return
             }
@@ -462,14 +480,15 @@ class MyAccessibilityService : AccessibilityService() {
             val eventLabel = "$eventTime; $eventType"
             // add the event
             addEvent(node, currEventPackageName, isNewTrace, eventLabel, scrollCoords, currentScreenshot!!, vh)
-            if (isBackBtnPressed) {
-                lastEventPackageName = currEventPackageName
+            lastEventPackageName = if (isBackBtnPressed) {
+                currEventPackageName
             } else {
-                lastEventPackageName = event.packageName.toString()
+                event.packageName.toString()
             }
         }
     }
 
+    // TODO: check for a iterative solution again?
     private fun parseVHToJson(node: AccessibilityNodeInfo,
                               boxes: ArrayList<Rect>,
                               jsonWriter: JsonWriter) {
@@ -491,8 +510,8 @@ class MyAccessibilityService : AccessibilityService() {
             jsonWriter.name("bounds_in_screen").value(outbounds.toString())
             boxes.add(outbounds)
             // parent and class name
-            jsonWriter.name("package_name").value(node.packageName.toString())
-            jsonWriter.name("class_name").value(node.className.toString())
+            jsonWriter.name("package_name").value(node.packageName?.toString() ?: "null")
+            jsonWriter.name("class_name").value(node.className?.toString() ?: "null")
             if (node.parent != null) {
                 val parentClass = node.parent.className ?: "none"
                 jsonWriter.name("parent").value(parentClass.toString())
@@ -552,6 +571,11 @@ class MyAccessibilityService : AccessibilityService() {
         return Gesture(centerX, centerY, scrollDX, scrollDY)
     }
 
+    /**
+     * TODO: save event as files to external storage files should be stored in directories:
+     * ODIM/$packageName/$traceName/$timestamp/ (image, gesture, and json)
+     *
+     */
     private fun addEvent(
         node: AccessibilityNodeInfo?,
         packageName: String,

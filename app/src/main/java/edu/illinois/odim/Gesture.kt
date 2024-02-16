@@ -8,13 +8,10 @@ class Gesture {
 
     override fun equals(other: Any?): Boolean {
         val otherGesture = other as Gesture?
-        if (this.x == otherGesture?.x &&
-            this.y == otherGesture.y &&
-            this.scrollDeltaX == otherGesture.scrollDeltaX &&
-            this.scrollDeltaY == otherGesture.scrollDeltaY) {
-            return true
-        }
-        return false
+        return this.x == otherGesture?.x &&
+                this.y == otherGesture.y &&
+                this.scrollDeltaX == otherGesture.scrollDeltaX &&
+                this.scrollDeltaY == otherGesture.scrollDeltaY
     }
 
     override fun toString(): String {

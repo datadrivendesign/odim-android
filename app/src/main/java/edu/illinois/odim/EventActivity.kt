@@ -73,8 +73,7 @@ class EventActivity : AppCompatActivity() {
                 .setTitle("Upload Trace")
                 .setView(traceDescInput)
                 .setPositiveButton("UPLOAD") { _, _ ->
-                    val uploadScope = CoroutineScope(Dispatchers.IO)
-                    uploadScope.launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
                         val uploadSuccess = uploadFullTraceContent(chosenPackageName!!,
                             chosenTraceLabel!!,
@@ -85,12 +84,13 @@ class EventActivity : AppCompatActivity() {
                             errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
                                 .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
                             errSnackbar.show()
+                        } else {
+                            val successSnackbar = Snackbar.make(buttonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                            successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
+                            successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                                .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+                            successSnackbar.show()
                         }
-                        val successSnackbar = Snackbar.make(buttonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
-                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
-                        successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-                        successSnackbar.show()
                     }
                 }
                 .setNegativeButton("CANCEL") { dialogInterface, _ ->

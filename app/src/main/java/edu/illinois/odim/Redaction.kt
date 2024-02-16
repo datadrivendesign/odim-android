@@ -12,14 +12,11 @@ class Redaction(coords: Rect, label: String) {
 
     override fun equals(other: Any?): Boolean {
         val otherRedaction = other as Redaction?
-        if (this.rect?.top  == otherRedaction?.rect?.top &&
-            this.rect?.left == otherRedaction?.rect?.left &&
-            this.rect?.bottom == otherRedaction?.rect?.bottom &&
-            this.rect?.right == otherRedaction?.rect?.right &&
-            this.label == otherRedaction?.label) {
-            return true
-        }
-        return false
+        return this.rect?.top  == otherRedaction?.rect?.top &&
+                this.rect?.left == otherRedaction?.rect?.left &&
+                this.rect?.bottom == otherRedaction?.rect?.bottom &&
+                this.rect?.right == otherRedaction?.rect?.right &&
+                this.label == otherRedaction?.label
     }
 
     override fun hashCode(): Int {
