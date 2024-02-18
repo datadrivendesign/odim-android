@@ -99,9 +99,6 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 if (convertedX == -1 || convertedY == -1) {
                     return false
                 }
-
-
-
                 // Delete rectangle if in Delete Mode and touch rectangle
                 if (!drawMode) {
                     for (redaction in currentRedacts) {

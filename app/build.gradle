@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId "edu.illinois.odim"
         minSdk 30
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -48,7 +48,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-    implementation 'com.google.code.gson:gson:2.10'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
     // coroutine libraries
@@ -62,4 +61,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor")
     implementation("ru.gildor.coroutines:kotlin-coroutines-okhttp:1.0")
+    // JSON parsing library
+    implementation 'com.google.code.gson:gson:2.10'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.4'
 }

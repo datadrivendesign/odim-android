@@ -26,10 +26,12 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.core.content.pm.PackageInfoCompat
+import com.fasterxml.jackson.core.JsonEncoding
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonGenerator
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.google.gson.stream.JsonWriter
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.gesturesMap
 import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
@@ -44,7 +46,6 @@ import okhttp3.Response
 import ru.gildor.coroutines.okhttp.await
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -293,7 +294,8 @@ class MyAccessibilityService : AccessibilityService() {
         info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
                         AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
                         AccessibilityEvent.TYPE_VIEW_SCROLLED or
-                        AccessibilityEvent.TYPE_VIEW_SELECTED
+                        AccessibilityEvent.TYPE_VIEW_SELECTED // or
+                        // AccessibilityEvent.TYPE_VIEW_SELECTED
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
         info.notificationTimeout = 300
         info.packageNames = null
@@ -335,7 +337,6 @@ class MyAccessibilityService : AccessibilityService() {
                     currVHBoxes.clear()
                 }
                 currVHString = null
-                Log.i("odim", "touch package " + (currRootWindow?.packageName ?: "null"))
                 if (currRootWindow?.packageName.toString() == "null" ||
                     currRootWindow!!.packageName == odimPackageName ||
                     currRootWindow!!.packageName == appLauncherPackageName ||
@@ -345,11 +346,11 @@ class MyAccessibilityService : AccessibilityService() {
                     return false
                 }
 
-//                // get view hierarchy at this time
+                // get view hierarchy at this time
                 GlobalScope.launch(Dispatchers.IO) {
                     val fullTime = measureTimeMillis {
                     val byteStream = ByteArrayOutputStream()
-                    val jsonWriter = JsonWriter(OutputStreamWriter(byteStream, "UTF-8"))
+                    val jsonWriter = JsonFactory().createGenerator(byteStream, JsonEncoding.UTF8)
                         currVHBoxes = ArrayList()
                         parseVHToJson(currRootWindow!!, currVHBoxes, jsonWriter)
                         jsonWriter.flush()
@@ -358,12 +359,12 @@ class MyAccessibilityService : AccessibilityService() {
                             currVHString = currRootWindow.toString()
                         }
                         Log.i("currRootWindow", "update VH")
-//                        byteStream.close()
                         jsonWriter.close()
+                        byteStream.close()
+//                        Log.d("MEASURE_VH_SIZE", currVHString!!.length.toString())
+//                        longLog(currVHString!!)
                     }
                     Log.d("MEASURE_TIME", "Parse time took ${fullTime}ms")
-                    Log.d("PARSE_STR_LEN", "Parse length ${currVHString?.length} chars")
-                    Log.d("PARSE_STR", currVHString?: "null")
                 }
 
                 GlobalScope.launch(Dispatchers.Default) {
@@ -398,7 +399,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     // TODO: check if can break parts into coroutine and multithread
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        Log.i("event", event?.packageName.toString())
+        Log.i("MEASURE_EVENT", event?.packageName.toString())
         if (event == null) {
             return
         }
@@ -437,7 +438,8 @@ class MyAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
+            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED) // ||
+            // (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED)
         ) {
             if (currentBitmap == null) {
                 return
@@ -460,7 +462,7 @@ class MyAccessibilityService : AccessibilityService() {
             var vh = currVHString
             if (vh == null) {
                 val byteStream = ByteArrayOutputStream()
-                val jsonWriter = JsonWriter(OutputStreamWriter(byteStream, "UTF-8"))
+                val jsonWriter = JsonFactory().createGenerator(byteStream, JsonEncoding.UTF8)
                 Log.i("odim", "before parse")
                 currVHBoxes.clear()
                 parseVHToJson(currRootWindow!!, currVHBoxes, jsonWriter)
@@ -488,59 +490,87 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
-    // TODO: check for a iterative solution again?
+//    private fun saveVHAsString(node: AccessibilityNodeInfo): String {
+//        var vhString = "{$node"
+//        var addedChild = false
+//        for (i in 0 until node.childCount) {
+//            val currentNode = node.getChild(i)
+//            if (currentNode != null) {
+//                val childVH = saveVHAsString(currentNode)
+//                if (i == 0) {
+//                    vhString += "; children: [$childVH"
+//                    addedChild = true
+//                } else {
+//                    vhString += ", $childVH"
+//                }
+//            }
+//        }
+//        if (addedChild) {
+//            vhString += "]"
+//        }
+//        return "$vhString}"
+//    }
+
+//    fun longLog(str: String) {
+//        if (str.length > 4000) {
+//            Log.d("MEASURE_VH", str.substring(0, 4000))
+//            longLog(str.substring(4000))
+//        } else Log.d("MEASURE_VH", str)
+//    }
+
+
     private fun parseVHToJson(node: AccessibilityNodeInfo,
                               boxes: ArrayList<Rect>,
-                              jsonWriter: JsonWriter) {
+                              jsonWriter: JsonGenerator) {
         try {
-            jsonWriter.beginObject()
+            // "visit" the node on tree
+            jsonWriter.writeStartObject()
+            // write coordinates as string to json
+            val outbounds = Rect()
+            node.getBoundsInScreen(outbounds)
+            jsonWriter.writeStringField("bounds_in_screen", outbounds.toString())
+            if (node.isVisibleToUser) {
+                boxes.add(outbounds)
+            }
+            // parent and class name
+            jsonWriter.writeStringField("package_name", node.packageName?.toString() ?: "null")
+            jsonWriter.writeStringField("class_name", node.className?.toString() ?: "null")
+            if (node.parent != null) {
+                jsonWriter.writeStringField("parent", node.parent.className?.toString() ?: "none")
+            } else {
+                jsonWriter.writeStringField("parent", "none")
+            }
+            // add vh element boolean properties
+            jsonWriter.writeBooleanField("scrollable", node.isScrollable)
+            jsonWriter.writeBooleanField("clickable", node.isClickable)
+            jsonWriter.writeBooleanField("focusable", node.isFocusable)
+            jsonWriter.writeBooleanField("focused", node.isFocused)
+            jsonWriter.writeBooleanField("checkable", node.isCheckable)
+            jsonWriter.writeBooleanField("checked", node.isChecked)
+            jsonWriter.writeBooleanField("long-clickable", node.isLongClickable)
+            jsonWriter.writeBooleanField("enabled", node.isEnabled)
+            jsonWriter.writeBooleanField("visibility", node.isVisibleToUser)
+            jsonWriter.writeBooleanField("selected", node.isSelected)
+            // write text and content description to json
+            jsonWriter.writeStringField("content-desc", node.contentDescription?.toString() ?: "none")
+            val text = node.text
+            if (text != null) {
+                jsonWriter.writeStringField("text_field", text.toString())
+            }
+            jsonWriter.writeNumberField("children_count", node.childCount)
+            // recursive call
             // add children to json
-            jsonWriter.name("children")
-            jsonWriter.beginArray()
+            jsonWriter.writeFieldName("children")
+            jsonWriter.writeStartArray()
             for (i in 0 until node.childCount) {
                 val currentNode = node.getChild(i)
                 if (currentNode != null) {
                     parseVHToJson(currentNode, boxes, jsonWriter)
                 }
             }
-            jsonWriter.endArray()
-            // write coordinates as string to json
-            val outbounds = Rect()
-            node.getBoundsInScreen(outbounds)
-            jsonWriter.name("bounds_in_screen").value(outbounds.toString())
-            boxes.add(outbounds)
-            // parent and class name
-            jsonWriter.name("package_name").value(node.packageName?.toString() ?: "null")
-            jsonWriter.name("class_name").value(node.className?.toString() ?: "null")
-            if (node.parent != null) {
-                val parentClass = node.parent.className ?: "none"
-                jsonWriter.name("parent").value(parentClass.toString())
-            } else {
-                jsonWriter.name("parent").value("none")
-            }
-            // add vh element boolean properties
-            jsonWriter.name("scrollable").value(node.isScrollable)
-            jsonWriter.name("clickable").value(node.isClickable)
-            jsonWriter.name("focusable").value(node.isFocusable)
-            jsonWriter.name("focused").value(node.isFocused)
-            jsonWriter.name("checkable").value(node.isCheckable)
-            jsonWriter.name("checked").value(node.isChecked)
-            jsonWriter.name("long-clickable").value(node.isLongClickable)
-            jsonWriter.name("enabled").value(node.isEnabled)
-            jsonWriter.name("visibility").value(node.isVisibleToUser)
-            jsonWriter.name("selected").value(node.isSelected)
-            // write text and content description to json
-            val contentDesc = node.contentDescription ?: "none"
-            jsonWriter.name("content-desc").value(contentDesc.toString())
-            val text = node.text
-            if (text != null) {
-                val textField = text.toString()
-                if (textField.isNotEmpty()) {
-                    jsonWriter.name("text_field").value(textField)
-                }
-            }
-            jsonWriter.name("children_count").value(node.childCount)
-            jsonWriter.endObject()
+            // sub-problem
+            jsonWriter.writeEndArray()
+            jsonWriter.writeEndObject()
         } catch (e: IOException) {
             Log.e("edu.illinois.odim", "IOException", e)
         }
