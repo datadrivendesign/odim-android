@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlin.math.abs
 
 class MovableFloatingActionButton : FloatingActionButton,
     View.OnTouchListener {
@@ -50,23 +51,11 @@ class MovableFloatingActionButton : FloatingActionButton,
             val parentWidth: Int = viewParent.width
             val parentHeight: Int = viewParent.height
             var newX = motionEvent.rawX + dX
-            newX = Math.max(
-                layoutParams.leftMargin.toFloat(),
-                newX
-            ) // Don't allow the FAB past the left hand side of the parent
-            newX = Math.min(
-                (parentWidth - viewWidth - layoutParams.rightMargin).toFloat(),
-                newX
-            ) // Don't allow the FAB past the right hand side of the parent
+            newX = layoutParams.leftMargin.toFloat().coerceAtLeast(newX) // Don't allow the FAB past the left hand side of the parent
+            newX = (parentWidth - viewWidth - layoutParams.rightMargin).toFloat().coerceAtMost(newX) // Don't allow the FAB past the right hand side of the parent
             var newY = motionEvent.rawY + dY
-            newY = Math.max(
-                layoutParams.topMargin.toFloat(),
-                newY
-            ) // Don't allow the FAB past the top of the parent
-            newY = Math.min(
-                (parentHeight - viewHeight - layoutParams.bottomMargin).toFloat(),
-                newY
-            ) // Don't allow the FAB past the bottom of the parent
+            newY = layoutParams.topMargin.toFloat().coerceAtLeast(newY) // Don't allow the FAB past the top of the parent
+            newY = (parentHeight - viewHeight - layoutParams.bottomMargin).toFloat().coerceAtMost(newY) // Don't allow the FAB past the bottom of the parent
             view.animate()
                 .x(newX)
                 .y(newY)
@@ -78,7 +67,7 @@ class MovableFloatingActionButton : FloatingActionButton,
             val upRawY = motionEvent.rawY
             val upDX = upRawX - downRawX
             val upDY = upRawY - downRawY
-            if (Math.abs(upDX) < CLICK_DRAG_TOLERANCE && Math.abs(upDY) < CLICK_DRAG_TOLERANCE) { // A click
+            if (abs(upDX) < CLICK_DRAG_TOLERANCE && abs(upDY) < CLICK_DRAG_TOLERANCE) { // A click
                 performClick()
             } else { // A drag
                 true // Consumed
