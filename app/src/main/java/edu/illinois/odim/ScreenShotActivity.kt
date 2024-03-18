@@ -1,17 +1,19 @@
 package edu.illinois.odim
 
 import android.content.res.ColorStateList
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
-import edu.illinois.odim.MyAccessibilityService.Companion.redactionMap
-import org.json.JSONArray
 
 class ScreenShotActivity : AppCompatActivity() {
 
@@ -20,21 +22,45 @@ class ScreenShotActivity : AppCompatActivity() {
     private var chosenTraceLabel: String? = null
     private var chosenEventLabel: String? = null
     private var canvas: Canvas? = null
+    private lateinit var canvasBitmap: Bitmap
     private var originalBitmap: Bitmap? = null
+    private var vhBoxes: MutableList<Rect> = arrayListOf()
+    private val mapper = ObjectMapper()
 
+
+    private fun extractVHBoxes(root: JsonNode, vhBoxes: MutableList<Rect>, mapper: ObjectMapper) {
+        if (root.get("visibility").asBoolean()) {
+            val vhBoxString = root.get("bounds_in_screen").asText()
+            val vhBoxRect = Rect.unflattenFromString(vhBoxString)
+            if (vhBoxRect != null){
+                vhBoxes.add(vhBoxRect)
+            }
+        }
+        // Base Case
+        val children = root.get("children") ?: return
+        val childrenArr = children as ArrayNode
+        if (childrenArr.isEmpty) {
+            return
+        }
+        // Recursive Case
+        for (i in 0 until childrenArr.size()) {
+            val child = childrenArr[i]//.asJsonObject
+            extractVHBoxes(child, vhBoxes, mapper)
+        }
+    }
     /**
      * Draw red bounding boxes where VH elements are, based on screenshot view hierarchy
      * input takes boxes as an array of rectangles representing locations of VH elements
      * red box borders are drawn on the canvas.
      */
-    private fun drawVHBoxes(boxes: ArrayList<Rect>?) {
+    private fun drawVHBoxes(boxes: List<Rect>?) {
         if (boxes != null) {
-            for (i in 0 until boxes.size) {
+            for (element in boxes) {
                 val paint = Paint()
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = 2F
                 paint.color = Color.rgb(255, 0, 0)
-                canvas!!.drawRect(boxes[i], paint)
+                canvas!!.drawRect(element, paint)
             }
         }
     }
@@ -44,9 +70,9 @@ class ScreenShotActivity : AppCompatActivity() {
      * areas drawn by drawing over them with the original bitmap (copied before
      * red boxes were drawn).
      */
-    private fun removeVHBoxes(boxes: ArrayList<Rect>?, originalBitmap: Bitmap?) {
+    private fun removeVHBoxes(boxes: List<Rect>?, originalBitmap: Bitmap?) {
         if (boxes != null) {
-            for (i in 0 until boxes.size) {
+            for (i in boxes.indices) {
                 canvas!!.drawBitmap(originalBitmap!!, boxes[i], boxes[i], null)
             }
         }
@@ -56,38 +82,34 @@ class ScreenShotActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide()
         setContentView(R.layout.activity_screenshot)
-        chosenPackageName = intent.extras!!["package_name"].toString()
-        chosenTraceLabel = intent.extras!!["trace_label"].toString()
-        chosenEventLabel = intent.extras!!["event_label"].toString()
+        chosenPackageName = intent.extras!!.getString("package_name")
+        chosenTraceLabel = intent.extras!!.getString("trace_label")
+        chosenEventLabel = intent.extras!!.getString("event_label")
         title = "ScreenShot (Click Image for VH)"
         imageView = findViewById<View>(R.id.screenshot) as ScrubbingView
-        val screenshot: ScreenShot =
-            getScreenshot(chosenPackageName, chosenTraceLabel, chosenEventLabel)
 
-        val jsonArray = JSONArray(getVh(chosenPackageName, chosenTraceLabel, chosenEventLabel))
-        val jsonString: String = jsonArray[0] as String
-//        Log.i("vh string size", jsonString.length.toString())
-//        Log.i("vh", "num boxes: " + screenshot.vh?.size.toString())
-        var vhJsonObject = JsonObject()
-        vhJsonObject = Gson().fromJson(jsonString.trim(), vhJsonObject.javaClass)
+        // setup image bitmaps for scrubbing view
+        val screenshot: Bitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        val vhJsonString = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        // extract view hierarchy boxes from VH
+        val vhRootJson = mapper.readTree(vhJsonString.trim())
+        extractVHBoxes(vhRootJson, vhBoxes, mapper)
+        imageView!!.vhRects = vhBoxes
 
-        imageView!!.vhRects = screenshot.vh
-        val myBit: Bitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)  //tempBit
-        canvas = Canvas(myBit)
+        canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
+        canvas = Canvas(canvasBitmap)
         imageView!!.canvas = canvas
-        imageView!!.vhs = vhJsonObject
+        imageView!!.vhs = vhRootJson
 
         // Save the original bitmap with gesture so we can remove mistake redactions
-        this.originalBitmap = myBit.copy(Bitmap.Config.ARGB_8888, true)
-
-        drawVHBoxes(screenshot.vh)
-
-        imageView!!.baseBitMap = myBit.copy(Bitmap.Config.ARGB_8888, true)
+        originalBitmap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
+        drawVHBoxes(vhBoxes)
+        imageView!!.baseBitMap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
         // set the full drawings as primary bitmap for scrubbingView
-        imageView!!.setImageBitmap(myBit)
+        imageView!!.setImageBitmap(canvasBitmap)
+
         // Save Listener
         val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_fab)
-        val gson = GsonBuilder().create()
         saveFAB.setOnClickListener {
             // don't save if no redactions have been drawn
             if (imageView!!.currentRedacts.isEmpty()) {
@@ -95,40 +117,31 @@ class ScreenShotActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             // loop through imageView.rectangles
-            removeVHBoxes(screenshot.vh, this.originalBitmap)
+            removeVHBoxes(vhBoxes, this.originalBitmap)
             for (drawnRedaction: Redaction in imageView!!.currentRedacts) {
                 // traverse each rectangle
-                Log.i("redact", drawnRedaction.toString())
-                imageView!!.traverse(imageView!!.vhs, drawnRedaction.rect!!)
-                setVh(chosenPackageName, chosenTraceLabel, chosenEventLabel, gson.toJson(imageView!!.vhs))  // TODO: stream back to string if needed
-                if (redactionMap.containsKey(chosenTraceLabel)) {
-                    if (redactionMap[chosenTraceLabel]!!.containsKey(chosenEventLabel)) {
-                        redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)
-                    } else {
-                        redactionMap[chosenTraceLabel]!![chosenEventLabel!!] = mutableSetOf()
-                        redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)
-                    }
-
-                } else {
-                    redactionMap[chosenTraceLabel!!] = HashMap()
-                    redactionMap[chosenTraceLabel]!![chosenEventLabel!!] = mutableSetOf()
-                    redactionMap[chosenTraceLabel]!![chosenEventLabel!!]?.add(drawnRedaction)
-                }
-
+                val redactRect = imageView!!.convertRedactToRect(drawnRedaction)
+                imageView!!.traverse(imageView!!.vhs, redactRect, mapper)
+                saveVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, mapper.writeValueAsString(imageView!!.vhs))
+                saveRedactions(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, drawnRedaction)
             }
             // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
-            screenshot.bitmap = myBit
+            saveScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, canvasBitmap)
             this.originalBitmap?.recycle()
-            this.originalBitmap = screenshot.bitmap!!.copy(Bitmap.Config.ARGB_8888, true)
-            drawVHBoxes(screenshot.vh)
+            this.originalBitmap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+            this.imageView!!.baseBitMap?.recycle()
+            this.imageView!!.baseBitMap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+            drawVHBoxes(vhBoxes)
             // clear imageView.rectangles
             imageView!!.currentRedacts.clear()
             notifyEventAdapter()
         }
 
         // Delete Listener
-        val deletefab: FloatingActionButton = findViewById(R.id.draw_delete_fab)
-        deletefab.setOnClickListener { view ->
+        val deleteFAB: FloatingActionButton = findViewById(R.id.draw_delete_fab)
+        deleteFAB.setOnClickListener { view ->
             imageView!!.drawMode = !imageView!!.drawMode
             if (imageView!!.drawMode) {
                 val drawColor = Color.argb(250, 181, 202, 215)
@@ -142,7 +155,7 @@ class ScreenShotActivity : AppCompatActivity() {
         }
 
 //        This took an embarrassing amount of time to figure out dimensions of the screen, image and canvas
-//        Further calculations are done in the scrubbing view
+//        Further calculations are done in the scrubbing view:
 
 //        val size = Point()
 //        val display = getDisplay()?.getSize(size)
@@ -163,15 +176,42 @@ class ScreenShotActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        val screenshot: ScreenShot =
-            getScreenshot(chosenPackageName, chosenTraceLabel, chosenEventLabel)
-        removeVHBoxes(screenshot.vh, this.originalBitmap)
-        notifyEventAdapter()
-        super.onBackPressed()
+        removeVHBoxes(vhBoxes, this.originalBitmap)
+        canvasBitmap.recycle()
+        originalBitmap?.recycle()
+        imageView!!.baseBitMap?.recycle()
+        super.onBackPressedDispatcher.onBackPressed()
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        // setup image bitmaps for scrubbing view
+        chosenEventLabel = intent.extras!!.getString("event_label")
+        val screenshot: Bitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        val vhJsonString = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        // extract view hierarchy boxes from VH
+        val vhRootJson = mapper.readTree(vhJsonString.trim())
+        extractVHBoxes(vhRootJson, vhBoxes, mapper)
+
+        imageView!!.vhRects = vhBoxes
+
+        canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
+        canvas = Canvas(canvasBitmap)
+        imageView!!.canvas = canvas
+        imageView!!.vhs = vhRootJson
+
+        // Save the original bitmap with gesture so we can remove mistake redactions
+        originalBitmap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
+        drawVHBoxes(vhBoxes)
+        imageView!!.baseBitMap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
+        // set the full drawings as primary bitmap for scrubbingView
+        imageView!!.setImageBitmap(canvasBitmap)
     }
 
     override fun onDestroy() {
-        originalBitmap?.recycle()
         super.onDestroy()
+        canvasBitmap.recycle()
+        originalBitmap?.recycle()
+        imageView!!.baseBitMap?.recycle()
     }
 }

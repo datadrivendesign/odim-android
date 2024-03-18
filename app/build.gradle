@@ -63,5 +63,6 @@ dependencies {
     implementation("ru.gildor.coroutines:kotlin-coroutines-okhttp:1.0")
     // JSON parsing library
     implementation 'com.google.code.gson:gson:2.10'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.4'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.16.1'
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1"
 }

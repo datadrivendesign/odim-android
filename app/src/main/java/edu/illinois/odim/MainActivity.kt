@@ -26,6 +26,7 @@ fun notifyPackageAdapter() {
 class MainActivity : AppCompatActivity() {
     private var recyclerView : RecyclerView? = null
     private var workerIdInput : EditText? = null
+    private lateinit var traceList: MutableList<String>
 
     private fun createWorkerInputForm() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
@@ -57,7 +58,8 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.package_recycler_view)
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        recyclerAdapter = MainAdapter(this, getPackages())
+        traceList = listPackages()
+        recyclerAdapter = MainAdapter(this, traceList) // getPackages())
         recyclerView?.adapter = recyclerAdapter
 
         val decoratorVertical = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
@@ -72,6 +74,13 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         })
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        traceList.clear()
+        traceList.addAll(listPackages())
+        notifyPackageAdapter()
     }
 }
 

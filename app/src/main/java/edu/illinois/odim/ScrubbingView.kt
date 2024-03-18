@@ -16,10 +16,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import com.google.gson.reflect.TypeToken
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -32,8 +32,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
     private val confirmPaint = Paint()
     var canvas: Canvas? = null
     var currentRedacts = mutableSetOf<Redaction>()
-    var vhRects: ArrayList<Rect>? = null
-    var vhs: JsonObject = JsonObject()
+    var vhRects: MutableList<Rect>? = null
+    lateinit var vhs: JsonNode
     var drawMode: Boolean = true
     var baseBitMap: Bitmap? = null
 
@@ -86,6 +86,10 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return convertedY.roundToInt()
     }
 
+    fun convertRedactToRect(redaction: Redaction): Rect {
+        return Rect(redaction.startX, redaction.startY, redaction.endX, redaction.endY)
+    }
+
     // Get coordinates on user touch
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -102,8 +106,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                 // Delete rectangle if in Delete Mode and touch rectangle
                 if (!drawMode) {
                     for (redaction in currentRedacts) {
-                        val redactRect = redaction.rect
-                        if (redactRect!!.contains(convertedX, convertedY)) {
+                        val redactRect = convertRedactToRect(redaction)
+                        if (redactRect.contains(convertedX, convertedY)) {
                             currentRedacts.remove(redaction)
                             this.canvas?.drawBitmap(baseBitMap!!, redactRect, redactRect, null)
                             return true
@@ -112,7 +116,8 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                     return true
                 } else { // edit redaction label if in Draw mode and touch rectangle
                     for (redaction in currentRedacts) {
-                        if (redaction.rect!!.contains(convertedX, convertedY)) {
+                        val redactRect = convertRedactToRect(redaction)
+                        if (redactRect.contains(convertedX, convertedY)) {
                             // start creating the label form
                             val inputForm = inflate(context, R.layout.layout_redaction_label, null)
                             val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
@@ -196,8 +201,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         }
     }
 
-
-    private fun getMatchingVH(vhRects: ArrayList<Rect>?, rect: Rect): Rect {
+    private fun getMatchingVH(vhRects: MutableList<Rect>?, rect: Rect): Rect {
         var maxOverlapRatio = 0.0F
         var matched = Rect()
         if (vhRects != null) {
@@ -220,40 +224,35 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-    fun traverse(root: JsonObject?, newRect: Rect): Triple<Boolean, Boolean, JsonObject?> {
+    fun traverse(root: JsonNode?, newRect: Rect, mapper: ObjectMapper): Triple<Boolean, Boolean, JsonNode?> {
         // Base Case
         if (nodeIsMatch(root, newRect)) {
             // matching child is found to the rectangle
             return Triple(true, false, root)  // return pair of isFound flag, isContentRemoved flag, currentVHTreeRoot in recursive case
         }
         // Recursive Case
-        val gson = GsonBuilder().create()
         val children = root?.get("children") ?: return Triple(false, false, null)
-//        val jsonChildType = object : TypeToken<ArrayList<HashMap<String, String>>>() {}.type
-        val jsonChildType = object : TypeToken<JsonArray>() {}.type
-        val childrenArr = gson.fromJson<JsonArray>(children, jsonChildType)
+        val childrenArr = children as ArrayNode
         for (i in 0 until childrenArr.size()) {
-            val child = childrenArr[i].asJsonObject
+            val child = childrenArr[i] as ObjectNode//.asJsonObject
             // skip children already redacted
-            if (child.has("content-desc") && child["content-desc"].asString == "description redacted.") {
+            if (child.has("content-desc") && child["content-desc"].asText() == "description redacted.") {
                 continue
             }
-            val isMatch = traverse(child, newRect)
+            val isMatch = traverse(child, newRect, mapper)
             if (isMatch.first && !isMatch.second) {
                 postInvalidate()
                 if (child.has("text_field")) {
                     child.remove("text_field")
-                    child.addProperty("text_field", "text redacted.")
+                    child.put("text_field", "text redacted.")
                 }
                 child.remove("content-desc")
-                child.addProperty("content-desc", "description redacted.")
-//                root["children"] = gson.toJson(childrenArr)  // TODO: should not need to update children
+                child.put("content-desc", "description redacted.")
                 this.canvas?.drawRect(newRect, confirmPaint)
                 return Triple(true, true, root)
             } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
                 postInvalidate()
                 childrenArr[i] = isMatch.third!!
-//                root["children"] = gson.toJson(childrenArr)
                 return Triple(true, true, root)
             }
         }
@@ -261,10 +260,9 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return Triple(false, false, null)
     }
 
-    private fun nodeIsMatch(node: JsonObject?, newRect: Rect): Boolean {
-        val nodeRectString = node?.getAsJsonPrimitive("bounds_in_screen")?.asString ?: "null"
-        val newRectString = newRect.toString()
-        return nodeRectString == newRectString
+    private fun nodeIsMatch(node: JsonNode?, newRect: Rect): Boolean {
+        val nodeRect = Rect.unflattenFromString(node?.get("bounds_in_screen")?.asText())
+        return nodeRect == newRect
     }
 
     private fun getArea(rect: Rect): Float {

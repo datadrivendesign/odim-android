@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class TraceAdapter(context: Context,
                    private val packageName: String,
-                   private var itemList: ArrayList<String>) : RecyclerView.Adapter<MyViewHolder>() {
+                   private var itemList: MutableList<String>) : RecyclerView.Adapter<MyViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context)
     private lateinit var itemClickListener : OnItemClickListener
 
@@ -29,7 +29,7 @@ class TraceAdapter(context: Context,
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         val traceLabel = itemList[position]
-        val events = getEvents(packageName, traceLabel)
+        val events = listEvents(packageName, traceLabel)
 
         holder.traceLabel.text = traceLabel
         holder.traceScreensTextView.text = this.inflater.context.getString(R.string.traceNumScreens, events.size)

@@ -9,9 +9,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 
-class MainAdapter(context: Context, itemList: ArrayList<String>) : RecyclerView.Adapter<MainViewHolder>() {
+class MainAdapter(context: Context, itemList: MutableList<String>) : RecyclerView.Adapter<MainViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context)
-    private var itemList : ArrayList<String> = itemList
+    private var itemList : MutableList<String> = itemList
     private lateinit var itemClickListener : OnItemClickListener
 
     interface  OnItemClickListener {

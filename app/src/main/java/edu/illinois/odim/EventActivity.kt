@@ -32,22 +32,22 @@ class EventActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_event)
-        chosenPackageName = intent.extras!!["package_name"].toString()
-        chosenTraceLabel = intent.extras!!["trace_label"].toString()
+        chosenPackageName = intent.extras!!.getString("package_name") // intent.extras!!["package_name"].toString()
+        chosenTraceLabel = intent.extras!!.getString("trace_label") // intent.extras!!["trace_label"].toString()
         title = "$chosenPackageName: $chosenTraceLabel"
         // change the way we do this with recyclerview
         recyclerView = findViewById(R.id.event_recycler_view)
         // use gridview instead of linear
         recyclerView?.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
         // want both screenshot and event information for trace
-        val eventsInTrace : ArrayList<String> = getEvents(chosenPackageName, chosenTraceLabel)
+        val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         for (event in eventsInTrace) {
-            val screenshot = getScreenshot(chosenPackageName, chosenTraceLabel, event)
+            val screenshot = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, event)
             val eventDelimiter = "; "
             val eventInfo = event.split(eventDelimiter)
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
-            val screenshotPreview = ScreenShotPreview(screenshot.bitmap!!, eventType, eventTime)
+            val screenshotPreview = ScreenShotPreview(screenshot, eventType, eventTime)
             screenPreview.add(screenshotPreview)
         }
         recyclerAdapter = EventAdapter(screenPreview)
@@ -65,6 +65,8 @@ class EventActivity : AppCompatActivity() {
             }
         })
         recyclerView?.adapter = recyclerAdapter
+
+
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
@@ -100,17 +102,25 @@ class EventActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        for (screen in screenPreview) {
+            screen.screenShot.recycle()
+        }
+        screenPreview.clear()
+    }
+
     override fun onRestart() {
         super.onRestart()
         screenPreview.clear()
-        val eventsInTrace : ArrayList<String> = getEvents(chosenPackageName, chosenTraceLabel)
+        val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         for (event in eventsInTrace) {
-            val screenshot = getScreenshot(chosenPackageName, chosenTraceLabel, event)
+            val screenshot = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, event)
             val eventDelimiter = "; "
             val eventInfo = event.split(eventDelimiter)
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
-            val screenshotPreview = ScreenShotPreview(screenshot.bitmap!!, eventType, eventTime)
+            val screenshotPreview = ScreenShotPreview(screenshot, eventType, eventTime)
             screenPreview.add(screenshotPreview)
         }
         notifyEventAdapter()
