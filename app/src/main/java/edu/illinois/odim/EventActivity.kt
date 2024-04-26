@@ -2,6 +2,7 @@ package edu.illinois.odim
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -51,6 +52,43 @@ class EventActivity : AppCompatActivity() {
             screenPreview.add(screenshotPreview)
         }
         recyclerAdapter = EventAdapter(screenPreview)
+        recyclerAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
+            override fun onItemLongClick(cardView: CardCellBinding): Boolean {
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this@EventActivity)
+                var result = true
+                builder
+                    .setTitle("Delete trace item")
+                    .setMessage("Are you sure you want to delete this item from the trace? " +
+                            "You will remove the screen, view hierarchy, and gesture data from this item.")
+                    .setPositiveButton("Yes") { dialog, _ ->
+                        val chosenEventLabel = "${cardView.time.text}; ${cardView.event.text}"
+                        result = deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)
+                        // notify recycler view deletion happened
+                        val newScreens = ArrayList(screenPreview)
+                        val ind = screenPreview.indexOfFirst {
+                            s -> s.timestamp == cardView.time.text.toString()
+                        }
+                        if (ind < 0) {  // should theoretically never happen
+                            Log.e("EVENT", "could not find screenshot preview to delete")
+                            dialog.dismiss()
+                            return@setPositiveButton
+                        }
+                        newScreens.removeAt(ind)
+                        screenPreview.clear()
+                        screenPreview.addAll(newScreens)
+                        recyclerAdapter!!.notifyItemRemoved(ind)
+                        val itemChangeCount = newScreens.size - ind
+                        recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
+                    }
+                    .setNegativeButton("No") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                val dialog: AlertDialog = builder.create()
+                dialog.show()
+                return result
+            }
+        })
+
         recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
             override fun onItemClick(cardView: CardCellBinding) {
                 val intent = Intent(
