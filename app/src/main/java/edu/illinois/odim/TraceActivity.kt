@@ -2,9 +2,11 @@ package edu.illinois.odim
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -44,6 +46,43 @@ class TraceActivity : AppCompatActivity(){
         recyclerView?.addItemDecoration(decoratorVertical)
 
         recyclerView!!.adapter = recyclerAdapter
+
+        recyclerAdapter!!.setOnItemLongClickListener(object : TraceAdapter.OnItemLongClickListener {
+            override fun onItemLongClick(traceLabel: String): Boolean {
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this@TraceActivity)
+                var result = true
+                builder
+                    .setTitle("Delete trace")
+                    .setMessage("Are you sure you want to delete this trace recording? " +
+                            "You will remove the entire trace, including all screens, view hierarchies, and gestures.")
+                    .setPositiveButton("Yes") { dialog, _ ->
+                        result = deleteTrace(chosenPackageName!!, traceLabel)
+                        // notify recycler view deletion happened
+                        val newTraces = ArrayList(traceList)
+                        val ind = traceList.indexOfFirst {
+                            trace -> trace == traceLabel
+                        }
+                        if (ind < 0) {  // should theoretically never happen
+                            Log.e("TRACE", "could not find trace to delete")
+                            dialog.dismiss()
+                            return@setPositiveButton
+                        }
+                        newTraces.removeAt(ind)
+                        traceList.clear()
+                        traceList.addAll(newTraces)
+                        recyclerAdapter!!.notifyItemRemoved(ind)
+                        val itemChangeCount = newTraces.size - ind
+                        recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
+                    }
+                    .setNegativeButton("No") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                val dialog: AlertDialog = builder.create()
+                dialog.show()
+                return result
+            }
+        })
+
         recyclerAdapter!!.setOnItemClickListener(object : TraceAdapter.OnItemClickListener {
             override fun onItemClick(traceLabel: String) {
                 val intent = Intent(applicationContext, EventActivity::class.java)

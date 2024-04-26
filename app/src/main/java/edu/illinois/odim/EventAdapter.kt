@@ -8,19 +8,28 @@ import edu.illinois.odim.databinding.CardCellBinding
 class EventAdapter(screenPreviews: ArrayList<ScreenShotPreview>) : RecyclerView.Adapter<DetailViewHolder>() {
     private var itemList : ArrayList<ScreenShotPreview> = screenPreviews
     private lateinit var itemClickListener : OnItemClickListener
+    private lateinit var itemLongClickListener: OnItemLongClickListener
 
-    interface  OnItemClickListener {
+    interface OnItemClickListener {
         fun onItemClick(cardView: CardCellBinding)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
+    }
+
+    interface OnItemLongClickListener {
+        fun onItemLongClick(cardView: CardCellBinding) : Boolean
     }
 
     fun setOnItemClickListener(listener : OnItemClickListener) {
         itemClickListener = listener
     }
 
+    fun setOnItemLongClickListener(listener: OnItemLongClickListener) {
+        itemLongClickListener = listener
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DetailViewHolder {
         val from = LayoutInflater.from(parent.context)
         val itemView = CardCellBinding.inflate(from, parent, false)
-        return DetailViewHolder(itemView, itemClickListener)
+        return DetailViewHolder(itemView, itemClickListener, itemLongClickListener)
     }
 
     override fun onBindViewHolder(holder: DetailViewHolder, position: Int) {
@@ -34,11 +43,15 @@ class EventAdapter(screenPreviews: ArrayList<ScreenShotPreview>) : RecyclerView.
 
 class DetailViewHolder(
     private val cardBinding : CardCellBinding,
-    private val listener: EventAdapter.OnItemClickListener) : RecyclerView.ViewHolder(cardBinding.cardView.rootView)
+    clickListener: EventAdapter.OnItemClickListener,
+    longClickListener: EventAdapter.OnItemLongClickListener) : RecyclerView.ViewHolder(cardBinding.cardView.rootView)
 {
     init {
         itemView.setOnClickListener {
-            listener.onItemClick(cardBinding)
+            clickListener.onItemClick(cardBinding)
+        }
+        itemView.setOnLongClickListener {
+            longClickListener.onItemLongClick(cardBinding)
         }
     }
 

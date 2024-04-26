@@ -115,6 +115,42 @@ fun listEvents(packageName: String, trace: String): MutableList<String>  {
     }
 }
 
+fun deleteApp(packageName: String): Boolean {
+    val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/")
+    val result = traceFile.deleteRecursively()
+    return if (result) {
+        Log.i("FILE", "delete $packageName directory")
+        true
+    } else {
+        Log.e("FILE", "cannot delete $packageName directory")
+        false
+    }
+}
+
+fun deleteTrace(packageName: String, trace: String): Boolean {
+    val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
+    val result = traceFile.deleteRecursively()
+    return if (result) {
+        Log.i("FILE", "delete $trace directory")
+        true
+    } else {
+        Log.e("FILE", "cannot delete $trace directory")
+        false
+    }
+}
+
+fun deleteEvent(packageName: String, trace: String, event: String): Boolean {
+    val eventFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
+    val result = eventFile.deleteRecursively()
+    return if (result) {
+        Log.i("FILE", "delete $trace directory")
+        true
+    } else {
+        Log.e("FILE", "cannot delete $trace directory")
+        false
+    }
+}
+
 fun loadScreenshot(packageName: String, trace: String, event: String): Bitmap {
     val screenFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
     if (screenFile.exists()) {
@@ -172,6 +208,7 @@ fun saveVH(packageName: String, trace: String, event: String, vhJsonString: Stri
         false
     }
 }
+
 fun loadGestures(packageName: String, trace: String, event: String): Gesture {
     val jsonFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$event.json")
     if (jsonFile.exists()) {
@@ -201,9 +238,9 @@ fun saveGestures(packageName: String, trace: String, event: String, gesture: Ges
 }
 
 fun loadRedactions(packageName: String, trace: String, event: String): MutableSet<Redaction> {
-    val jsonFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
-    return if (jsonFile.exists()) {
-        val redactJsonString = jsonFile.readText(Charsets.UTF_8)
+    val redactFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
+    return if (redactFile.exists()) {
+        val redactJsonString = redactFile.readText(Charsets.UTF_8)
         Log.d("redact string", redactJsonString)
         kotlinMapper.readValue<MutableSet<Redaction>>(redactJsonString)
     } else {
@@ -234,6 +271,18 @@ fun saveRedactions(packageName: String, trace: String, event: String, redaction:
         false
     }
 }
+
+//fun deleteRedactions(packageName: String, trace: String, event: String) : Boolean {
+//    val redactFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
+//    val result = redactFile.delete()
+//    return if (result) {
+//        Log.i("FILE", "deleted $REDACT_PREFIX$event.json")
+//        true
+//    } else {
+//        Log.e("FILE", "cannot delete $REDACT_PREFIX$event.json or file does not exist")
+//        false
+//    }
+//}
 
 private suspend fun uploadScreen(client: OkHttpClient,
                          mapper: ObjectMapper,
@@ -520,7 +569,6 @@ class MyAccessibilityService : AccessibilityService() {
                                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
                                     result.hardwareBuffer.close()
                                     Log.i("screenshot", "update screen")
-                                    lastTouchPackage = currRootWindow!!.packageName.toString()
                                 }
 
                                 override fun onFailure(errCode: Int) {
@@ -531,6 +579,7 @@ class MyAccessibilityService : AccessibilityService() {
                     }
                     Log.d("MEASURE_TIME", "Screenshot time took ${time}ms")
                 }
+                lastTouchPackage = currRootWindow!!.packageName.toString()
                 return false
             }
         })
