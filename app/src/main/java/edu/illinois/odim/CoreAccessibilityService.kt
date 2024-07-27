@@ -73,8 +73,6 @@ fun listPackages(): MutableList<String> {
         return arrayListOf()
     }
     val packageDir = File(appContext.filesDir, TRACES_DIR)
-    Log.i("loadPackages", packageDir.absolutePath)
-
     return if(packageDir.exists()) {
         packageDir.listFiles()?.filter {
             it.isDirectory
@@ -119,7 +117,6 @@ fun deleteApp(packageName: String): Boolean {
     val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/")
     val result = traceFile.deleteRecursively()
     return if (result) {
-        Log.i("FILE", "delete $packageName directory")
         true
     } else {
         Log.e("FILE", "cannot delete $packageName directory")
@@ -131,7 +128,6 @@ fun deleteTrace(packageName: String, trace: String): Boolean {
     val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
     val result = traceFile.deleteRecursively()
     return if (result) {
-        Log.i("FILE", "delete $trace directory")
         true
     } else {
         Log.e("FILE", "cannot delete $trace directory")
@@ -143,7 +139,6 @@ fun deleteEvent(packageName: String, trace: String, event: String): Boolean {
     val eventFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
     val result = eventFile.deleteRecursively()
     return if (result) {
-        Log.i("FILE", "delete $trace directory")
         true
     } else {
         Log.e("FILE", "cannot delete $trace directory")
@@ -154,7 +149,6 @@ fun deleteEvent(packageName: String, trace: String, event: String): Boolean {
 fun loadScreenshot(packageName: String, trace: String, event: String): Bitmap {
     val screenFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
     if (screenFile.exists()) {
-        Log.i("loadScreen", "loaded")
         val bitmapBytes = screenFile.readBytes()
         return BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.size)
     } else {
@@ -172,8 +166,6 @@ fun saveScreenshot(packageName: String, trace: String, event: String, screen: Bi
         FileOutputStream(fileScreen, false).use {stream ->
             if(!screen.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
                 throw IOException("Couldn't save bitmap")
-            } else {
-                Log.i("saveScreen", "saved")
             }
         }
         true
@@ -272,18 +264,6 @@ fun saveRedactions(packageName: String, trace: String, event: String, redaction:
     }
 }
 
-//fun deleteRedactions(packageName: String, trace: String, event: String) : Boolean {
-//    val redactFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
-//    val result = redactFile.delete()
-//    return if (result) {
-//        Log.i("FILE", "deleted $REDACT_PREFIX$event.json")
-//        true
-//    } else {
-//        Log.e("FILE", "cannot delete $REDACT_PREFIX$event.json or file does not exist")
-//        false
-//    }
-//}
-
 private suspend fun uploadScreen(client: OkHttpClient,
                          mapper: ObjectMapper,
                          packageName: String,
@@ -372,17 +352,17 @@ fun checkWiFiConnection(): Boolean {
         appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager  // Context.CONNECTIVITY_SERVICE
     val networkCapabilities = connMgr.activeNetwork //?: return false
     if (networkCapabilities == null) {
-        Log.i("error upload", "no Wi-Fi connection")
+        Log.e("error upload", "no Wi-Fi connection")
         return false
     }
     val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) //?: return false
     if (activeNetwork == null) {
-        Log.i("error upload", "no Wi-Fi connection")
+        Log.e("error upload", "no Wi-Fi connection")
         return false
     }
     val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     if (!isWifiConn) {
-        Log.i("error upload", "no Wi-Fi connection")
+        Log.e("error upload", "no Wi-Fi connection")
         return false
     }
     return true
@@ -421,7 +401,7 @@ suspend fun uploadFullTraceContent(
             }
 
             if (isSuccessUpload && screenId.isNotEmpty()) {
-                Log.i("api", "success upload screenshot")
+                Log.d("api", "success upload screenshot")
                 screenIds.add(screenId)
             } else {
                 Log.e("api", "fail upload screenshot")
@@ -434,7 +414,7 @@ suspend fun uploadFullTraceContent(
                     isSuccessUpload = it.isSuccessful
                 }
                 if (isSuccessUpload) {
-                    Log.i("api", "success upload redaction")
+                    Log.d("api", "success upload redaction")
                 } else {
                     Log.e("api", "fail upload redaction")
                     return false
@@ -447,7 +427,7 @@ suspend fun uploadFullTraceContent(
         }
 
         if (isSuccessUpload) {
-            Log.i("api", "success upload trace")
+            Log.d("api", "success upload trace")
         } else {
             Log.e("api", "fail upload trace")
         }
@@ -492,7 +472,10 @@ class MyAccessibilityService : AccessibilityService() {
         info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
                         AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
                         AccessibilityEvent.TYPE_VIEW_SCROLLED or
-                        AccessibilityEvent.TYPE_VIEW_SELECTED
+                        AccessibilityEvent.TYPE_VIEW_SELECTED  or
+                        AccessibilityEvent.TYPE_VIEW_FOCUSED
+//            AccessibilityEvent.TYPES_ALL_MASK
+
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
         info.notificationTimeout = 300
         info.packageNames = null
@@ -526,6 +509,10 @@ class MyAccessibilityService : AccessibilityService() {
         // record screenshot and view hierarchy when screen touch is detected with separate coroutines
         layout.setOnTouchListener (object : View.OnTouchListener {
             override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
+                if (motionEvent != null) {
+                    Log.i("TOUCH_EVENT", MotionEvent.actionToString(motionEvent.action))
+                    Log.i("TOUCH_EVENT", "(${motionEvent.rawX}, ${motionEvent.rawY}); (${motionEvent.x}, ${motionEvent.y})")
+                }
                 currRootWindow = rootInActiveWindow
                 currVHString = null
                 if (currRootWindow?.packageName.toString() == "null" ||
@@ -548,7 +535,7 @@ class MyAccessibilityService : AccessibilityService() {
                                 if (currVHString.isNullOrEmpty()) {
                                     currVHString = currRootWindow.toString()
                                 }
-                                Log.i("currRootWindow", "update VH")
+                                Log.d("currRootWindow", "update VH")
                             }
                         }
                     }
@@ -568,7 +555,7 @@ class MyAccessibilityService : AccessibilityService() {
                                     isScreenEventPaired = false
                                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
                                     result.hardwareBuffer.close()
-                                    Log.i("screenshot", "update screen")
+                                    Log.d("screenshot", "update screen")
                                 }
 
                                 override fun onFailure(errCode: Int) {
@@ -587,8 +574,21 @@ class MyAccessibilityService : AccessibilityService() {
 
     // TODO: check if can break parts into coroutine and multithread
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        Log.i("MEASURE_EVENT", event?.packageName.toString())
-        if (event == null) {
+        if (event != null) {
+            Log.d("MEASURE_EVENT", eventTypeToString( event.eventType))
+            if (event.packageName != null) {
+                Log.d("MEASURE_EVENT", event.packageName.toString())
+            }
+            if (event.className != null) {
+                Log.i("MEASURE_EVENT", event.className.toString())
+            }
+            if (event.source != null) {
+                val rect = Rect()
+                event.source?.getBoundsInScreen(rect)
+                Log.i("MEASURE_EVENT", rect.flattenToString())
+            }
+        }
+        if (event == null || event.packageName == null) {
             return
         }
         if (isScreenEventPaired) {  // ignore if screenshot already paired with event
@@ -610,10 +610,10 @@ class MyAccessibilityService : AccessibilityService() {
             isNewTrace = true
         }
         if (isBackBtnPressed || isHomeBtnPressed || isOverviewBtnPressed) {
-            Log.i("pressed", "systemui buttons")
+            Log.d("pressed", "systemui buttons")
             currEventPackageName = lastEventPackageName
         }
-        Log.i("currEventPackageName", currEventPackageName)
+        Log.d("currEventPackageName", currEventPackageName)
         if (currEventPackageName == "null" ||
             currEventPackageName == odimPackageName ||
             currEventPackageName == appLauncherPackageName ||
@@ -626,6 +626,7 @@ class MyAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
+//            (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) ||
             (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
         ) {
             if (currentBitmap == null) {

@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.fasterxml.jackson.databind.JsonNode
@@ -103,6 +102,61 @@ class ScreenShotActivity : AppCompatActivity() {
 
         // Save the original bitmap with gesture so we can remove mistake redactions
         originalBitmap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+
+
+
+
+        // FIXME: for debug
+        val gesture = loadGestures(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
+        val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
+        val centerX = gesture.centerX * windowWidth
+        val centerY = gesture.centerY * windowHeight
+        val scrollDX = gesture.scrollDX * windowWidth
+        val scrollDY = gesture.scrollDY * windowHeight
+        var rectLeft = (if(centerX-50 > 0) centerX-50 else 0).toInt()
+        var rectTop = (if(centerY-50 >0) centerY-50 else 0).toInt()
+        var rectRight = (centerX+50).toInt()
+        var rectBottom = (centerY+50).toInt()
+        if (scrollDX > 0) {
+            rectLeft = (centerX - scrollDX).toInt()
+            rectRight = (centerX + scrollDX).toInt()
+        }
+        if (scrollDY > 0) {
+            rectTop = (centerY - scrollDY).toInt()
+            rectBottom = (centerY + scrollDY).toInt()
+        }
+        val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
+        if (scrollDX.toInt() == 0 && scrollDY.toInt() == 0) {
+            val paint = Paint()
+            paint.color = Color.rgb(255, 165, 0)
+            paint.alpha = 100
+            canvas!!.drawCircle(
+                rect.centerX().toFloat(),
+                rect.centerY().toFloat(),
+                (((rect.height() + rect.width()) * 0.25).toFloat()),
+                paint
+            )
+        } else {
+            val paint = Paint()
+            paint.color = Color.rgb(165, 0, 255)
+            paint.alpha = 100
+            canvas!!.drawOval(
+                (rect.centerX() - 50).toFloat(),
+                (rect.centerY() - 100).toFloat(),
+                (rect.centerX() + 50).toFloat(),
+                (rect.centerY() + 100).toFloat(),
+                paint
+            )
+        }
+
+
+
+
+
+
+
         drawVHBoxes(vhBoxes)
         imageView!!.baseBitMap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
         // set the full drawings as primary bitmap for scrubbingView
@@ -113,7 +167,6 @@ class ScreenShotActivity : AppCompatActivity() {
         saveFAB.setOnClickListener {
             // don't save if no redactions have been drawn
             if (imageView!!.currentRedacts.isEmpty()) {
-                Log.i("redact", "empty")
                 return@setOnClickListener
             }
             // loop through imageView.rectangles

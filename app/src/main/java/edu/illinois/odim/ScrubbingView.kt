@@ -61,7 +61,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         visibility = View.VISIBLE
     }
 
-    private fun convertXToImageScale(x: Int) : Int {
+    fun convertXToImageScale(x: Int) : Int {
         val bitmapWidth = this.drawable.intrinsicWidth  // original image width, height
         val bitmapHeight = this.drawable.intrinsicHeight
         val canvasImageHeight = this.measuredHeight  // canvas height space available
@@ -75,7 +75,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return convertedX.roundToInt()
     }
 
-    private fun convertYToImageScale(y: Int) : Int {
+    fun convertYToImageScale(y: Int) : Int {
         val bitmapHeight = this.drawable.intrinsicHeight
         val canvasImageHeight = this.measuredHeight  // canvas height space available
         val convertedY = (bitmapHeight.toDouble() / canvasImageHeight) * y
