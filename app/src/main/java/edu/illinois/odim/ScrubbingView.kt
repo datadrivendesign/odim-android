@@ -17,7 +17,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import kotlin.math.max
@@ -92,17 +91,17 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
 
     // Get coordinates on user touch
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when (event!!.action) {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val pointX = event.x.roundToInt()
+        val pointY = event.y.roundToInt()
+        // convert coordinates to image size scale
+        val convertedX = convertXToImageScale(pointX)
+        val convertedY = convertYToImageScale(pointY)
+        if (convertedX == -1 || convertedY == -1) {
+            return false
+        }
+        when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                val pointX = event.x.roundToInt()
-                val pointY = event.y.roundToInt()
-
-                val convertedX = convertXToImageScale(pointX)
-                val convertedY = convertYToImageScale(pointY)
-                if (convertedX == -1 || convertedY == -1) {
-                    return false
-                }
                 // Delete rectangle if in Delete Mode and touch rectangle
                 if (!drawMode) {
                     for (redaction in currentRedacts) {
@@ -137,20 +136,10 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
                         }
                     }
                 }
-
                 p1 = Point(convertedX, convertedY)
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                val pointX = event.x.roundToInt()
-                val pointY = event.y.roundToInt()
-
-                val convertedX = convertXToImageScale(pointX)
-                val convertedY = convertYToImageScale(pointY)
-                if (convertedX == -1 || convertedY == -1) {
-                    return false
-                }
-
                 p2 = Point(convertedX, convertedY)
             }
             else -> {
@@ -224,7 +213,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
         return overlapArea / getArea(baseRect)
     }
 
-    fun traverse(root: JsonNode?, newRect: Rect, mapper: ObjectMapper): Triple<Boolean, Boolean, JsonNode?> {
+    fun traverse(root: JsonNode?, newRect: Rect): Triple<Boolean, Boolean, JsonNode?> {
         // Base Case
         if (nodeIsMatch(root, newRect)) {
             // matching child is found to the rectangle
@@ -239,7 +228,7 @@ class ScrubbingView : androidx.appcompat.widget.AppCompatImageView {
             if (child.has("content-desc") && child["content-desc"].asText() == "description redacted.") {
                 continue
             }
-            val isMatch = traverse(child, newRect, mapper)
+            val isMatch = traverse(child, newRect)
             if (isMatch.first && !isMatch.second) {
                 postInvalidate()
                 if (child.has("text_field")) {

@@ -1,6 +1,7 @@
 package edu.illinois.odim
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.CardCellBinding
@@ -11,7 +12,7 @@ class EventAdapter(screenPreviews: ArrayList<ScreenShotPreview>) : RecyclerView.
     private lateinit var itemLongClickListener: OnItemLongClickListener
 
     interface OnItemClickListener {
-        fun onItemClick(cardView: CardCellBinding)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
+        fun onItemClick(cardView: CardCellBinding)
     }
 
     interface OnItemLongClickListener {
@@ -57,6 +58,9 @@ class DetailViewHolder(
 
     fun bindScreenshotPreview(ssp: ScreenShotPreview) {
         cardBinding.cover.setImageBitmap(ssp.screenShot)
+        if (!ssp.isComplete) {
+            cardBinding.incompleteIndicator.visibility = View.VISIBLE
+        }
         cardBinding.time.text = ssp.timestamp
         cardBinding.event.text = ssp.event
     }

@@ -1,10 +1,19 @@
 package edu.illinois.odim
 
-data class Gesture(val centerX: Float, val centerY: Float, val scrollDX: Float, val scrollDY: Float) {
-    private val x: Float = centerX
-    private val y: Float = centerY
-    private val scrollDeltaX: Float = scrollDX
-    private val scrollDeltaY: Float = scrollDY
+data class Gesture(val centerX: Float, val centerY: Float, var scrollDX: Float, val scrollDY: Float) {
+    private var x: Float = centerX
+    private var y: Float = centerY
+    private var scrollDeltaX: Float = scrollDX
+    private var scrollDeltaY: Float = scrollDY
+    var className: String? = null
+
+    constructor(eventClassName: String) : this(-1F, -1F, -1F, -1F) {
+        x = -1F
+        y = -1F
+        scrollDeltaX = -1F
+        scrollDeltaY = -1F
+        className = eventClassName
+    }
 
     override fun equals(other: Any?): Boolean {
         val otherGesture = other as Gesture?

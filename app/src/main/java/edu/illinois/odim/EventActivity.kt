@@ -28,13 +28,14 @@ class EventActivity : AppCompatActivity() {
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
     private var uploadTraceButton: Button? = null
-    private val screenPreview : ArrayList<ScreenShotPreview> = ArrayList()
+    private val screenPreview: ArrayList<ScreenShotPreview> = ArrayList()
+    private var isTraceComplete: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_event)
-        chosenPackageName = intent.extras!!.getString("package_name") // intent.extras!!["package_name"].toString()
-        chosenTraceLabel = intent.extras!!.getString("trace_label") // intent.extras!!["trace_label"].toString()
+        chosenPackageName = intent.extras!!.getString("package_name")
+        chosenTraceLabel = intent.extras!!.getString("trace_label")
         title = "$chosenPackageName: $chosenTraceLabel"
         // change the way we do this with recyclerview
         recyclerView = findViewById(R.id.event_recycler_view)
@@ -48,7 +49,13 @@ class EventActivity : AppCompatActivity() {
             val eventInfo = event.split(eventDelimiter)
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
-            val screenshotPreview = ScreenShotPreview(screenshot, eventType, eventTime)
+            // check if source was null and gesture was not found
+            val eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
+            val isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
+            if (!isComplete) {
+                isTraceComplete = false
+            }
+            val screenshotPreview = ScreenShotPreview(screenshot, eventType, eventTime, isComplete)
             screenPreview.add(screenshotPreview)
         }
         recyclerAdapter = EventAdapter(screenPreview)
@@ -84,6 +91,7 @@ class EventActivity : AppCompatActivity() {
                         dialog.dismiss()
                     }
                 val dialog: AlertDialog = builder.create()
+                // check if any screens have null sources
                 dialog.show()
                 return result
             }
@@ -91,9 +99,14 @@ class EventActivity : AppCompatActivity() {
 
         recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
             override fun onItemClick(cardView: CardCellBinding) {
+                val nextClass = if (cardView.incompleteIndicator.visibility != View.VISIBLE) {
+                    ScreenShotActivity::class.java
+                } else {
+                    IncompleteScreenActivity::class.java
+                }
                 val intent = Intent(
                     applicationContext,
-                    ScreenShotActivity::class.java
+                    nextClass
                 )
                 intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_label", chosenTraceLabel)
@@ -103,7 +116,6 @@ class EventActivity : AppCompatActivity() {
             }
         })
         recyclerView?.adapter = recyclerAdapter
-
 
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
@@ -115,7 +127,8 @@ class EventActivity : AppCompatActivity() {
                 .setPositiveButton("UPLOAD") { _, _ ->
                     CoroutineScope(Dispatchers.IO).launch {
                         val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
-                        val uploadSuccess = uploadFullTraceContent(chosenPackageName!!,
+                        val uploadSuccess = uploadFullTraceContent(
+                            chosenPackageName!!,
                             chosenTraceLabel!!,
                             traceDescription.text.toString())
                         if (!uploadSuccess) {
@@ -138,6 +151,7 @@ class EventActivity : AppCompatActivity() {
                 }
                 .show()
         }
+        uploadTraceButton?.isEnabled = isTraceComplete
     }
 
     override fun onStop() {
@@ -150,6 +164,7 @@ class EventActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
+        isTraceComplete = true
         screenPreview.clear()
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         for (event in eventsInTrace) {
@@ -158,9 +173,16 @@ class EventActivity : AppCompatActivity() {
             val eventInfo = event.split(eventDelimiter)
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
-            val screenshotPreview = ScreenShotPreview(screenshot, eventType, eventTime)
+            // check if source was null and gesture was not found
+            val eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
+            val isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
+            if (!isComplete) {
+                isTraceComplete = false
+            }
+            val screenshotPreview = ScreenShotPreview(screenshot, eventType, eventTime, isComplete)
             screenPreview.add(screenshotPreview)
         }
+        uploadTraceButton?.isEnabled = isTraceComplete
         notifyEventAdapter()
     }
 }

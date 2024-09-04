@@ -22,4 +22,7 @@
     <string name="trace_upload_title">Add Trace Description</string>
     <string name="upload_trace_hint">Add a description for your trace</string>
     <string name="worker_id_input_hint">Give worker id for your traces</string>
+    <string name="question_mark_icon">The gesture for this screen is unknown</string>
+    <string name="confirm_user_gesture">Confirm Gesture Element</string>
+    <string name="incomplete_screen_content_desc">Incomplete screen lacking gesture</string>
 </resources>

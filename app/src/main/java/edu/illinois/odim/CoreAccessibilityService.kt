@@ -19,7 +19,6 @@ import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
 import android.view.Gravity
 import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
@@ -201,7 +200,7 @@ fun saveVH(packageName: String, trace: String, event: String, vhJsonString: Stri
     }
 }
 
-fun loadGestures(packageName: String, trace: String, event: String): Gesture {
+fun loadGesture(packageName: String, trace: String, event: String): Gesture {
     val jsonFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$event.json")
     if (jsonFile.exists()) {
         val gestureJsonString = jsonFile.readText(Charsets.UTF_8)
@@ -211,7 +210,7 @@ fun loadGestures(packageName: String, trace: String, event: String): Gesture {
     }
 }
 
-fun saveGestures(packageName: String, trace: String, event: String, gesture: Gesture) : Boolean {
+fun saveGesture(packageName: String, trace: String, event: String, gesture: Gesture) : Boolean {
     return try {
         val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
         if (!eventDir.exists()) {
@@ -253,7 +252,7 @@ fun saveRedactions(packageName: String, trace: String, event: String, redaction:
             redactions.addAll(currRedacts)
         }
         redactions.add(redaction)
-
+        // write redactions to local storage
         FileOutputStream(fileRedacts, false).use {stream ->
             stream.write(kotlinMapper.writeValueAsBytes(redactions))
         }
@@ -280,13 +279,19 @@ private suspend fun uploadScreen(client: OkHttpClient,
         // retrieve screen timestamp
         val screenCreatedAt = eventLabel.substringBefore(";")
         // retrieve gesture for screen
-        val gesture: Gesture =  loadGestures(packageName, traceLabel, eventLabel)
+        val gesture: Gesture = loadGesture(packageName, traceLabel, eventLabel)
         // construct request body
         val reqBodyJSONObj = mapper.createObjectNode()
         reqBodyJSONObj.put("vh", vhString)
         reqBodyJSONObj.put("img", bitmapBase64)
         reqBodyJSONObj.put("created", screenCreatedAt)
-        reqBodyJSONObj.set<JsonNode>("gesture", mapper.valueToTree(gesture) as JsonNode)
+        // construct gesture body, need to exclude className
+        val gestureJSON = ObjectMapper().createObjectNode()
+        gestureJSON.put("x", gesture.centerX)
+        gestureJSON.put("y", gesture.centerY)
+        gestureJSON.put("scrollDeltaX", gesture.scrollDX)
+        gestureJSON.put("scrollDeltaY", gesture.scrollDY)
+        reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
         val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
         // run the POST request
         val screenPostRequest = Request.Builder()
@@ -328,8 +333,8 @@ private suspend fun uploadTrace(client: OkHttpClient,
                         traceLabel: String,
                         traceDescription: String): Response {
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-
-    val reqBodyJSONObj = mapper.createObjectNode()// JsonObject()
+    // construct request body
+    val reqBodyJSONObj = mapper.createObjectNode()
     reqBodyJSONObj.putArray("screens").addAll(mapper.valueToTree(screenIds) as ArrayNode)
     reqBodyJSONObj.put("app", packageName)
     reqBodyJSONObj.put("created", traceLabel)
@@ -337,7 +342,7 @@ private suspend fun uploadTrace(client: OkHttpClient,
     reqBodyJSONObj.put("worker", workerId)
     reqBodyJSONObj.put("version", getAppVersion(packageName))
     val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
-
+    // send post request
     val tracePostRequest = Request.Builder()
         .url("$apiUrlPrefix/traces")
         .addHeader("Content-Type", "application/json; charset=utf-8")
@@ -381,7 +386,6 @@ suspend fun uploadFullTraceContent(
         Toast.makeText(appContext, "Cannot upload without connection to Wi-Fi!", Toast.LENGTH_SHORT).show()
         return false
     }
-
     Logger.getLogger(OkHttpClient::class.java.name).level = Level.FINE
     val client = OkHttpClient()
     var isSuccessUpload: Boolean
@@ -399,7 +403,6 @@ suspend fun uploadFullTraceContent(
                 val returnedScreen = mapper.readTree(screenResBodyStr)
                 screenId = returnedScreen.get("_id").asText()
             }
-
             if (isSuccessUpload && screenId.isNotEmpty()) {
                 Log.d("api", "success upload screenshot")
                 screenIds.add(screenId)
@@ -425,7 +428,6 @@ suspend fun uploadFullTraceContent(
         uploadTrace(client, mapper, screenIds, packageName, traceLabel, traceDescription).use {
             isSuccessUpload = it.isSuccessful
         }
-
         if (isSuccessUpload) {
             Log.d("api", "success upload trace")
         } else {
@@ -449,18 +451,11 @@ class MyAccessibilityService : AccessibilityService() {
     var currTouchTime: String? = null
     private val odimPackageName = "edu.illinois.odim"
     private val settingsPackageName = "com.android.settings"
-
+    // static variables
     companion object {
         lateinit var appContext: Context
         fun isAppContextInitialized(): Boolean { return ::appContext.isInitialized }
         lateinit var appLauncherPackageName: String
-    }
-
-    fun getInteractionTime(): String {
-        val date = Date(System.currentTimeMillis()) //event.eventTime)
-        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
-        formatter.timeZone = TimeZone.getTimeZone("UTC")
-        return formatter.format(date)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -474,7 +469,6 @@ class MyAccessibilityService : AccessibilityService() {
                         AccessibilityEvent.TYPE_VIEW_SCROLLED or
                         AccessibilityEvent.TYPE_VIEW_SELECTED  or
                         AccessibilityEvent.TYPE_VIEW_FOCUSED
-//            AccessibilityEvent.TYPES_ALL_MASK
 
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
         info.notificationTimeout = 300
@@ -490,7 +484,6 @@ class MyAccessibilityService : AccessibilityService() {
                                     intent,
                                     PackageManager.MATCH_DEFAULT_ONLY
                                 )!!.activityInfo.packageName
-
         // add invisible layout to get touches to screen
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager?
         val layout = FrameLayout(appContext)
@@ -507,166 +500,75 @@ class MyAccessibilityService : AccessibilityService() {
         params.gravity = Gravity.TOP
         windowManager!!.addView(layout, params)
         // record screenshot and view hierarchy when screen touch is detected with separate coroutines
-        layout.setOnTouchListener (object : View.OnTouchListener {
-            override fun onTouch(view: View?, motionEvent: MotionEvent?): Boolean {
-                if (motionEvent != null) {
-                    Log.i("TOUCH_EVENT", MotionEvent.actionToString(motionEvent.action))
-                    Log.i("TOUCH_EVENT", "(${motionEvent.rawX}, ${motionEvent.rawY}); (${motionEvent.x}, ${motionEvent.y})")
-                }
-                currRootWindow = rootInActiveWindow
-                currVHString = null
-                if (currRootWindow?.packageName.toString() == "null" ||
-                    currRootWindow!!.packageName == odimPackageName ||
-                    currRootWindow!!.packageName == appLauncherPackageName ||
-                    currRootWindow!!.packageName == settingsPackageName
-                ) {
-                    lastTouchPackage = currRootWindow?.packageName.toString()
-                    return false
-                }
-
-                // get view hierarchy at this time
-                GlobalScope.launch(Dispatchers.IO) {
-                    val fullTime = measureTimeMillis {
-                        ByteArrayOutputStream().use { baos ->
-                            JsonFactory().createGenerator(baos, JsonEncoding.UTF8).use { writer ->
-                                parseVHToJson(currRootWindow!!, writer)
-                                writer.flush()
-                                currVHString = String(baos.toByteArray())
-                                if (currVHString.isNullOrEmpty()) {
-                                    currVHString = currRootWindow.toString()
-                                }
-                                Log.d("currRootWindow", "update VH")
+        layout.setOnTouchListener { _, motionEvent ->
+            if (motionEvent != null) {
+                Log.i("TOUCH_EVENT", MotionEvent.actionToString(motionEvent.action))
+                Log.i("TOUCH_EVENT", "(${motionEvent.rawX}, ${motionEvent.rawY}); (${motionEvent.x}, ${motionEvent.y})")
+            }
+            currRootWindow = rootInActiveWindow
+            currVHString = null
+            if (currRootWindow?.packageName.toString() == "null" ||
+                currRootWindow!!.packageName == odimPackageName ||
+                currRootWindow!!.packageName == appLauncherPackageName ||
+                currRootWindow!!.packageName == settingsPackageName
+            ) {
+                lastTouchPackage = currRootWindow?.packageName.toString()
+                return@setOnTouchListener false
+            }
+            // get view hierarchy at this time
+            GlobalScope.launch(Dispatchers.IO) {
+                val fullTime = measureTimeMillis {
+                    ByteArrayOutputStream().use { baos ->
+                        JsonFactory().createGenerator(baos, JsonEncoding.UTF8).use { writer ->
+                            parseVHToJson(currRootWindow!!, writer)
+                            writer.flush()
+                            currVHString = String(baos.toByteArray())
+                            if (currVHString.isNullOrEmpty()) {
+                                currVHString = currRootWindow.toString()
                             }
+                            Log.d("currRootWindow", "update VH")
                         }
                     }
-                    Log.d("MEASURE_TIME", "Parse time took ${fullTime}ms")
                 }
-
-                GlobalScope.launch(Dispatchers.Default) {
-                    val time = measureTimeMillis {
-                        takeScreenshot(
-                            DEFAULT_DISPLAY,
-                            appContext.mainExecutor,
-                            object : TakeScreenshotCallback {
-                                override fun onSuccess(result: ScreenshotResult) {
-                                    currTouchTime = getInteractionTime()
-                                    // take screenshot and record current bitmap globally
-                                    // update screen
-                                    isScreenEventPaired = false
-                                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                                    result.hardwareBuffer.close()
-                                    Log.d("screenshot", "update screen")
-                                }
-
-                                override fun onFailure(errCode: Int) {
-                                    Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
-                                }
+                Log.d("MEASURE_TIME", "Parse time took ${fullTime}ms")
+            }
+            // coroutine to take screenshot
+            GlobalScope.launch(Dispatchers.Default) {
+                val time = measureTimeMillis {
+                    takeScreenshot(
+                        DEFAULT_DISPLAY,
+                        appContext.mainExecutor,
+                        object : TakeScreenshotCallback {
+                            override fun onSuccess(result: ScreenshotResult) {
+                                currTouchTime = getInteractionTime()
+                                // take screenshot and record current bitmap globally
+                                // update screen
+                                isScreenEventPaired = false
+                                currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                                result.hardwareBuffer.close()
+                                Log.d("screenshot", "update screen")
                             }
-                        )
-                    }
-                    Log.d("MEASURE_TIME", "Screenshot time took ${time}ms")
+                            override fun onFailure(errCode: Int) {
+                                Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
+                            }
+                        }
+                    )
                 }
-                lastTouchPackage = currRootWindow!!.packageName.toString()
-                return false
+                Log.d("MEASURE_TIME", "Screenshot time took ${time}ms")
             }
-        })
-    }
-
-    // TODO: check if can break parts into coroutine and multithread
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event != null) {
-            Log.d("MEASURE_EVENT", eventTypeToString( event.eventType))
-            if (event.packageName != null) {
-                Log.d("MEASURE_EVENT", event.packageName.toString())
-            }
-            if (event.className != null) {
-                Log.i("MEASURE_EVENT", event.className.toString())
-            }
-            if (event.source != null) {
-                val rect = Rect()
-                event.source?.getBoundsInScreen(rect)
-                Log.i("MEASURE_EVENT", rect.flattenToString())
-            }
-        }
-        if (event == null || event.packageName == null) {
-            return
-        }
-        if (isScreenEventPaired) {  // ignore if screenshot already paired with event
-            return
-        }
-        var currEventPackageName = event.packageName.toString()
-        // before we decide if new trace, we should check if BACK or HOME button
-        val systemUIPackageName = "com.android.systemui"
-        val backBtnText = "[Back]"
-        val homeBtnText = "[Home]"
-        val overviewBtnTexts = listOf("[Overview]", "[Recents]") // TODO: do we want this button to be used?
-        val isBackBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == backBtnText)
-        val isHomeBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == homeBtnText)
-        val isOverviewBtnPressed = (event.packageName == systemUIPackageName) && (overviewBtnTexts.contains(event.text.toString()))
-        // ignore new systemui package name update if home or back button pressed
-        var isNewTrace = false
-        if (currEventPackageName != lastEventPackageName && !isBackBtnPressed && !isHomeBtnPressed && !isOverviewBtnPressed) {
-            // continue trace even if back and home button pressed
-            isNewTrace = true
-        }
-        if (isBackBtnPressed || isHomeBtnPressed || isOverviewBtnPressed) {
-            Log.d("pressed", "systemui buttons")
-            currEventPackageName = lastEventPackageName
-        }
-        Log.d("currEventPackageName", currEventPackageName)
-        if (currEventPackageName == "null" ||
-            currEventPackageName == odimPackageName ||
-            currEventPackageName == appLauncherPackageName ||
-            currEventPackageName == settingsPackageName
-        ) {
-            lastEventPackageName = currEventPackageName
-            return
-        }
-        // construct interaction event
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
-//            (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) ||
-            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
-        ) {
-            if (currentBitmap == null) {
-                return
-            }
-            isScreenEventPaired = true
-            // check if event scroll, add delta coordinates
-            var scrollCoords : Pair<Int, Int>? = null
-            if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-                scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
-            }
-            // get vh element interacted with and parse view hierarchy of current screen if null
-            val node = event.source ?: return
-            val outbounds = Rect()
-            node.getBoundsInScreen(outbounds)
-            // create json string of VH
-            val vh = currVHString ?: return
-            // Parse event description
-            val eventTime = currTouchTime //getInteractionTime()
-            val eventType = eventTypeToString(event.eventType)
-            val eventLabel = "$eventTime; $eventType"
-            // add the event
-            addEvent(node, currEventPackageName, isNewTrace, eventLabel, scrollCoords, currentBitmap!!, vh)
-            lastEventPackageName = if (isBackBtnPressed) {
-                currEventPackageName
-            } else {
-                event.packageName.toString()
-            }
+            lastTouchPackage = currRootWindow!!.packageName.toString()
+            return@setOnTouchListener false
         }
     }
 
-//    fun longLog(str: String) {
-//        if (str.length > 4000) {
-//            Log.d("MEASURE_VH", str.substring(0, 4000))
-//            longLog(str.substring(4000))
-//        } else Log.d("MEASURE_VH", str)
-//    }
+    fun getInteractionTime(): String {
+        val date = Date(System.currentTimeMillis()) //event.eventTime)
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        return formatter.format(date)
+    }
 
-    private fun parseVHToJson(node: AccessibilityNodeInfo,
-                              jsonWriter: JsonGenerator) {
+    private fun parseVHToJson(node: AccessibilityNodeInfo, jsonWriter: JsonGenerator) {
         try {
             // "visit" the node on tree
             jsonWriter.writeStartObject()
@@ -718,7 +620,139 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun createGesture(node: AccessibilityNodeInfo?, scrollCoords: Pair<Int, Int>?) : Gesture {
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // logging
+        if (event != null) {
+            Log.d("MEASURE_EVENT", eventTypeToString( event.eventType))
+            if (event.packageName != null) {
+                Log.d("MEASURE_EVENT", event.packageName.toString())
+            }
+            if (event.className != null) {
+                Log.i("MEASURE_EVENT", event.className.toString())
+            }
+            if (event.source != null) {
+                val rect = Rect()
+                event.source?.getBoundsInScreen(rect)
+                Log.i("MEASURE_EVENT", rect.flattenToString())
+            }
+        }
+        // odim recording logic begins
+        if (event == null || event.packageName == null) {
+            return
+        }
+        if (isScreenEventPaired) {  // ignore if screenshot already paired with event
+            return
+        }
+        var currEventPackageName = event.packageName.toString()
+        // before we decide if new trace, we should check if BACK or HOME button
+        val systemUIPackageName = "com.android.systemui"
+        val backBtnText = "[Back]"
+        val homeBtnText = "[Home]"
+        val overviewBtnTexts = listOf("[Overview]", "[Recents]") // TODO: do we want this button to be used?
+        val isBackBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == backBtnText)
+        val isHomeBtnPressed = (event.packageName == systemUIPackageName) && (event.text.toString() == homeBtnText)
+        val isOverviewBtnPressed = (event.packageName == systemUIPackageName) && (overviewBtnTexts.contains(event.text.toString()))
+        val isSystemUIBtnPressed = isBackBtnPressed || isHomeBtnPressed || isOverviewBtnPressed
+        // ignore new systemui package name update if home or back button pressed
+        var isNewTrace = false
+        if (currEventPackageName != lastEventPackageName && !isBackBtnPressed && !isHomeBtnPressed && !isOverviewBtnPressed) {
+            // continue trace even if back and home button pressed
+            isNewTrace = true
+        }
+        if (isSystemUIBtnPressed) {
+            Log.d("pressed", "systemui buttons")
+            currEventPackageName = lastEventPackageName
+        }
+        Log.d("currEventPackageName", currEventPackageName)
+        if (currEventPackageName == "null" ||
+            currEventPackageName == odimPackageName ||
+            currEventPackageName == appLauncherPackageName ||
+            currEventPackageName == settingsPackageName
+        ) {
+            lastEventPackageName = currEventPackageName
+            return
+        }
+        // construct interaction event
+//        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+//            (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
+//            (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
+//            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
+//        ) {
+            // get vh element interacted with and parse the coordinates
+            val node = event.source
+            var outbounds: Rect? = null
+            if (node != null) {
+                outbounds = Rect()
+                node.getBoundsInScreen(outbounds)
+            }
+            val className = event.className.toString()
+            // null checks for both bitmap and vh in touch listener
+            if (currentBitmap == null) {
+                return
+            }
+            val vh = currVHString ?: return
+            isScreenEventPaired = true
+            // Parse event description
+            val eventTime = currTouchTime
+            val eventType = eventTypeToString(event.eventType)
+            val eventLabel = "$eventTime; $eventType"
+            // check if event scroll, add delta coordinates
+            var scrollCoords : Pair<Int, Int>? = null
+            if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+                scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
+            }
+            // add the event
+            addEvent(
+                outbounds,
+                currEventPackageName,
+                eventLabel,
+                isSystemUIBtnPressed,
+                isNewTrace,
+                className,
+                scrollCoords,
+                currentBitmap!!,
+                vh
+            )
+            lastEventPackageName = if (isBackBtnPressed) {
+                currEventPackageName
+            } else {
+                event.packageName.toString()
+            }
+//        }
+    }
+
+    private fun addEvent(
+        outbounds: Rect?,
+        packageName: String,
+        eventLabel: String,
+        isSystemUIBtnPressed: Boolean,
+        isNewTrace: Boolean,
+        className: String,
+        scrollCoords: Pair<Int, Int>?,
+        currentScreenShot: Bitmap,
+        viewHierarchy: String
+    ) {
+        val traceList = listTraces(packageName)
+        val traceLabel = if (isNewTrace) {
+            eventLabel.substringBefore(";")
+        } else {
+            traceList.first()  // trace is sorted in descending order
+        }
+        // update gesture map with new gesture
+        val gesture = createGesture(isSystemUIBtnPressed, className, outbounds, scrollCoords)
+        saveGesture(packageName, traceLabel, eventLabel, gesture)
+        // add a new screenshot to list of traces
+        saveScreenshot(packageName, traceLabel, eventLabel, currentScreenShot)
+        // add the view hierarchy to list of traces
+        saveVH(packageName, traceLabel, eventLabel, viewHierarchy)
+    }
+
+    private fun createGesture(
+        isSystemUIBtnPressed: Boolean,
+        className: String,
+        outbounds: Rect?,
+        scrollCoords: Pair<Int, Int>?
+    ) : Gesture {
         val windowMetrics = windowManager!!.currentWindowMetrics
         val screenWidth = windowMetrics.bounds.width().toFloat()
         val screenHeight = windowMetrics.bounds.height().toFloat()
@@ -726,48 +760,23 @@ class MyAccessibilityService : AccessibilityService() {
         val centerY: Float
         var scrollDX = 0F
         var scrollDY = 0F
-        if (node == null) {
-            // take into account when node is empty (when home button is pressed)
-            centerX = (screenWidth/2) / screenWidth
-            centerY = (screenHeight-30) / screenHeight
+        if (outbounds == null) {
+          if (!isSystemUIBtnPressed) {
+              return Gesture(className)
+          } else {
+              // take into account when node is empty (when home button is pressed)
+              centerX = (screenWidth/2) / screenWidth
+              centerY = (screenHeight-30) / screenHeight
+          }
         } else {
-            val outbounds = Rect()
-            node.getBoundsInScreen(outbounds)
             centerX = outbounds.centerX()/screenWidth
             centerY = outbounds.centerY()/screenHeight
-            if (scrollCoords != null) {
-                scrollDX = scrollCoords.first/screenWidth
-                scrollDY = scrollCoords.second/screenHeight
-            }
+        }
+        if (scrollCoords != null) {
+            scrollDX = scrollCoords.first/screenWidth
+            scrollDY = scrollCoords.second/screenHeight
         }
         return Gesture(centerX, centerY, scrollDX, scrollDY)
-    }
-
-    /**
-     *
-     */
-    private fun addEvent(
-        node: AccessibilityNodeInfo?,
-        packageName: String,
-        isNewTrace: Boolean,
-        eventLabel: String,
-        scrollCoords: Pair<Int, Int>?,
-        currentScreenShot: Bitmap,
-        viewHierarchy: String
-    ) {
-        val traceList = listTraces(packageName)// traceLayer.list
-        val traceLabel = if (isNewTrace) {
-            eventLabel.substringBefore(";")
-        } else {
-            traceList.first()  // trace is sorted in descending order
-        }
-        // update gesture map with new gesture
-        val gesture = createGesture(node, scrollCoords)
-        saveGestures(packageName, traceLabel, eventLabel, gesture)
-        // add a new screenshot to list of traces
-        saveScreenshot(packageName, traceLabel, eventLabel, currentScreenShot)
-        // add the view hierarchy to list of traces
-        saveVH(packageName, traceLabel, eventLabel, viewHierarchy)
     }
 
     override fun onInterrupt() {}

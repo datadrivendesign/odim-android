@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class ScreenShotActivity : AppCompatActivity() {
-
     private var imageView: ScrubbingView? = null
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
@@ -26,8 +25,7 @@ class ScreenShotActivity : AppCompatActivity() {
     private var vhBoxes: MutableList<Rect> = arrayListOf()
     private val mapper = ObjectMapper()
 
-
-    private fun extractVHBoxes(root: JsonNode, vhBoxes: MutableList<Rect>, mapper: ObjectMapper) {
+    private fun extractVHBoxes(root: JsonNode, vhBoxes: MutableList<Rect>) {
         if (root.get("visibility").asBoolean()) {
             val vhBoxString = root.get("bounds_in_screen").asText()
             val vhBoxRect = Rect.unflattenFromString(vhBoxString)
@@ -44,7 +42,7 @@ class ScreenShotActivity : AppCompatActivity() {
         // Recursive Case
         for (i in 0 until childrenArr.size()) {
             val child = childrenArr[i]//.asJsonObject
-            extractVHBoxes(child, vhBoxes, mapper)
+            extractVHBoxes(child, vhBoxes)
         }
     }
     /**
@@ -92,7 +90,7 @@ class ScreenShotActivity : AppCompatActivity() {
         val vhJsonString = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         // extract view hierarchy boxes from VH
         val vhRootJson = mapper.readTree(vhJsonString.trim())
-        extractVHBoxes(vhRootJson, vhBoxes, mapper)
+        extractVHBoxes(vhRootJson, vhBoxes)
         imageView!!.vhRects = vhBoxes
 
         canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
@@ -108,7 +106,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
 
         // FIXME: for debug
-        val gesture = loadGestures(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        val gesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
         val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
         val centerX = gesture.centerX * windowWidth
@@ -155,8 +153,6 @@ class ScreenShotActivity : AppCompatActivity() {
 
 
 
-
-
         drawVHBoxes(vhBoxes)
         imageView!!.baseBitMap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
         // set the full drawings as primary bitmap for scrubbingView
@@ -174,7 +170,7 @@ class ScreenShotActivity : AppCompatActivity() {
             for (drawnRedaction: Redaction in imageView!!.currentRedacts) {
                 // traverse each rectangle
                 val redactRect = imageView!!.convertRedactToRect(drawnRedaction)
-                imageView!!.traverse(imageView!!.vhs, redactRect, mapper)
+                imageView!!.traverse(imageView!!.vhs, redactRect)
                 saveVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, mapper.writeValueAsString(imageView!!.vhs))
                 saveRedactions(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, drawnRedaction)
             }
@@ -226,7 +222,7 @@ class ScreenShotActivity : AppCompatActivity() {
 //        val navBarHeight = resources.getDimensionPixelSize(navBarHeightId)
 //        Log.i("nav bar h:", navBarHeight.toString())
     }
-
+    // TODO: handle the lifecycle onStop and onDestroy properly
     override fun onStop() {
         super.onStop()
         removeVHBoxes(vhBoxes, this.originalBitmap)
@@ -244,15 +240,13 @@ class ScreenShotActivity : AppCompatActivity() {
         val vhJsonString = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         // extract view hierarchy boxes from VH
         val vhRootJson = mapper.readTree(vhJsonString.trim())
-        extractVHBoxes(vhRootJson, vhBoxes, mapper)
-
+        extractVHBoxes(vhRootJson, vhBoxes)
         imageView!!.vhRects = vhBoxes
-
+        // re-set up canvas
         canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
         canvas = Canvas(canvasBitmap)
         imageView!!.canvas = canvas
         imageView!!.vhs = vhRootJson
-
         // Save the original bitmap with gesture so we can remove mistake redactions
         originalBitmap = canvasBitmap.copy(Bitmap.Config.ARGB_8888, true)
         drawVHBoxes(vhBoxes)
