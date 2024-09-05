@@ -202,34 +202,6 @@ class ScreenShotActivity : AppCompatActivity() {
                 (view as FloatingActionButton).setImageResource(android.R.drawable.ic_delete)
             }
         }
-
-//        This took an embarrassing amount of time to figure out dimensions of the screen, image and canvas
-//        Further calculations are done in the scrubbing view:
-
-//        val size = Point()
-//        val display = getDisplay()?.getSize(size)
-//        Log.i("display size:", "x: ${size.x}  y: ${size.y}")
-//
-//        val realSize = Point()
-//        val realDisplay = getDisplay()?.getRealSize(realSize)
-//        Log.i("real display size:", "x: ${realSize.x} y: ${realSize.y}")
-//
-//        val statusBarHeightId = resources.getIdentifier("status_bar_height", "dimen", "android")
-//        val statusBarHeight = resources.getDimensionPixelSize(statusBarHeightId)
-//        Log.i("status bar h:", statusBarHeight.toString())
-//
-//        val navBarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
-//        val navBarHeight = resources.getDimensionPixelSize(navBarHeightId)
-//        Log.i("nav bar h:", navBarHeight.toString())
-    }
-    // TODO: handle the lifecycle onStop and onDestroy properly
-    override fun onStop() {
-        super.onStop()
-        removeVHBoxes(vhBoxes, this.originalBitmap)
-        canvasBitmap.recycle()
-        originalBitmap?.recycle()
-        imageView!!.baseBitMap?.recycle()
-        super.onBackPressedDispatcher.onBackPressed()
     }
 
     override fun onRestart() {
@@ -262,3 +234,22 @@ class ScreenShotActivity : AppCompatActivity() {
         imageView!!.baseBitMap?.recycle()
     }
 }
+
+//        This took an embarrassing amount of time to figure out dimensions of the screen, image and canvas
+//        Further calculations are done in the scrubbing view:
+
+//        val size = Point()
+//        val display = getDisplay()?.getSize(size)
+//        Log.i("display size:", "x: ${size.x}  y: ${size.y}")
+//
+//        val realSize = Point()
+//        val realDisplay = getDisplay()?.getRealSize(realSize)
+//        Log.i("real display size:", "x: ${realSize.x} y: ${realSize.y}")
+//
+//        val statusBarHeightId = resources.getIdentifier("status_bar_height", "dimen", "android")
+//        val statusBarHeight = resources.getDimensionPixelSize(statusBarHeightId)
+//        Log.i("status bar h:", statusBarHeight.toString())
+//
+//        val navBarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+//        val navBarHeight = resources.getDimensionPixelSize(navBarHeightId)
+//        Log.i("nav bar h:", navBarHeight.toString())

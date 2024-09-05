@@ -116,7 +116,6 @@ class EventActivity : AppCompatActivity() {
             }
         })
         recyclerView?.adapter = recyclerAdapter
-
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
@@ -160,6 +159,7 @@ class EventActivity : AppCompatActivity() {
             screen.screenShot.recycle()
         }
         screenPreview.clear()
+        notifyEventAdapter()
     }
 
     override fun onRestart() {
@@ -183,6 +183,8 @@ class EventActivity : AppCompatActivity() {
             screenPreview.add(screenshotPreview)
         }
         uploadTraceButton?.isEnabled = isTraceComplete
+        // redraw views
+        recyclerView?.adapter = recyclerAdapter
         notifyEventAdapter()
     }
 }

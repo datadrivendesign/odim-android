@@ -739,7 +739,7 @@ class MyAccessibilityService : AccessibilityService() {
             traceList.first()  // trace is sorted in descending order
         }
         // update gesture map with new gesture
-        val gesture = createGesture(isSystemUIBtnPressed, className, outbounds, scrollCoords)
+        val gesture = createGestureFromNode(isSystemUIBtnPressed, className, outbounds, scrollCoords)
         saveGesture(packageName, traceLabel, eventLabel, gesture)
         // add a new screenshot to list of traces
         saveScreenshot(packageName, traceLabel, eventLabel, currentScreenShot)
@@ -747,7 +747,7 @@ class MyAccessibilityService : AccessibilityService() {
         saveVH(packageName, traceLabel, eventLabel, viewHierarchy)
     }
 
-    private fun createGesture(
+    private fun createGestureFromNode(
         isSystemUIBtnPressed: Boolean,
         className: String,
         outbounds: Rect?,

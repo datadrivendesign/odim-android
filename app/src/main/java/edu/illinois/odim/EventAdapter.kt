@@ -6,8 +6,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.CardCellBinding
 
-class EventAdapter(screenPreviews: ArrayList<ScreenShotPreview>) : RecyclerView.Adapter<DetailViewHolder>() {
-    private var itemList : ArrayList<ScreenShotPreview> = screenPreviews
+class EventAdapter(screenPreviews: List<ScreenShotPreview>) : RecyclerView.Adapter<DetailViewHolder>() {
+    private var itemList : List<ScreenShotPreview> = screenPreviews
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
 

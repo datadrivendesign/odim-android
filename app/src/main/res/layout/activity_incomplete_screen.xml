@@ -20,6 +20,7 @@
         android:id="@+id/confirm_gesture_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:enabled="false"
         android:text="@string/confirm_user_gesture"
         app:layout_constraintBottom_toBottomOf="@+id/incomplete_image"
         app:layout_constraintEnd_toEndOf="parent"

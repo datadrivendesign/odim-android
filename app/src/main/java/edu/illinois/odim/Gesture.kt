@@ -24,7 +24,7 @@ data class Gesture(val centerX: Float, val centerY: Float, var scrollDX: Float, 
     }
 
     override fun toString(): String {
-        return "$x, $y, $scrollDeltaX, $scrollDeltaY"
+        return "$x, $y, $scrollDeltaX, $scrollDeltaY, $className"
     }
 
     override fun hashCode(): Int {
