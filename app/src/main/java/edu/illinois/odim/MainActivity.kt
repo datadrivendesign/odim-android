@@ -58,53 +58,23 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.odim_app_header))
         createWorkerInputForm()
-
+        // set up recycler view
         recyclerView = findViewById(R.id.package_recycler_view)
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         appPackageList = listPackages()
         recyclerAdapter = MainAdapter(this, appPackageList) // getPackages())
         recyclerView?.adapter = recyclerAdapter
-
+        // set up recycler view listeners
         val decoratorVertical = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         decoratorVertical.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider)!!)
         recyclerView?.addItemDecoration(decoratorVertical)
         recyclerAdapter!!.setOnItemLongClickListener(object: MainAdapter.OnItemLongClickListener {
             override fun onItemLongClick(appPackage: String): Boolean {
-                val builder: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
-                var result = true
-                builder
-                    .setTitle("Delete app")
-                    .setMessage("Are you sure you want to delete this item from the trace? " +
-                            "You will remove the every trace recorded by this app.")
-                    .setPositiveButton("Yes") { dialog, _ ->
-                        result = deleteApp(appPackage)
-                        // notify recycler view deletion happened
-                        val newPackages = ArrayList(appPackageList)
-                        val ind = appPackageList.indexOfFirst {
-                                app -> app == appPackage
-                        }
-                        if (ind < 0) {  // should theoretically never happen
-                            Log.e("APP", "could not find trace to delete")
-                            dialog.dismiss()
-                            return@setPositiveButton
-                        }
-                        newPackages.removeAt(ind)
-                        appPackageList.clear()
-                        appPackageList.addAll(newPackages)
-                        recyclerAdapter!!.notifyItemRemoved(ind)
-                        val itemChangeCount = newPackages.size - ind
-                        recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
-                    }
-                    .setNegativeButton("No") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                val dialog: AlertDialog = builder.create()
+                val (dialog, result) = createDeleteAppAlertDialog(appPackage)
                 dialog.show()
                 return result
             }
-
         })
-
         recyclerAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
             override fun onItemClick(appPackage: String) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
@@ -112,6 +82,38 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         })
+    }
+
+    private fun createDeleteAppAlertDialog(appPackage: String): Pair<AlertDialog, Boolean> {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
+        var result = true
+        builder
+            .setTitle("Delete app")
+            .setMessage("Are you sure you want to delete this item from the trace? " +
+                    "You will remove the every trace recorded by this app.")
+            .setPositiveButton("Yes") { dialog, _ ->
+                result = deleteApp(appPackage)
+                // notify recycler view deletion happened
+                val newPackages = ArrayList(appPackageList)
+                val ind = appPackageList.indexOfFirst {
+                        app -> app == appPackage
+                }
+                if (ind < 0) {  // should theoretically never happen
+                    Log.e("APP", "could not find trace to delete")
+                    dialog.dismiss()
+                    return@setPositiveButton
+                }
+                newPackages.removeAt(ind)
+                appPackageList.clear()
+                appPackageList.addAll(newPackages)
+                recyclerAdapter!!.notifyItemRemoved(ind)
+                val itemChangeCount = newPackages.size - ind
+                recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+            }
+        return Pair(builder.create(), result)
     }
 
     override fun onRestart() {

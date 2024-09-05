@@ -35,7 +35,6 @@ class IncompleteScreenActivity: AppCompatActivity() {
         chosenEventLabel = intent.extras!!.getString("event_label")
         // load screen
         screenBitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
-//        screenBitmap = incompleteScreen.copy(Bitmap.Config.ARGB_8888, true)
         val incompleteVH = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val vhRootJson = mapper.readTree(incompleteVH.trim())
         val incompleteGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
@@ -73,10 +72,10 @@ class IncompleteScreenActivity: AppCompatActivity() {
                     when(checkedId) {
                         R.id.scroll_radio_button_vertical -> {
                             scrollDx = 0F
-                            scrollDy = 40F
+                            scrollDy = 80F
                         }
                         R.id.scroll_radio_button_horizontal -> {
-                            scrollDx = 40F
+                            scrollDx = 80F
                             scrollDy = 0F
                         }
                     }
