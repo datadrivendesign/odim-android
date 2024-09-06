@@ -30,6 +30,36 @@ class MainActivity : AppCompatActivity() {
     private var workerIdInput : EditText? = null
     private lateinit var appPackageList: MutableList<String>
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        setContentView(R.layout.activity_main)
+        setSupportActionBar(findViewById(R.id.odim_app_header))
+        createWorkerInputForm()
+        // set up recycler view
+        recyclerView = findViewById(R.id.package_recycler_view)
+        recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        appPackageList = listPackages()
+        recyclerAdapter = MainAdapter(this, appPackageList) // getPackages())
+        recyclerView?.adapter = recyclerAdapter
+        // set up recycler view listeners
+        val decoratorVertical = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
+        decoratorVertical.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider)!!)
+        recyclerView?.addItemDecoration(decoratorVertical)
+        recyclerAdapter!!.setOnItemLongClickListener(object: MainAdapter.OnItemLongClickListener {
+            override fun onItemLongClick(appPackage: String): Boolean {
+                return createDeleteAppAlertDialog(appPackage)
+            }
+        })
+        recyclerAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
+            override fun onItemClick(appPackage: String) {
+                val intent = Intent(applicationContext, TraceActivity::class.java)
+                intent.putExtra("package_name", appPackage)
+                startActivity(intent)
+            }
+        })
+    }
+
     private fun createWorkerInputForm() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
         val workerForm = View.inflate(this, R.layout.worker_input_dialog, null)
@@ -52,42 +82,9 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-        setContentView(R.layout.activity_main)
-        setSupportActionBar(findViewById(R.id.odim_app_header))
-        createWorkerInputForm()
-        // set up recycler view
-        recyclerView = findViewById(R.id.package_recycler_view)
-        recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        appPackageList = listPackages()
-        recyclerAdapter = MainAdapter(this, appPackageList) // getPackages())
-        recyclerView?.adapter = recyclerAdapter
-        // set up recycler view listeners
-        val decoratorVertical = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
-        decoratorVertical.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider)!!)
-        recyclerView?.addItemDecoration(decoratorVertical)
-        recyclerAdapter!!.setOnItemLongClickListener(object: MainAdapter.OnItemLongClickListener {
-            override fun onItemLongClick(appPackage: String): Boolean {
-                val (dialog, result) = createDeleteAppAlertDialog(appPackage)
-                dialog.show()
-                return result
-            }
-        })
-        recyclerAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
-            override fun onItemClick(appPackage: String) {
-                val intent = Intent(applicationContext, TraceActivity::class.java)
-                intent.putExtra("package_name", appPackage)
-                startActivity(intent)
-            }
-        })
-    }
-
-    private fun createDeleteAppAlertDialog(appPackage: String): Pair<AlertDialog, Boolean> {
-        val builder: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
+    private fun createDeleteAppAlertDialog(appPackage: String): Boolean {
         var result = true
-        builder
+        val builder = AlertDialog.Builder(this@MainActivity)
             .setTitle("Delete app")
             .setMessage("Are you sure you want to delete this item from the trace? " +
                     "You will remove the every trace recorded by this app.")
@@ -113,7 +110,9 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("No") { dialog, _ ->
                 dialog.dismiss()
             }
-        return Pair(builder.create(), result)
+        val deleteAlertDialog = builder.create()
+        deleteAlertDialog.show()
+        return result
     }
 
     override fun onRestart() {

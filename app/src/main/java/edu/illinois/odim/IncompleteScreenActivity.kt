@@ -47,7 +47,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
         val candidateElements: MutableList<Rect> = arrayListOf()
         retrieveVHElems(className, vhRootJson, candidateElements)
         incompleteOverlayView.setCandidateElements(candidateElements)
-        // set intrinsic height and width once imageView is set up
+        // set intrinsic height and width for scaling coordinate calculations once imageView is fully rendered
         incompleteImageView.viewTreeObserver.addOnGlobalLayoutListener(object: ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 val intrinsicWidth = incompleteImageView.drawable.intrinsicWidth
@@ -61,55 +61,71 @@ class IncompleteScreenActivity: AppCompatActivity() {
         saveScreenButton = findViewById(R.id.confirm_gesture_button)
         incompleteOverlayView.setIncompleteScreenSaveButton(saveScreenButton)
         saveScreenButton.setOnClickListener { _ ->
-            val confirmGestureInput = View.inflate(this, R.layout.confirm_gesture_dialog, null)
-            var scrollDx = 0F
-            var scrollDy = 0F
-            // show scroll radio button option only if event is a scroll
-            if (chosenEventLabel!!.contains(getString(R.string.type_view_scroll))) {
-                val scrollRadioGroup: RadioGroup = confirmGestureInput.findViewById(R.id.scroll_radio_group)
-                scrollRadioGroup.visibility = View.VISIBLE
-                scrollRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-                    when(checkedId) {
-                        R.id.scroll_radio_button_vertical -> {
-                            scrollDx = 0F
-                            scrollDy = 80F
-                        }
-                        R.id.scroll_radio_button_horizontal -> {
-                            scrollDx = 80F
-                            scrollDy = 0F
-                        }
+            val confirmGestureView = View.inflate(this, R.layout.confirm_gesture_dialog, null)
+            val (scrollDx, scrollDy) = setUpScrollGestureRadioGroup(confirmGestureView)
+            // create alert dialog
+            createSaveUserGestureAlertDialog(confirmGestureView, incompleteImageView, incompleteOverlayView, scrollDx, scrollDy)
+        }
+    }
+    
+    private fun setUpScrollGestureRadioGroup(confirmGestureView: View): Pair<Float, Float> {
+        var scrollDx = 0F
+        var scrollDy = 0F
+        // show scroll radio button option only if event is a scroll
+        if (chosenEventLabel!!.contains(getString(R.string.type_view_scroll))) {
+            val scrollRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.scroll_radio_group)
+            scrollRadioGroup.visibility = View.VISIBLE
+            scrollRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+                when(checkedId) {
+                    R.id.scroll_radio_button_vertical -> {
+                        scrollDx = 0F
+                        scrollDy = 80F
+                    }
+                    R.id.scroll_radio_button_horizontal -> {
+                        scrollDx = 80F
+                        scrollDy = 0F
                     }
                 }
             }
-            // create alert dialog
-            AlertDialog.Builder(this)
-                .setTitle("Confirm Gesture")
-                .setView(confirmGestureInput)
-                .setPositiveButton("SAVE") { _, _ ->
-                    // gesture needs to be in percentage form
-                    val newGesture = Gesture(
-                        incompleteOverlayView.currVHCandidate!!.exactCenterX() / incompleteImageView.drawable.intrinsicWidth,
-                        incompleteOverlayView.currVHCandidate!!.exactCenterY() / incompleteImageView.drawable.intrinsicHeight,
-                        scrollDx / incompleteImageView.drawable.intrinsicWidth,
-                        scrollDy / incompleteImageView.drawable.intrinsicHeight
-                    )
-                    val result = saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
-                    // transfer directly to ScreenShotActivity
-                    val intent = Intent(
-                        applicationContext,
-                        ScreenShotActivity::class.java
-                    )
-                    intent.putExtra("package_name", chosenPackageName)
-                    intent.putExtra("trace_label", chosenTraceLabel)
-                    intent.putExtra("event_label", chosenEventLabel)
-                    startActivity(intent)
-                    finish()
-                }
-                .setNegativeButton("CANCEL") { dialogInterface, _ ->
-                    dialogInterface.cancel()
-                }
-                .show()
         }
+        return Pair(scrollDx, scrollDy)
+    }
+    
+    private fun createSaveUserGestureAlertDialog(
+        confirmGestureView: View,
+        incompleteImageView: ImageView,
+        incompleteOverlayView: IncompleteScreenCanvasOverlay,
+        scrollDx: Float,
+        scrollDy: Float
+    ) {
+        val builder = AlertDialog.Builder(this)
+            .setTitle("Confirm Gesture")
+            .setView(confirmGestureView)
+            .setPositiveButton("SAVE") { _, _ ->
+                // gesture needs to be in percentage form
+                val newGesture = Gesture(
+                    incompleteOverlayView.currVHCandidate!!.exactCenterX() / incompleteImageView.drawable.intrinsicWidth,
+                    incompleteOverlayView.currVHCandidate!!.exactCenterY() / incompleteImageView.drawable.intrinsicHeight,
+                    scrollDx / incompleteImageView.drawable.intrinsicWidth,
+                    scrollDy / incompleteImageView.drawable.intrinsicHeight
+                )
+                saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
+                // transfer directly to ScreenShotActivity
+                val intent = Intent(
+                    applicationContext,
+                    ScreenShotActivity::class.java
+                )
+                intent.putExtra("package_name", chosenPackageName)
+                intent.putExtra("trace_label", chosenTraceLabel)
+                intent.putExtra("event_label", chosenEventLabel)
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("CANCEL") { dialogInterface, _ ->
+                dialogInterface.cancel()
+            }
+        val saveDialog = builder.create()
+        saveDialog.show()
     }
 
     private fun retrieveVHElems(className: String, vhRoot: JsonNode, candidateElems: MutableList<Rect>) {

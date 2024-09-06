@@ -53,9 +53,7 @@ class EventActivity : AppCompatActivity() {
         recyclerAdapter = EventAdapter(screenPreview)
         recyclerAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
             override fun onItemLongClick(cardView: CardCellBinding): Boolean {
-                val (dialog, result) = createScreenTraceAlertDialog(cardView)
-                dialog.show()
-                return result
+                return createDeleteScreenAlertDialog(cardView)
             }
         })
         // set listener for clicking on screen
@@ -68,7 +66,7 @@ class EventActivity : AppCompatActivity() {
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
-            createUploadTraceAlertDialog(buttonView).show()
+            createUploadTraceAlertDialog(buttonView)
         }
         uploadTraceButton?.isEnabled = isTraceComplete
     }
@@ -116,10 +114,9 @@ class EventActivity : AppCompatActivity() {
         }
     }
 
-    private fun createScreenTraceAlertDialog(cardView: CardCellBinding): Pair<AlertDialog, Boolean> {
-        val builder: AlertDialog.Builder = AlertDialog.Builder(this@EventActivity)
+    private fun createDeleteScreenAlertDialog(cardView: CardCellBinding): Boolean {
         var result = true
-        builder
+        val builder = AlertDialog.Builder(this@EventActivity)
             .setTitle("Delete trace item")
             .setMessage("Are you sure you want to delete this item from the trace? " +
                     "You will remove the screen, view hierarchy, and gesture data from this item.")
@@ -146,12 +143,14 @@ class EventActivity : AppCompatActivity() {
             .setNegativeButton("No") { dialog, _ ->
                 dialog.dismiss()
             }
-        return Pair(builder.create(), result)
+        val deleteAlertDialog = builder.create()
+        deleteAlertDialog.show()
+        return result
     }
 
-    private fun createUploadTraceAlertDialog(uploadButtonView: View): AlertDialog {
+    private fun createUploadTraceAlertDialog(uploadButtonView: View) {
         val traceDescInput = View.inflate(this, R.layout.upload_trace_dialog, null)
-        val builder = AlertDialog.Builder(this)
+        val uploadDialog = AlertDialog.Builder(this)
             .setTitle("Upload Trace")
             .setView(traceDescInput)
             .setPositiveButton("UPLOAD") { _, _ ->
@@ -179,7 +178,8 @@ class EventActivity : AppCompatActivity() {
             .setNegativeButton("CANCEL") { dialogInterface, _ ->
                 dialogInterface.cancel()
             }
-        return builder.create()
+            .create()
+        uploadDialog.show()
     }
 
     private fun navigateToNextActivity(cardView: CardCellBinding) {

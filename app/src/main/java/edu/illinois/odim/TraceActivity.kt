@@ -48,9 +48,7 @@ class TraceActivity : AppCompatActivity(){
         // set up recycler view listeners
         recyclerAdapter!!.setOnItemLongClickListener(object : TraceAdapter.OnItemLongClickListener {
             override fun onItemLongClick(traceLabel: String): Boolean {
-                val (dialog, result) = createDeleteTraceAlertDialog(traceLabel)
-                dialog.show()
-                return result
+                return createDeleteTraceAlertDialog(traceLabel)
             }
         })
         recyclerAdapter!!.setOnItemClickListener(object : TraceAdapter.OnItemClickListener {
@@ -63,10 +61,9 @@ class TraceActivity : AppCompatActivity(){
         })
     }
 
-    fun createDeleteTraceAlertDialog(traceLabel: String): Pair<AlertDialog, Boolean> {
-        val builder: AlertDialog.Builder = AlertDialog.Builder(this@TraceActivity)
+    fun createDeleteTraceAlertDialog(traceLabel: String): Boolean {
         var result = true
-        builder
+        val builder = AlertDialog.Builder(this@TraceActivity)
             .setTitle("Delete trace")
             .setMessage("Are you sure you want to delete this trace recording? " +
                     "You will remove the entire trace, including all screens, view hierarchies, and gestures.")
@@ -92,7 +89,9 @@ class TraceActivity : AppCompatActivity(){
             .setNegativeButton("No") { dialog, _ ->
                 dialog.dismiss()
             }
-        return Pair(builder.create(), result)
+        val deleteAlertDialog = builder.create()
+        deleteAlertDialog.show()
+        return result
     }
 
     override fun onRestart() {
