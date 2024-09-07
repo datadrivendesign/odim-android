@@ -16,17 +16,24 @@
         android:layout_height="match_parent"
         android:background="@android:color/transparent" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/confirm_gesture_button"
+
+    <edu.illinois.odim.MovableFloatingActionButton
+        android:id="@+id/save_gesture_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:enabled="false"
-        android:text="@string/confirm_user_gesture"
-        app:layout_constraintBottom_toBottomOf="@+id/incomplete_image"
+        android:clickable="true"
+        app:backgroundTint="@color/material_dynamic_secondary80"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="41dp"
+        android:scaleType="center"
+        app:maxImageSize="28dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="@+id/incomplete_image"
+        app:layout_constraintHorizontal_bias="0.112"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.938" >
-    </com.google.android.material.button.MaterialButton>
+        app:layout_constraintVertical_bias="0.973"
+        app:srcCompat="@android:drawable/ic_menu_save" />
 </androidx.constraintlayout.widget.ConstraintLayout>

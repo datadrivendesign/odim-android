@@ -64,13 +64,13 @@ class ScreenShotActivity : AppCompatActivity() {
         scrubbingOverlayView.setVHRects(vhBoxes)
         canvas = Canvas(canvasBitmap)
         // Save Listener
-        setUpSaveFloatingActionButton()
+        setUpSaveRedactFloatingActionButton()
         // Delete Listener
-        setUpDeleteFloatingActionButton()
+        setUpDeleteRedactFloatingActionButton()
     }
 
-    private fun setUpSaveFloatingActionButton() {
-        val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_fab)
+    private fun setUpSaveRedactFloatingActionButton() {
+        val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_redact_fab)
         saveFAB.setOnClickListener {
             // don't save if no redactions have been drawn
             if (scrubbingOverlayView.currentRedacts.isEmpty()) {
@@ -93,8 +93,8 @@ class ScreenShotActivity : AppCompatActivity() {
         }
     }
 
-    fun setUpDeleteFloatingActionButton() {
-        val deleteFAB: FloatingActionButton = findViewById(R.id.draw_delete_fab)
+    private fun setUpDeleteRedactFloatingActionButton() {
+        val deleteFAB: FloatingActionButton = findViewById(R.id.delete_redact_fab)
         deleteFAB.setOnClickListener { view ->
             scrubbingOverlayView.drawMode = !scrubbingOverlayView.drawMode
             if (scrubbingOverlayView.drawMode) {

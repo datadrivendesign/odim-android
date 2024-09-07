@@ -672,53 +672,46 @@ class MyAccessibilityService : AccessibilityService() {
             lastEventPackageName = currEventPackageName
             return
         }
-        // construct interaction event
-//        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
-//            (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) ||
-//            (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) ||
-//            (event.eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
-//        ) {
-            // get vh element interacted with and parse the coordinates
-            val node = event.source
-            var outbounds: Rect? = null
-            if (node != null) {
-                outbounds = Rect()
-                node.getBoundsInScreen(outbounds)
-            }
-            val className = event.className.toString()
-            // null checks for both bitmap and vh in touch listener
-            if (currentBitmap == null) {
-                return
-            }
-            val vh = currVHString ?: return
-            isScreenEventPaired = true
-            // Parse event description
-            val eventTime = currTouchTime
-            val eventType = eventTypeToString(event.eventType)
-            val eventLabel = "$eventTime; $eventType"
-            // check if event scroll, add delta coordinates
-            var scrollCoords : Pair<Int, Int>? = null
-            if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-                scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
-            }
-            // add the event
-            addEvent(
-                outbounds,
-                currEventPackageName,
-                eventLabel,
-                isSystemUIBtnPressed,
-                isNewTrace,
-                className,
-                scrollCoords,
-                currentBitmap!!,
-                vh
-            )
-            lastEventPackageName = if (isBackBtnPressed) {
-                currEventPackageName
-            } else {
-                event.packageName.toString()
-            }
-//        }
+        // get vh element interacted with and parse the coordinates
+        val node = event.source
+        var outbounds: Rect? = null
+        if (node != null) {
+            outbounds = Rect()
+            node.getBoundsInScreen(outbounds)
+        }
+        val className = event.className.toString()
+        // null checks for both bitmap and vh in touch listener
+        if (currentBitmap == null) {
+            return
+        }
+        val vh = currVHString ?: return
+        isScreenEventPaired = true
+        // Parse event description
+        val eventTime = currTouchTime
+        val eventType = eventTypeToString(event.eventType)
+        val eventLabel = "$eventTime; $eventType"
+        // check if event scroll, add delta coordinates
+        var scrollCoords : Pair<Int, Int>? = null
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
+        }
+        // add the event
+        addEvent(
+            outbounds,
+            currEventPackageName,
+            eventLabel,
+            isSystemUIBtnPressed,
+            isNewTrace,
+            className,
+            scrollCoords,
+            currentBitmap!!,
+            vh
+        )
+        lastEventPackageName = if (isBackBtnPressed) {
+            currEventPackageName
+        } else {
+            event.packageName.toString()
+        }
     }
 
     private fun addEvent(

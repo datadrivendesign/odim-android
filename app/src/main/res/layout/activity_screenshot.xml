@@ -17,7 +17,25 @@
         android:background="@android:color/transparent" />
 
     <edu.illinois.odim.MovableFloatingActionButton
-        android:id="@+id/save_fab"
+        android:id="@+id/delete_redact_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:scaleType="center"
+        app:maxImageSize="28dp"
+        app:backgroundTint="@color/material_dynamic_secondary80"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.112"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.814"
+        app:srcCompat="@android:drawable/ic_menu_edit" />
+
+    <edu.illinois.odim.MovableFloatingActionButton
+        android:id="@+id/save_redact_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
@@ -35,22 +53,4 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.973"
         app:srcCompat="@android:drawable/ic_menu_save" />
-
-    <edu.illinois.odim.MovableFloatingActionButton
-        android:id="@+id/draw_delete_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        android:scaleType="center"
-        app:maxImageSize="28dp"
-        app:backgroundTint="@color/material_dynamic_secondary80"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.112"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.814"
-        app:srcCompat="@android:drawable/ic_menu_edit" />
 </androidx.constraintlayout.widget.ConstraintLayout>

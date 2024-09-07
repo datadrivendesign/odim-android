@@ -107,7 +107,7 @@ class EventActivity : AppCompatActivity() {
             if (!isComplete) {
                 isTraceComplete = false
             } else {
-                addDrawnGesture(eventGesture, mutableScreenshot)
+                addDrawnGesture(eventType, eventGesture, mutableScreenshot)
             }
             val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, isComplete)
             screenPreview.add(screenshotPreview)
@@ -199,7 +199,7 @@ class EventActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun addDrawnGesture(gesture: Gesture, bitmap: Bitmap) {
+    private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
         // calculate gesture dimensions
         val gestureOffsetSize = 50
         val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
@@ -209,9 +209,9 @@ class EventActivity : AppCompatActivity() {
         val scrollDXPixel = gesture.scrollDX * windowWidth
         val scrollDYPixel = gesture.scrollDY * windowHeight
         var rectLeft = (if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0).toInt()
-        var rectTop = (if(centerY-gestureOffsetSize >0) centerY-gestureOffsetSize else 0).toInt()
-        var rectRight = (centerX+gestureOffsetSize).toInt()
-        var rectBottom = (centerY+gestureOffsetSize).toInt()
+        var rectTop = (if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0).toInt()
+        var rectRight = (if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth).toInt()
+        var rectBottom = (if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight).toInt()
         if (scrollDXPixel > 0) {
             rectLeft = (centerX - scrollDXPixel).toInt()
             rectRight = (centerX + scrollDXPixel).toInt()
@@ -240,7 +240,7 @@ class EventActivity : AppCompatActivity() {
                 (((rect.height() + rect.width()) * radiusFactor).toFloat()),
                 clickPaint
             )
-        } else {
+        } else if (eventType == "TYPE_VIEW_SCROLLED") {
             val scrollGestureOffsetSize = 40
             canvas.drawOval(
                 (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),

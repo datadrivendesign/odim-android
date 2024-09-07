@@ -7,7 +7,6 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.view.View
 import android.view.ViewTreeObserver
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
@@ -20,7 +19,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
     private var chosenEventLabel: String? = null
-    private lateinit var saveScreenButton: Button
+    private lateinit var saveScreenButton: MovableFloatingActionButton
     private var screenBitmap: Bitmap? = null
     private val mapper = ObjectMapper()
 
@@ -58,7 +57,14 @@ class IncompleteScreenActivity: AppCompatActivity() {
             }
         })
         // connect properties to UI layout
-        saveScreenButton = findViewById(R.id.confirm_gesture_button)
+        setUpSaveGestureFloatingActionButton(incompleteOverlayView, incompleteImageView)
+    }
+
+    private fun setUpSaveGestureFloatingActionButton(
+        incompleteOverlayView: IncompleteScreenCanvasOverlay,
+        incompleteImageView: ImageView
+    ) {
+        saveScreenButton = findViewById(R.id.save_gesture_fab)
         incompleteOverlayView.setIncompleteScreenSaveButton(saveScreenButton)
         saveScreenButton.setOnClickListener { _ ->
             val confirmGestureView = View.inflate(this, R.layout.confirm_gesture_dialog, null)
@@ -152,9 +158,5 @@ class IncompleteScreenActivity: AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         screenBitmap?.recycle()
-    }
-
-    override fun onRestart() {
-        super.onRestart()
     }
 }
