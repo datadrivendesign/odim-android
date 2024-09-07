@@ -15,6 +15,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import edu.illinois.odim.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.LocalStorageOps.loadVH
+import edu.illinois.odim.LocalStorageOps.saveRedactions
+import edu.illinois.odim.LocalStorageOps.saveScreenshot
+import edu.illinois.odim.LocalStorageOps.saveVH
 
 class ScreenShotActivity : AppCompatActivity() {
     private var chosenPackageName: String? = null

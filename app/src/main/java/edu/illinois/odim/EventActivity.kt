@@ -18,6 +18,11 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import edu.illinois.odim.LocalStorageOps.deleteEvent
+import edu.illinois.odim.LocalStorageOps.listEvents
+import edu.illinois.odim.LocalStorageOps.loadGesture
+import edu.illinois.odim.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.UploadDataOps.uploadFullTraceContent
 import edu.illinois.odim.databinding.CardCellBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -114,6 +119,59 @@ class EventActivity : AppCompatActivity() {
         }
     }
 
+    private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
+        // calculate gesture dimensions
+        val gestureOffsetSize = 50
+        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
+        val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
+        val centerX = gesture.centerX * windowWidth
+        val centerY = gesture.centerY * windowHeight
+        val scrollDXPixel = gesture.scrollDX * windowWidth
+        val scrollDYPixel = gesture.scrollDY * windowHeight
+        var rectLeft = (if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0).toInt()
+        var rectTop = (if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0).toInt()
+        var rectRight = (if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth).toInt()
+        var rectBottom = (if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight).toInt()
+        if (scrollDXPixel > 0) {
+            rectLeft = (centerX - scrollDXPixel).toInt()
+            rectRight = (centerX + scrollDXPixel).toInt()
+        }
+        if (scrollDYPixel > 0) {
+            rectTop = (centerY - scrollDYPixel).toInt()
+            rectBottom = (centerY + scrollDYPixel).toInt()
+        }
+        // set up canvas and paint
+        val canvas = Canvas(bitmap)
+        val clickPaint = Paint().apply {
+            color = Color.rgb(255, 165, 0)
+            alpha = 100
+        }
+        val scrollPaint = Paint().apply {
+            color = Color.rgb(165, 0, 255)
+            alpha = 100
+        }
+        // start drawing gestures
+        val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
+        if (scrollDXPixel.toInt() == 0 && scrollDYPixel.toInt() == 0) {
+            val radiusFactor = 0.25
+            canvas.drawCircle(
+                rect.centerX().toFloat(),
+                rect.centerY().toFloat(),
+                (((rect.height() + rect.width()) * radiusFactor).toFloat()),
+                clickPaint
+            )
+        } else if (eventType == "TYPE_VIEW_SCROLLED") {
+            val scrollGestureOffsetSize = 40
+            canvas.drawOval(
+                (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),
+                (rect.centerY() - scrollDYPixel - scrollGestureOffsetSize),
+                (rect.centerX() + scrollDXPixel + scrollGestureOffsetSize),
+                (rect.centerY() + scrollDYPixel + scrollGestureOffsetSize),
+                scrollPaint
+            )
+        }
+    }
+
     private fun createDeleteScreenAlertDialog(cardView: CardCellBinding): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@EventActivity)
@@ -197,58 +255,5 @@ class EventActivity : AppCompatActivity() {
         val chosenEventLabel = "${cardView.time.text}; ${cardView.event.text}"
         intent.putExtra("event_label", chosenEventLabel)
         startActivity(intent)
-    }
-
-    private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
-        // calculate gesture dimensions
-        val gestureOffsetSize = 50
-        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
-        val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
-        val centerX = gesture.centerX * windowWidth
-        val centerY = gesture.centerY * windowHeight
-        val scrollDXPixel = gesture.scrollDX * windowWidth
-        val scrollDYPixel = gesture.scrollDY * windowHeight
-        var rectLeft = (if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0).toInt()
-        var rectTop = (if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0).toInt()
-        var rectRight = (if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth).toInt()
-        var rectBottom = (if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight).toInt()
-        if (scrollDXPixel > 0) {
-            rectLeft = (centerX - scrollDXPixel).toInt()
-            rectRight = (centerX + scrollDXPixel).toInt()
-        }
-        if (scrollDYPixel > 0) {
-            rectTop = (centerY - scrollDYPixel).toInt()
-            rectBottom = (centerY + scrollDYPixel).toInt()
-        }
-        // set up canvas and paint
-        val canvas = Canvas(bitmap)
-        val clickPaint = Paint().apply {
-            color = Color.rgb(255, 165, 0)
-            alpha = 100
-        }
-        val scrollPaint = Paint().apply {
-            color = Color.rgb(165, 0, 255)
-            alpha = 100
-        }
-        // start drawing gestures
-        val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
-        if (scrollDXPixel.toInt() == 0 && scrollDYPixel.toInt() == 0) {
-            val radiusFactor = 0.25
-            canvas.drawCircle(
-                rect.centerX().toFloat(),
-                rect.centerY().toFloat(),
-                (((rect.height() + rect.width()) * radiusFactor).toFloat()),
-                clickPaint
-            )
-        } else if (eventType == "TYPE_VIEW_SCROLLED") {
-            val scrollGestureOffsetSize = 40
-            canvas.drawOval(
-                (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),
-                (rect.centerY() - scrollDYPixel - scrollGestureOffsetSize),
-                (rect.centerX() + scrollDXPixel + scrollGestureOffsetSize),
-                (rect.centerY() + scrollDYPixel + scrollGestureOffsetSize),
-                scrollPaint
-            )
-        }
     }
 }

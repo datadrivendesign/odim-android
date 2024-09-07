@@ -12,6 +12,8 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import edu.illinois.odim.LocalStorageOps.deleteTrace
+import edu.illinois.odim.LocalStorageOps.listTraces
 
 // these were static in java
 private var recyclerAdapter: TraceAdapter? = null

@@ -14,6 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import edu.illinois.odim.LocalStorageOps.loadGesture
+import edu.illinois.odim.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.LocalStorageOps.loadVH
+import edu.illinois.odim.LocalStorageOps.saveGesture
 
 class IncompleteScreenActivity: AppCompatActivity() {
     private var chosenPackageName: String? = null
@@ -43,7 +47,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
         incompleteImageView.setImageBitmap(screenBitmap)
         // set up transparent overlay
         val incompleteOverlayView: IncompleteScreenCanvasOverlay = findViewById(R.id.incomplete_overlay)
-        val candidateElements: MutableList<Rect> = arrayListOf()
+        val candidateElements: MutableList<GestureCandidate> = arrayListOf()
         retrieveVHElems(className, vhRootJson, candidateElements)
         incompleteOverlayView.setCandidateElements(candidateElements)
         // set intrinsic height and width for scaling coordinate calculations once imageView is fully rendered
@@ -109,11 +113,15 @@ class IncompleteScreenActivity: AppCompatActivity() {
             .setView(confirmGestureView)
             .setPositiveButton("SAVE") { _, _ ->
                 // gesture needs to be in percentage form
+                val screenWidth = incompleteImageView.drawable.intrinsicWidth
+                val screenHeight = incompleteImageView.drawable.intrinsicHeight
+                val vhCandidateRect = incompleteOverlayView.currVHCandidate!!.rect
                 val newGesture = Gesture(
-                    incompleteOverlayView.currVHCandidate!!.exactCenterX() / incompleteImageView.drawable.intrinsicWidth,
-                    incompleteOverlayView.currVHCandidate!!.exactCenterY() / incompleteImageView.drawable.intrinsicHeight,
-                    scrollDx / incompleteImageView.drawable.intrinsicWidth,
-                    scrollDy / incompleteImageView.drawable.intrinsicHeight
+                    vhCandidateRect.exactCenterX() /screenWidth,
+                    vhCandidateRect.exactCenterY() / screenHeight,
+                    scrollDx / screenWidth,
+                    scrollDy / screenHeight,
+                    incompleteOverlayView.currVHCandidate!!.viewId
                 )
                 saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
                 // transfer directly to ScreenShotActivity
@@ -134,12 +142,13 @@ class IncompleteScreenActivity: AppCompatActivity() {
         saveDialog.show()
     }
 
-    private fun retrieveVHElems(className: String, vhRoot: JsonNode, candidateElems: MutableList<Rect>) {
+    private fun retrieveVHElems(className: String, vhRoot: JsonNode, candidateElems: MutableList<GestureCandidate>) {
         if (vhRoot.get("class_name").asText() == className) {
             val vhBoxString = vhRoot.get("bounds_in_screen").asText()
+            val viewId = vhRoot.get("id").asText()
             val vhBoxRect = Rect.unflattenFromString(vhBoxString)
             if (vhBoxRect != null){
-                candidateElems.add(vhBoxRect)
+                candidateElems.add(GestureCandidate(vhBoxRect, viewId))
             }
         }
         // Base Case

@@ -25,9 +25,9 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
     private var imageIntrinsicHeight = 0
     private var imageIntrinsicWidth = 0
     private var imageMeasuredHeight = 0
-    private var candidateElements: List<Rect> = listOf()
-    var currVHCandidate: Rect? = null
-    private var newVHCandidate: Rect? = null
+    private var candidateElements: List<GestureCandidate> = listOf()
+    var currVHCandidate: GestureCandidate? = null
+    private var newVHCandidate: GestureCandidate? = null
     private var rectsDrawn = false
     private var incompleteScreenSaveScreenButton: MovableFloatingActionButton? = null
 
@@ -38,10 +38,10 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         }
         for (candidate in candidateElements) {
             canvas.drawRect(
-                convertScaleScreenXToBitmapX(candidate.left).toFloat(),
-                convertScaleScreenYToBitmapY(candidate.top).toFloat(),
-                convertScaleScreenXToBitmapX(candidate.right).toFloat(),
-                convertScaleScreenYToBitmapY(candidate.bottom).toFloat(),
+                convertScaleScreenXToBitmapX(candidate.rect.left).toFloat(),
+                convertScaleScreenYToBitmapY(candidate.rect.top).toFloat(),
+                convertScaleScreenXToBitmapX(candidate.rect.right).toFloat(),
+                convertScaleScreenYToBitmapY(candidate.rect.bottom).toFloat(),
                 tempPaint
             )
             rectsDrawn = true
@@ -49,25 +49,25 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         if (newVHCandidate != null) {
             if (currVHCandidate == null) {
                 canvas.drawRect(
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.left).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.top).toFloat(),
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.right).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.bottom).toFloat(),
+                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.left).toFloat(),
+                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.top).toFloat(),
+                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.right).toFloat(),
+                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.bottom).toFloat(),
                     confirmPaint
                 )
                 currVHCandidate = newVHCandidate
-            } else if (currVHCandidate!!.top == newVHCandidate!!.top &&
-                currVHCandidate!!.bottom == newVHCandidate!!.bottom &&
-                currVHCandidate!!.left == newVHCandidate!!.left &&
-                currVHCandidate!!.right == newVHCandidate!!.right
+            } else if (currVHCandidate!!.rect.top == newVHCandidate!!.rect.top &&
+                currVHCandidate!!.rect.bottom == newVHCandidate!!.rect.bottom &&
+                currVHCandidate!!.rect.left == newVHCandidate!!.rect.left &&
+                currVHCandidate!!.rect.right == newVHCandidate!!.rect.right
             ) {  // rects are equal, reset currVHCandidate to null
                 currVHCandidate = null
             } else {
                 canvas.drawRect(
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.left).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.top).toFloat(),
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.right).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.bottom).toFloat(),
+                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.left).toFloat(),
+                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.top).toFloat(),
+                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.right).toFloat(),
+                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.bottom).toFloat(),
                     confirmPaint
                 )
                 currVHCandidate = newVHCandidate
@@ -87,16 +87,16 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         if (convertedX == -1 || convertedY == -1) {
             return false
         }
-        var newCandidate = Rect()
+        var newCandidate = GestureCandidate(Rect(), "")
         for (candidate in candidateElements) {
-            if (candidate.contains(convertedX, convertedY)) {
+            if (candidate.rect.contains(convertedX, convertedY)) {
                 newCandidate = candidate
             }
         }
         when(event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // if candidate is new, edit paint
-                if (!newCandidate.isEmpty) {
+                if (!newCandidate.rect.isEmpty) {
                     // erase if already set
                     newVHCandidate = newCandidate
                     invalidate()
@@ -118,7 +118,7 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         incompleteScreenSaveScreenButton = button
     }
 
-    fun setCandidateElements(elements: MutableList<Rect>) {
+    fun setCandidateElements(elements: MutableList<GestureCandidate>) {
         candidateElements = elements.toList()
     }
 

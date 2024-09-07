@@ -6,11 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import edu.illinois.odim.LocalStorageOps.listEvents
 
 
-class TraceAdapter(context: Context,
-                   private val packageName: String,
-                   private var itemList: MutableList<String>) : RecyclerView.Adapter<MyViewHolder>() {
+class TraceAdapter(
+    context: Context,
+    private val packageName: String,
+    private var itemList: MutableList<String>
+) : RecyclerView.Adapter<MyViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context)
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
