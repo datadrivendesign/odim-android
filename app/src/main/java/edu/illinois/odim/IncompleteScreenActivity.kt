@@ -41,14 +41,22 @@ class IncompleteScreenActivity: AppCompatActivity() {
         val incompleteVH = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val vhRootJson = mapper.readTree(incompleteVH.trim())
         val incompleteGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
-        val className = incompleteGesture.className!!
         // set up imageView
         val incompleteImageView: ImageView = findViewById(R.id.incomplete_image)
         incompleteImageView.setImageBitmap(screenBitmap)
         // set up transparent overlay
         val incompleteOverlayView: IncompleteScreenCanvasOverlay = findViewById(R.id.incomplete_overlay)
         val candidateElements: MutableList<GestureCandidate> = arrayListOf()
-        retrieveVHElems(className, vhRootJson, candidateElements)
+        // check if should use viewId or className as search key
+        lateinit var searchVal: String
+        var useClassName = true
+        if (incompleteGesture.className != null) {        //  = incompleteGesture.className ?: incompleteGesture.viewId!!
+            searchVal = incompleteGesture.className!!
+        } else {
+            searchVal = incompleteGesture.viewId!!
+            useClassName = false
+        }
+        retrieveVHElems(useClassName, searchVal, vhRootJson, candidateElements)
         incompleteOverlayView.setCandidateElements(candidateElements)
         // set intrinsic height and width for scaling coordinate calculations once imageView is fully rendered
         incompleteImageView.viewTreeObserver.addOnGlobalLayoutListener(object: ViewTreeObserver.OnGlobalLayoutListener {
@@ -117,12 +125,13 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 val screenHeight = incompleteImageView.drawable.intrinsicHeight
                 val vhCandidateRect = incompleteOverlayView.currVHCandidate!!.rect
                 val newGesture = Gesture(
-                    vhCandidateRect.exactCenterX() /screenWidth,
+                    vhCandidateRect.exactCenterX() / screenWidth,
                     vhCandidateRect.exactCenterY() / screenHeight,
                     scrollDx / screenWidth,
                     scrollDy / screenHeight,
                     incompleteOverlayView.currVHCandidate!!.viewId
                 )
+                newGesture.verified = true
                 saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
                 // transfer directly to ScreenShotActivity
                 val intent = Intent(
@@ -142,13 +151,22 @@ class IncompleteScreenActivity: AppCompatActivity() {
         saveDialog.show()
     }
 
-    private fun retrieveVHElems(className: String, vhRoot: JsonNode, candidateElems: MutableList<GestureCandidate>) {
-        if (vhRoot.get("class_name").asText() == className) {
+    private fun retrieveVHElems(
+        useClassName: Boolean,
+        searchVal: String,
+        vhRoot: JsonNode,
+        candidates: MutableList<GestureCandidate>
+    ) {
+        var rootSearchVal: String = vhRoot.get("class_name").asText()
+        if (!useClassName) {  // use view id instead
+            rootSearchVal = vhRoot.get("id").asText()
+        }
+        if (rootSearchVal == searchVal) {
             val vhBoxString = vhRoot.get("bounds_in_screen").asText()
             val viewId = vhRoot.get("id").asText()
             val vhBoxRect = Rect.unflattenFromString(vhBoxString)
             if (vhBoxRect != null){
-                candidateElems.add(GestureCandidate(vhBoxRect, viewId))
+                candidates.add(GestureCandidate(vhBoxRect, viewId))
             }
         }
         // Base Case
@@ -159,8 +177,8 @@ class IncompleteScreenActivity: AppCompatActivity() {
         }
         // Recursive Case
         for (i in 0 until childrenArr.size()) {
-            val child = childrenArr[i]//.asJsonObject
-            retrieveVHElems(className, child, candidateElems)
+            val child = childrenArr[i]
+            retrieveVHElems(useClassName, searchVal, child, candidates)
         }
     }
 

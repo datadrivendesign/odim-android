@@ -8,6 +8,7 @@ data class Gesture(
     var viewId: String?
 ) {
     var className: String? = null
+    var verified: Boolean = false
 
     constructor(eventClassName: String) : this(centerX=-1F, centerY=-1F, scrollDX=-1F,scrollDY= -1F,viewId= null) {
         className = eventClassName
@@ -24,7 +25,7 @@ data class Gesture(
     }
 
     override fun toString(): String {
-        return "$centerX, $centerY, $scrollDX, $scrollDY, $viewId, $className"
+        return "$centerX, $centerY, $scrollDX, $scrollDY, $viewId, $className $verified"
     }
 
     override fun hashCode(): Int {

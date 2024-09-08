@@ -16,12 +16,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import edu.illinois.odim.LocalStorageOps.deleteEvent
 import edu.illinois.odim.LocalStorageOps.listEvents
 import edu.illinois.odim.LocalStorageOps.loadGesture
 import edu.illinois.odim.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.LocalStorageOps.loadVH
+import edu.illinois.odim.LocalStorageOps.saveGesture
 import edu.illinois.odim.UploadDataOps.uploadFullTraceContent
 import edu.illinois.odim.databinding.CardCellBinding
 import kotlinx.coroutines.CoroutineScope
@@ -98,6 +103,7 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun populateScreensFromEvents(eventsInTrace: List<String>) {
+        val mapper = ObjectMapper()
         for (event in eventsInTrace) {
             val screenshot = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, event)
             val mutableScreenshot = screenshot.copy(Bitmap.Config.ARGB_8888, true)
@@ -107,11 +113,30 @@ class EventActivity : AppCompatActivity() {
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
             // check if source was null and gesture was not found
-            val eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
-            val isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
+            var eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
+            var isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
             if (!isComplete) {
                 isTraceComplete = false
             } else {
+                // TODO: do view id checking for all screens
+                if (eventGesture.viewId != null && !eventGesture.verified) {
+                    val matches = verifyGestureCoords(event, mapper, eventGesture)
+                    if (matches.size > 1) { // use IncompleteScreenActivity to find correct gesture
+                        isComplete = false
+                    } else {
+                        if (matches.size == 1) {
+                            val gestureCandidate = matches[0]
+                            // check if gestures match, if not then overwrite
+                            val candidateRect = gestureCandidate.rect
+                            if (candidateRect.centerX().toFloat() != eventGesture.centerX ||
+                                candidateRect.centerY().toFloat() != eventGesture.centerY) {
+                                eventGesture = replaceGestureWithCandidate(event, gestureCandidate, eventGesture) // TODO: when replaced, how do we remove the question mark? add a field in gesture saying verified?
+                            }
+                        }
+                    }
+                }
+            }
+            if (isComplete) {
                 addDrawnGesture(eventType, eventGesture, mutableScreenshot)
             }
             val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, isComplete)
@@ -119,11 +144,59 @@ class EventActivity : AppCompatActivity() {
         }
     }
 
+    private fun verifyGestureCoords(event:String, mapper: ObjectMapper, gesture: Gesture): List<GestureCandidate> {
+        val vhString = loadVH(chosenPackageName!!, chosenTraceLabel!!, event)
+        val vhRoot: JsonNode = mapper.readTree(vhString)
+        val elemMatches: MutableList<GestureCandidate> = mutableListOf()
+        findVHElemsById(gesture.viewId!!, vhRoot, elemMatches)
+        return elemMatches
+    }
+
+    private fun findVHElemsById(viewId: String, vhRoot: JsonNode, elemMatches: MutableList<GestureCandidate>) {
+        if (vhRoot.get("id").asText() == viewId) {
+            val vhBoxString = vhRoot.get("bounds_in_screen").asText()
+            val vhBoxRect = Rect.unflattenFromString(vhBoxString)
+            if (vhBoxRect != null){
+                elemMatches.add(GestureCandidate(vhBoxRect, viewId))
+            }
+        }
+        // Base Case
+        val children = vhRoot.get("children") ?: return
+        val childrenArr = children as ArrayNode
+        if (childrenArr.isEmpty) {
+            return
+        }
+        // Recursive Case
+        for (i in 0 until childrenArr.size()) {
+            val child = childrenArr[i]//.asJsonObject
+            findVHElemsById(viewId, child, elemMatches)
+        }
+    }
+
+    private fun replaceGestureWithCandidate(event: String, candidate: GestureCandidate, gesture: Gesture): Gesture {
+        var newGesture = gesture
+        // if coordinates are negative, ignore because we can't render that
+        if (candidate.rect.centerX() > 0 && candidate.rect.centerY() > 0) {
+            val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
+            val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
+            newGesture = Gesture(
+                candidate.rect.centerX().toFloat() / windowWidth,
+                candidate.rect.centerY().toFloat() / windowHeight,
+                gesture.scrollDX / windowWidth,
+                gesture.scrollDY / windowHeight,
+                gesture.viewId
+            )
+        }
+        newGesture.verified = true
+        saveGesture(chosenPackageName!!, chosenTraceLabel!!, event, newGesture)
+        return newGesture
+    }
+
     private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
         // calculate gesture dimensions
         val gestureOffsetSize = 50
-        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
         val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
+        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
         val centerX = gesture.centerX * windowWidth
         val centerY = gesture.centerY * windowHeight
         val scrollDXPixel = gesture.scrollDX * windowWidth
@@ -152,15 +225,8 @@ class EventActivity : AppCompatActivity() {
         }
         // start drawing gestures
         val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
-        if (scrollDXPixel.toInt() == 0 && scrollDYPixel.toInt() == 0) {
-            val radiusFactor = 0.25
-            canvas.drawCircle(
-                rect.centerX().toFloat(),
-                rect.centerY().toFloat(),
-                (((rect.height() + rect.width()) * radiusFactor).toFloat()),
-                clickPaint
-            )
-        } else if (eventType == "TYPE_VIEW_SCROLLED") {
+
+        if (eventType == "TYPE_VIEW_SCROLLED") {
             val scrollGestureOffsetSize = 40
             canvas.drawOval(
                 (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),
@@ -168,6 +234,14 @@ class EventActivity : AppCompatActivity() {
                 (rect.centerX() + scrollDXPixel + scrollGestureOffsetSize),
                 (rect.centerY() + scrollDYPixel + scrollGestureOffsetSize),
                 scrollPaint
+            )
+        } else {
+            val radiusFactor = 0.25
+            canvas.drawCircle(
+                rect.centerX().toFloat(),
+                rect.centerY().toFloat(),
+                (((rect.height() + rect.width()) * radiusFactor).toFloat()),
+                clickPaint
             )
         }
     }
