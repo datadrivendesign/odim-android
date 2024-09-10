@@ -7,13 +7,18 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
+import android.icu.text.Normalizer2
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.widget.CheckBox
 import android.widget.EditText
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -36,6 +41,8 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
     private var p1: Point? = null
     private var p2: Point? = null
     private var vhRects: MutableList<Rect> = mutableListOf()
+    private lateinit var screenVHRoot: JsonNode
+
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -51,8 +58,11 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
             // start creating the label form
             val inputForm = inflate(context, R.layout.layout_redaction_label, null)
             val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
+            val redactCheckbox = inputForm.findViewById<CheckBox>(R.id.redact_label_checkbox)
+            val redactKeywordInput =
+                inputForm.findViewById<EditText>(R.id.redact_label_keyword_input)
             // create the popup
-            createRedactLabelAlertDialog(inputForm, redactInputLabel, rectMatch)
+            createRedactLabelAlertDialog(inputForm, redactInputLabel, redactCheckbox, redactKeywordInput, rectMatch)
             p1 = null
             p2 = null
         }
@@ -107,7 +117,16 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         return true
     }
 
-    private fun createRedactLabelAlertDialog(inputForm: View, labelEditText: EditText, redactRect: Rect) {
+    private fun createRedactLabelAlertDialog(
+        inputForm: View,
+        labelEditText: EditText,
+        redactCheckbox: CheckBox,
+        redactKeywordInput: EditText,
+        redactRect: Rect
+    ) {
+        // try to assume the keyword from redaction
+        val guessedKeyword = serializeToASCII(getKeywordFromRedact(screenVHRoot, redactRect))
+        redactKeywordInput.setText(guessedKeyword)
         val labelDialog = AlertDialog.Builder(context)
             .setTitle("Set Label")
             .setView(inputForm)
@@ -115,6 +134,23 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                 val label = labelEditText.text.toString()
                 val redaction = Redaction(redactRect, label)
                 this.currentRedacts.add(redaction)
+
+                // if keyword box is checked and keyword is not null, recursively
+                // find all matching rectangles
+                if (redactCheckbox.isChecked && redactKeywordInput.text != null) {
+                    // get elements of VH that match the keyword
+                    val keyword = redactKeywordInput.text.toString()
+                    // get the matching elements
+                    val matchedRects = getElementsByKeyword(keyword, screenVHRoot)
+                    // draw the redacted rectangles
+                    for (rect in matchedRects) {
+                        val matchedRedact = Redaction(rect, label)
+                        currentRedacts.add(matchedRedact)
+                    }
+                    // reset the keyword input
+                    redactKeywordInput.text.clear()
+                }
+
                 invalidate()
             }
             .setNegativeButton("EXIT") { dialogInterface, _ ->
@@ -131,6 +167,70 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         })
         labelDialog.setCancelable(false)
         labelDialog.setCanceledOnTouchOutside(false)
+    }
+
+    /**
+     * Automatically get the relevant keyword from redacted phrase
+     */
+    private fun getKeywordFromRedact(root: JsonNode, redactRect: Rect): String {
+        // base case
+        val nodeRect = Rect.unflattenFromString(root.get("bounds_in_screen")?.asText())
+
+        if (nodeRect == redactRect) {
+            return if (root.has("text_field")) root["text_field"].asText() else root["content-desc"].asText()
+        }
+
+        // recursive case
+        if (root.has("children")) {
+            val children = root["children"] as ArrayNode
+            for (i in 0 until children.size()) {
+                val keyword = getKeywordFromRedact(children[i], redactRect)
+                if (keyword.isNotEmpty()) {
+                    return keyword
+                }
+            }
+        }
+
+        return ""
+    }
+
+    /**
+     * Cleaning strings that we get for keywords...Apparently devs like hairline spaces...
+     */
+    private fun serializeToASCII(text: String): String {
+        // Get the NFKD Normalizer using the recommended method
+        val normalizer = Normalizer2.getNFKDInstance()
+
+        // Normalize the text using NFKD (decomposition normalization)
+        val normalizedText = normalizer.normalize(text)
+
+        // Remove non-ASCII characters by keeping only characters with code <= 127 (ASCII range)
+        val asciiText = normalizedText.filter { it.toInt() <= 127 }
+
+        return asciiText
+    }
+
+    /** Return the list of rectangles that recursively match the keyword in the given json node */
+    private fun getElementsByKeyword(keyword: String, root: JsonNode): MutableList<Rect> {
+        val matchedRects = mutableListOf<Rect>()
+        if (root.has("text_field") && root["text_field"].asText().contains(keyword)) {
+            Log.d("keyword", root["text_field"].asText())
+            Rect.unflattenFromString(root["bounds_in_screen"].asText())?.let { matchedRects.add(it) }
+        }
+
+        if (root.has("content-desc") && root["content-desc"].asText().contains(keyword)) {
+            Log.d("keyword", root["content-desc"].asText())
+            Rect.unflattenFromString(root["bounds_in_screen"].asText())
+                ?.let { matchedRects.add(it) }
+        }
+
+        if (root.has("children")) {
+            val children = root["children"] as ArrayNode
+            for (i in 0 until children.size()) {
+                matchedRects.addAll(getElementsByKeyword(keyword, children[i]))
+            }
+        }
+        return matchedRects
     }
 
     private fun editRedactLabelAlertDialog(inputForm: View, labelEditText: EditText, redaction: Redaction) {
@@ -187,6 +287,10 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
 
     fun setVHRects(screenVHRects: MutableList<Rect>) {
         vhRects = screenVHRects
+    }
+
+    fun setScreenVHRoot(vHRoot: JsonNode) {
+        screenVHRoot = vHRoot
     }
 
     private fun drawCurrentRedacts(canvas: Canvas) {

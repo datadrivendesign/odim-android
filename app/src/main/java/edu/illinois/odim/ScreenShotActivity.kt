@@ -65,6 +65,7 @@ class ScreenShotActivity : AppCompatActivity() {
         // extract view hierarchy boxes from VH
         val vhJsonString = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         screenVHRoot = mapper.readTree(vhJsonString.trim())
+        scrubbingOverlayView.setScreenVHRoot(screenVHRoot)
         extractVHBoxes(screenVHRoot, vhBoxes)
         scrubbingOverlayView.setVHRects(vhBoxes)
         canvas = Canvas(canvasBitmap)
@@ -97,6 +98,7 @@ class ScreenShotActivity : AppCompatActivity() {
             notifyEventAdapter()
         }
     }
+
 
     private fun setUpDeleteRedactFloatingActionButton() {
         val deleteFAB: FloatingActionButton = findViewById(R.id.delete_redact_fab)
