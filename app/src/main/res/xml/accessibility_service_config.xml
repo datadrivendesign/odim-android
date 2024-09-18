@@ -1,11 +1,12 @@
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/accessibility_service_description"
-    android:accessibilityEventTypes="typeViewClicked|typeViewScrolled|typeViewLongClicked|typeViewSelected"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds"
-    android:notificationTimeout="100"
+    android:accessibilityEventTypes="typeViewClicked|typeViewLongClicked|typeViewSelected|typeViewFocused|typeViewTextChanged|typeViewTextSelectionChanged|typeViewTextTraversedAtMovementGranularity|typeViewScrolled"
+    android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:notificationTimeout="0"
     android:canRetrieveWindowContent="true"
     android:settingsActivity="com.example.android.accessibility.ServiceSettingsActivity"
-    android:accessibilityFeedbackType="feedbackAllMask"
-    android:canPerformGestures="true"
+    android:accessibilityFeedbackType="feedbackGeneric"
     android:canTakeScreenshot="true"
-/>
+    android:interactiveUiTimeout="5000"
+    android:nonInteractiveUiTimeout="5000"
+    />

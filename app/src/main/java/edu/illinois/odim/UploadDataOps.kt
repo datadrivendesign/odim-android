@@ -1,7 +1,10 @@
 package edu.illinois.odim
 
+import android.content.Context
 import android.content.pm.PackageInfo
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
@@ -116,6 +119,27 @@ object UploadDataOps {
             .post(reqBody.toRequestBody(jsonMediaType))
             .build()
         return client.newCall(tracePostRequest).await()
+    }
+
+    private fun checkWiFiConnection(): Boolean {
+        val connMgr: ConnectivityManager =
+            appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCapabilities = connMgr.activeNetwork
+        if (networkCapabilities == null) {
+            Log.e("error upload", "no Wi-Fi connection")
+            return false
+        }
+        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) //?: return false
+        if (activeNetwork == null) {
+            Log.e("error upload", "no Wi-Fi connection")
+            return false
+        }
+        val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        if (!isWifiConn) {
+            Log.e("error upload", "no Wi-Fi connection")
+            return false
+        }
+        return true
     }
 
     suspend fun uploadFullTraceContent(

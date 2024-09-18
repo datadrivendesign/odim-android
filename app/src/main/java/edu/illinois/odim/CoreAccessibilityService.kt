@@ -1,7 +1,6 @@
 package edu.illinois.odim
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -10,12 +9,9 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
 import android.graphics.PixelFormat
 import android.graphics.Rect
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
@@ -28,7 +24,6 @@ import edu.illinois.odim.LocalStorageOps.listTraces
 import edu.illinois.odim.LocalStorageOps.saveGesture
 import edu.illinois.odim.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.LocalStorageOps.saveVH
-import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -41,27 +36,6 @@ import java.util.TimeZone
 import kotlin.system.measureTimeMillis
 
 internal var workerId = "test_user"
-
-fun checkWiFiConnection(): Boolean {
-    val connMgr: ConnectivityManager =
-        appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager  // Context.CONNECTIVITY_SERVICE
-    val networkCapabilities = connMgr.activeNetwork //?: return false
-    if (networkCapabilities == null) {
-        Log.e("error upload", "no Wi-Fi connection")
-        return false
-    }
-    val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) //?: return false
-    if (activeNetwork == null) {
-        Log.e("error upload", "no Wi-Fi connection")
-        return false
-    }
-    val isWifiConn = activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-    if (!isWifiConn) {
-        Log.e("error upload", "no Wi-Fi connection")
-        return false
-    }
-    return true
-}
 
 class MyAccessibilityService : AccessibilityService() {
     private var currentBitmap: Bitmap? = null
@@ -86,21 +60,7 @@ class MyAccessibilityService : AccessibilityService() {
         // Create the service
         Log.i("onServiceConnected", "Accessibility Service Connected")
         appContext = applicationContext
-        val info = AccessibilityServiceInfo()
-        info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
-                        AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
-                        AccessibilityEvent.TYPE_VIEW_SCROLLED or
-                        AccessibilityEvent.TYPE_VIEW_SELECTED  or
-                        AccessibilityEvent.TYPE_VIEW_FOCUSED
-
-        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-        info.notificationTimeout = 300
-        info.packageNames = null
-        info.flags = AccessibilityServiceInfo.DEFAULT or
-                AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
-                AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
-        serviceInfo = info
-
+        // filter out unwanted packages from recording
         val intent = Intent("android.intent.action.MAIN")
         intent.addCategory("android.intent.category.HOME")
         appLauncherPackageName = packageManager.resolveActivity(
@@ -124,10 +84,6 @@ class MyAccessibilityService : AccessibilityService() {
         windowManager!!.addView(layout, params)
         // record screenshot and view hierarchy when screen touch is detected with separate coroutines
         layout.setOnTouchListener { _, motionEvent ->
-            if (motionEvent != null) {
-                Log.i("TOUCH_EVENT", MotionEvent.actionToString(motionEvent.action))
-                Log.i("TOUCH_EVENT", "(${motionEvent.rawX}, ${motionEvent.rawY}); (${motionEvent.x}, ${motionEvent.y})")
-            }
             currRootWindow = rootInActiveWindow
             currVHString = null
             if (currRootWindow?.packageName.toString() == "null" ||
