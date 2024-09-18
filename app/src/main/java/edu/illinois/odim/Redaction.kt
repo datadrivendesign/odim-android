@@ -2,12 +2,7 @@ package edu.illinois.odim
 
 import android.graphics.Rect
 
-class Redaction(startX: Int, startY: Int, endX: Int, endY: Int, label: String) {
-    var startX: Int = startX
-    var startY: Int = startY
-    var endX: Int = endX
-    var endY: Int = endY
-    var label: String = label
+data class Redaction(val startX: Int, val startY: Int, val endX: Int, val endY: Int, var label: String) {
 
     constructor(rect: Rect, label: String) : this(rect.left, rect.top, rect.right, rect.bottom, label)
 

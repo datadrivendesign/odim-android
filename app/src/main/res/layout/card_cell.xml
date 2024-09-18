@@ -22,14 +22,29 @@
             android:orientation="vertical"
             android:clickable="false">
 
-            <ImageView
-                android:id="@+id/cover"
+            <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/n1"
-                android:adjustViewBounds="true"
-                android:contentDescription="@string/cover"
-                android:clickable="false" />
+            >
+                <ImageView
+                    android:id="@+id/cover"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/n1"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/cover"
+                    android:clickable="false" />
+                <ImageView
+                    android:id="@+id/incomplete_indicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/round_question_mark_24"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/question_mark_icon"
+                    android:layout_gravity="center"
+                    android:visibility="invisible"
+                    android:clickable="false" />
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/time"

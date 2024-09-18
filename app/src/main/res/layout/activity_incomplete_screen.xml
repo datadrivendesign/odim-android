@@ -1,41 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <ImageView
-        android:id="@+id/scrubbing_image"
+        android:id="@+id/incomplete_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@string/incomplete_screen_content_desc" />
 
-    <edu.illinois.odim.ScrubbingScreenshotOverlay
-        android:id="@+id/scrubbing_overlay"
+    <edu.illinois.odim.IncompleteScreenCanvasOverlay
+        android:id="@+id/incomplete_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent" />
 
-    <edu.illinois.odim.MovableFloatingActionButton
-        android:id="@+id/delete_redact_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        android:scaleType="center"
-        app:maxImageSize="28dp"
-        app:backgroundTint="@color/material_dynamic_secondary80"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.112"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.814"
-        app:srcCompat="@android:drawable/ic_menu_edit" />
 
     <edu.illinois.odim.MovableFloatingActionButton
-        android:id="@+id/save_redact_fab"
+        android:id="@+id/save_gesture_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"

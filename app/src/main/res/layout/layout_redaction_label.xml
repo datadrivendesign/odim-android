@@ -16,4 +16,24 @@
         android:minHeight="48dp"
         android:autofillHints="@string/redact_input_hint"
         android:inputType="text" />
+
+    <CheckBox
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:id="@+id/redact_label_checkbox"
+        android:text="Redact matching keywords"
+        android:textSize="16sp"
+        />
+
+    <EditText
+        android:id="@+id/redact_label_keyword_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20sp"
+        android:hint="Keyword"
+        android:minHeight="48dp"
+        android:autofillHints="@string/redact_input_hint"
+        android:inputType="text" />
+
 </LinearLayout>
