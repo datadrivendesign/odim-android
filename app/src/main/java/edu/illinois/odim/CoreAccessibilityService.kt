@@ -24,8 +24,11 @@ import edu.illinois.odim.LocalStorageOps.listTraces
 import edu.illinois.odim.LocalStorageOps.saveGesture
 import edu.illinois.odim.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.LocalStorageOps.saveVH
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -48,6 +51,8 @@ class MyAccessibilityService : AccessibilityService() {
     var currTouchTime: String? = null
     private val odimPackageName = "edu.illinois.odim"
     private val settingsPackageName = "com.android.settings"
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     // static variables
     companion object {
         lateinit var appContext: Context
@@ -95,45 +100,52 @@ class MyAccessibilityService : AccessibilityService() {
                 return@setOnTouchListener false
             }
             // get view hierarchy at this time
-            GlobalScope.launch(Dispatchers.IO) {
-                val fullTime = measureTimeMillis {
-                    ByteArrayOutputStream().use { baos ->
-                        JsonFactory().createGenerator(baos, JsonEncoding.UTF8).use { writer ->
-                            parseVHToJson(currRootWindow!!, writer)
-                            writer.flush()
-                            currVHString = String(baos.toByteArray())
-                            if (currVHString.isNullOrEmpty()) {
-                                currVHString = currRootWindow.toString()
+            serviceScope.launch(Dispatchers.Main) {
+                val vhJob = async(Dispatchers.IO) {
+                    measureTimeMillis {
+                        ByteArrayOutputStream().use { baos ->
+                            JsonFactory().createGenerator(baos, JsonEncoding.UTF8).use { writer ->
+                                parseVHToJson(currRootWindow!!, writer)
+                                writer.flush()
+                                currVHString = String(baos.toByteArray())
+                                if (currVHString.isNullOrEmpty()) {
+                                    currVHString = currRootWindow.toString()
+                                }
+                                Log.d("currRootWindow", "update VH")
                             }
-                            Log.d("currRootWindow", "update VH")
                         }
                     }
                 }
-                Log.d("MEASURE_TIME", "Parse time took ${fullTime}ms")
-            }
-            // coroutine to take screenshot
-            GlobalScope.launch(Dispatchers.Default) {
-                val time = measureTimeMillis {
-                    takeScreenshot(
-                        DEFAULT_DISPLAY,
-                        appContext.mainExecutor,
-                        object : TakeScreenshotCallback {
-                            override fun onSuccess(result: ScreenshotResult) {
-                                currTouchTime = getInteractionTime()
-                                // take screenshot and record current bitmap globally
-                                // update screen
-                                isScreenEventPaired = false
-                                currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                                result.hardwareBuffer.close()
-                                Log.d("screenshot", "update screen")
+                // coroutine to take screenshot
+                val screenshotJob = async(Dispatchers.Default) {
+                    measureTimeMillis {
+                        takeScreenshot(
+                            DEFAULT_DISPLAY,
+                            appContext.mainExecutor,
+                            object : TakeScreenshotCallback {
+                                override fun onSuccess(result: ScreenshotResult) {
+                                    currTouchTime = getInteractionTime()
+                                    // take screenshot and record current bitmap globally
+                                    // update screen
+                                    isScreenEventPaired = false
+                                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                                    result.hardwareBuffer.close()
+                                    Log.d("screenshot", "update screen")
+                                }
+                                override fun onFailure(errCode: Int) {
+                                    // TODO: set to null if an error occurs so we don't record
+                                    Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
+                                }
                             }
-                            override fun onFailure(errCode: Int) {
-                                Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
-                Log.d("MEASURE_TIME", "Screenshot time took ${time}ms")
+                // wait for coroutine jobs to finish
+                val vhTime = vhJob.await()
+                val screenshotTime = screenshotJob.await()
+                Log.d("MEASURE_TIME", "Parse time took ${vhTime}ms")
+                Log.d("MEASURE_TIME", "Screenshot time took ${screenshotTime}ms")
+                // TODO: once we have screen and vh, save screen as event
             }
             lastTouchPackage = currRootWindow!!.packageName.toString()
             return@setOnTouchListener false
@@ -324,4 +336,9 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
+    }
 }
