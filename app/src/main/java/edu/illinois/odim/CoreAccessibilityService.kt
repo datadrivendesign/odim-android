@@ -201,21 +201,6 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // logging
-        if (event != null) {
-            Log.d("MEASURE_EVENT", eventTypeToString( event.eventType))
-            if (event.packageName != null) {
-                Log.d("MEASURE_EVENT", event.packageName.toString())
-            }
-            if (event.className != null) {
-                Log.i("MEASURE_EVENT", event.className.toString())
-            }
-            if (event.source != null) {
-                val rect = Rect()
-                event.source?.getBoundsInScreen(rect)
-                Log.i("MEASURE_EVENT", rect.flattenToString())
-            }
-        }
         // odim recording logic begins
         if (event == null || event.packageName == null) {
             return
