@@ -16,7 +16,7 @@ import java.io.IOException
 object LocalStorageOps {
     private const val TRACES_DIR = "TRACES"
     private const val VH_PREFIX = "vh-"
-    private const val GESTURE_PREFIX = "gesture-"
+    const val GESTURE_PREFIX = "gesture-"
     private const val REDACT_PREFIX = "redact-"
     private val kotlinMapper = ObjectMapper().registerKotlinModule()
 
@@ -65,6 +65,32 @@ object LocalStorageOps {
         }
     }
 
+    fun listEventData(packageName: String, trace: String, event: String): MutableList<String> {
+        val eventFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
+        return if (eventFile.exists()) {
+            eventFile.listFiles()?.map {
+                it.name
+            }?.sorted()?.toMutableList() ?: arrayListOf()
+        } else {
+            arrayListOf()
+        }
+    }
+
+    fun renameEvent(packageName: String, trace: String, event: String, newEventName: String): Boolean {
+        val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
+        val newEventDirName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$newEventName")
+        if (!eventDir.exists()) {
+            Log.e("FILE", "Directory to rename does not exist: ${eventDir.path}")
+            return false
+        }
+        return if (eventDir.renameTo(newEventDirName)) {
+            true
+        } else {
+            Log.e("FILE", "cannot rename $event directory")
+            false
+        }
+    }
+
     fun deleteApp(packageName: String): Boolean {
         val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/")
         val result = traceFile.deleteRecursively()
@@ -108,6 +134,21 @@ object LocalStorageOps {
         }
     }
 
+    fun renameScreenshot(packageName: String, trace: String, event: String, newEventName: String): Boolean {
+        val screenshotName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
+        val newScreenshotName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$newEventName.png")
+        if (!screenshotName.exists()) {
+            Log.e("FILE", "Screenshot to rename does not exist: ${screenshotName.path}")
+            return false
+        }
+        return if (screenshotName.renameTo(newScreenshotName)) {
+            true
+        } else {
+            Log.e("FILE", "cannot rename $event screen")
+            false
+        }
+    }
+
     fun saveScreenshot(packageName: String, trace: String, event: String, screen: Bitmap): Boolean {
         return try {
             val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
@@ -133,6 +174,21 @@ object LocalStorageOps {
             return jsonFile.readText(Charsets.UTF_8)
         } else {
             throw FileNotFoundException("VH was not found")
+        }
+    }
+
+    fun renameVH(packageName: String, trace: String, event: String, newEventName: String): Boolean {
+        val vHName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$event.json")
+        val newVHName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$newEventName.json")
+        if (!vHName.exists()) {
+            Log.e("FILE", "File to rename does not exist: ${vHName.path}")
+            return false
+        }
+        return if (vHName.renameTo(newVHName)) {
+            true
+        } else {
+            Log.e("FILE", "cannot rename $event VH")
+            false
         }
     }
 

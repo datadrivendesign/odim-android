@@ -18,6 +18,7 @@ import edu.illinois.odim.LocalStorageOps.loadGesture
 import edu.illinois.odim.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.LocalStorageOps.loadVH
 import edu.illinois.odim.LocalStorageOps.saveGesture
+import java.io.FileNotFoundException
 
 class IncompleteScreenActivity: AppCompatActivity() {
     private var chosenPackageName: String? = null
@@ -26,6 +27,12 @@ class IncompleteScreenActivity: AppCompatActivity() {
     private lateinit var saveScreenButton: MovableFloatingActionButton
     private var screenBitmap: Bitmap? = null
     private val mapper = ObjectMapper()
+
+    private enum class CandidateId {
+        CLASS,
+        VIEW,
+        NONE
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +47,11 @@ class IncompleteScreenActivity: AppCompatActivity() {
         screenBitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val incompleteVH = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val vhRootJson = mapper.readTree(incompleteVH.trim())
-        val incompleteGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        val incompleteGesture: Gesture? = try {
+            loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+        } catch (e: FileNotFoundException) {
+            null
+        }
         // set up imageView
         val incompleteImageView: ImageView = findViewById(R.id.incomplete_image)
         incompleteImageView.setImageBitmap(screenBitmap)
@@ -49,14 +60,19 @@ class IncompleteScreenActivity: AppCompatActivity() {
         val candidateElements: MutableList<GestureCandidate> = arrayListOf()
         // check if should use viewId or className as search key
         lateinit var searchVal: String
-        var useClassName = true
-        if (incompleteGesture.className != null) {        //  = incompleteGesture.className ?: incompleteGesture.viewId!!
-            searchVal = incompleteGesture.className!!
+        var searchIdType = CandidateId.CLASS
+        if (incompleteGesture != null) {
+            if (incompleteGesture.className != null) {
+                searchVal = incompleteGesture.className!!
+            } else {
+                searchVal = incompleteGesture.viewId!!
+                searchIdType = CandidateId.VIEW
+            }
         } else {
-            searchVal = incompleteGesture.viewId!!
-            useClassName = false
+            searchVal = ""
+            searchIdType = CandidateId.NONE
         }
-        retrieveVHElems(useClassName, searchVal, vhRootJson, candidateElements)
+        retrieveVHElems(searchIdType, searchVal, vhRootJson, candidateElements)
         incompleteOverlayView.setCandidateElements(candidateElements)
         // set intrinsic height and width for scaling coordinate calculations once imageView is fully rendered
         incompleteImageView.viewTreeObserver.addOnGlobalLayoutListener(object: ViewTreeObserver.OnGlobalLayoutListener {
@@ -152,16 +168,16 @@ class IncompleteScreenActivity: AppCompatActivity() {
     }
 
     private fun retrieveVHElems(
-        useClassName: Boolean,
+        idType: CandidateId,
         searchVal: String,
         vhRoot: JsonNode,
         candidates: MutableList<GestureCandidate>
     ) {
         var rootSearchVal: String = vhRoot.get("class_name").asText()
-        if (!useClassName) {  // use view id instead
+        if (idType == CandidateId.VIEW) {  // use view id instead
             rootSearchVal = vhRoot.get("id").asText()
         }
-        if (rootSearchVal == searchVal) {
+        if (idType == CandidateId.NONE || rootSearchVal == searchVal) {
             val vhBoxString = vhRoot.get("bounds_in_screen").asText()
             val viewId = vhRoot.get("id").asText()
             val vhBoxRect = Rect.unflattenFromString(vhBoxString)
@@ -178,7 +194,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
         // Recursive Case
         for (i in 0 until childrenArr.size()) {
             val child = childrenArr[i]
-            retrieveVHElems(useClassName, searchVal, child, candidates)
+            retrieveVHElems(idType, searchVal, child, candidates)
         }
     }
 

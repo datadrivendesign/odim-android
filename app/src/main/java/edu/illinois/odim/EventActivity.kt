@@ -32,6 +32,7 @@ import edu.illinois.odim.databinding.CardCellBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
 
 // these were static in java
 private var recyclerAdapter: EventAdapter? = null
@@ -112,35 +113,38 @@ class EventActivity : AppCompatActivity() {
             val eventInfo = event.split(eventDelimiter)
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
-            // check if source was null and gesture was not found
-            var eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
-            var isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
-            if (!isComplete) {
-                isTraceComplete = false
-            } else {
-                // TODO: do view id checking for all screens
-                if (eventGesture.viewId != null && !eventGesture.verified) {
-                    val matches = verifyGestureCoords(event, mapper, eventGesture)
-                    if (matches.size > 1) { // use IncompleteScreenActivity to find correct gesture
-                        isComplete = false
-                    } else {
-                        if (matches.size == 1) {
-                            val gestureCandidate = matches[0]
-                            // check if gestures match, if not then overwrite
-                            val candidateRect = gestureCandidate.rect
-                            if (candidateRect.centerX().toFloat() != eventGesture.centerX ||
-                                candidateRect.centerY().toFloat() != eventGesture.centerY) {
-                                eventGesture = replaceGestureWithCandidate(event, gestureCandidate, eventGesture) // TODO: when replaced, how do we remove the question mark? add a field in gesture saying verified?
+            try {  // check if source was null and gesture was not found
+                var eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
+                var isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
+                if (!isComplete) {
+                    isTraceComplete = false
+                } else {
+                    if (eventGesture.viewId != null && !eventGesture.verified) {
+                        val matches = verifyGestureCoords(event, mapper, eventGesture)
+                        if (matches.size > 1) { // use IncompleteScreenActivity to find correct gesture
+                            isComplete = false
+                        } else {
+                            if (matches.size == 1) {
+                                val gestureCandidate = matches[0]
+                                // check if gestures match, if not then overwrite
+                                val candidateRect = gestureCandidate.rect
+                                if (candidateRect.centerX().toFloat() != eventGesture.centerX ||
+                                    candidateRect.centerY().toFloat() != eventGesture.centerY) {
+                                    eventGesture = replaceGestureWithCandidate(event, gestureCandidate, eventGesture)
+                                }
                             }
                         }
                     }
                 }
+                if (isComplete) {
+                    addDrawnGesture(eventType, eventGesture, mutableScreenshot)
+                }
+                val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, isComplete)
+                screenPreview.add(screenshotPreview)
+            } catch (e: FileNotFoundException) {
+                val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, false)
+                screenPreview.add(screenshotPreview)
             }
-            if (isComplete) {
-                addDrawnGesture(eventType, eventGesture, mutableScreenshot)
-            }
-            val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, isComplete)
-            screenPreview.add(screenshotPreview)
         }
     }
 
