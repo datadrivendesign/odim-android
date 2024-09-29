@@ -17,6 +17,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import edu.illinois.odim.LocalStorageOps.loadGesture
 import edu.illinois.odim.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.LocalStorageOps.loadVH
+import edu.illinois.odim.LocalStorageOps.renameEvent
+import edu.illinois.odim.LocalStorageOps.renameGesture
+import edu.illinois.odim.LocalStorageOps.renameScreenshot
+import edu.illinois.odim.LocalStorageOps.renameVH
 import edu.illinois.odim.LocalStorageOps.saveGesture
 import java.io.FileNotFoundException
 
@@ -96,29 +100,60 @@ class IncompleteScreenActivity: AppCompatActivity() {
         incompleteOverlayView.setIncompleteScreenSaveButton(saveScreenButton)
         saveScreenButton.setOnClickListener { _ ->
             val confirmGestureView = View.inflate(this, R.layout.confirm_gesture_dialog, null)
-            val (scrollDx, scrollDy) = setUpScrollGestureRadioGroup(confirmGestureView)
+            val scrollDx: Float
+            val scrollDy: Float
+            var updateScrolls: Pair<Float, Float> = Pair(0F, 0F)
+            if (chosenEventLabel!!.contains(getString(R.string.type_unknown))) {
+                updateScrolls = setUpDefineGestureTypeRadioGroup(confirmGestureView)
+            } else if (chosenEventLabel!!.contains(getString(R.string.type_view_scroll))) {
+                updateScrolls = setUpScrollGestureRadioGroup(confirmGestureView)
+            }
             // create alert dialog
+            scrollDx = updateScrolls.first
+            scrollDy = updateScrolls.second
             createSaveUserGestureAlertDialog(confirmGestureView, incompleteImageView, incompleteOverlayView, scrollDx, scrollDy)
         }
+    }
+
+    private fun setUpDefineGestureTypeRadioGroup(confirmGestureView: View): Pair<Float, Float> {
+        var scrollDx = 0F
+        var scrollDy = 0F
+        // make define gesture radio group visible if type is unknown
+        val defineRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.define_gesture_type_group)
+        defineRadioGroup.visibility = View.VISIBLE
+        defineRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            when(checkedId) {
+                R.id.define_click_type -> {
+                    val scrollRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.scroll_radio_group)
+                    scrollRadioGroup.visibility = View.INVISIBLE
+                    scrollDx = 0F
+                    scrollDy = 0F
+                }
+                R.id.define_scroll_type -> {
+                    val (dX, dY) = setUpScrollGestureRadioGroup(confirmGestureView)
+                    scrollDx = dX
+                    scrollDy = dY
+                }
+            }
+        }
+        return Pair(scrollDx, scrollDy)
     }
     
     private fun setUpScrollGestureRadioGroup(confirmGestureView: View): Pair<Float, Float> {
         var scrollDx = 0F
         var scrollDy = 0F
-        // show scroll radio button option only if event is a scroll
-        if (chosenEventLabel!!.contains(getString(R.string.type_view_scroll))) {
-            val scrollRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.scroll_radio_group)
-            scrollRadioGroup.visibility = View.VISIBLE
-            scrollRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-                when(checkedId) {
-                    R.id.scroll_radio_button_vertical -> {
-                        scrollDx = 0F
-                        scrollDy = 80F
-                    }
-                    R.id.scroll_radio_button_horizontal -> {
-                        scrollDx = 80F
-                        scrollDy = 0F
-                    }
+        // show scroll radio group option if event is a scroll
+        val scrollRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.scroll_radio_group)
+        scrollRadioGroup.visibility = View.VISIBLE
+        scrollRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            when(checkedId) {
+                R.id.scroll_radio_button_vertical -> {
+                    scrollDx = 0F
+                    scrollDy = 80F
+                }
+                R.id.scroll_radio_button_horizontal -> {
+                    scrollDx = 80F
+                    scrollDy = 0F
                 }
             }
         }
@@ -149,6 +184,19 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 )
                 newGesture.verified = true
                 saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
+                var eventNameDest: String = chosenEventLabel!!
+                if (chosenEventLabel!!.contains(getString(R.string.type_unknown))) {
+                    // replace the gesture name from unknown to click or scroll
+                    eventNameDest = chosenEventLabel!!.replace(
+                        getString(R.string.type_unknown),
+                        getString(if (scrollDx == 0F && scrollDy == 0F) R.string.type_view_click else R.string.type_view_scroll),
+                        false
+                    )
+                    renameGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
+                    renameScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
+                    renameVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
+                    renameEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
+                }
                 // transfer directly to ScreenShotActivity
                 val intent = Intent(
                     applicationContext,
@@ -156,7 +204,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 )
                 intent.putExtra("package_name", chosenPackageName)
                 intent.putExtra("trace_label", chosenTraceLabel)
-                intent.putExtra("event_label", chosenEventLabel)
+                intent.putExtra("event_label", eventNameDest)
                 startActivity(intent)
                 finish()
             }

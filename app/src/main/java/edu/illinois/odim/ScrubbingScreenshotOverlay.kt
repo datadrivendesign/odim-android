@@ -205,7 +205,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         val normalizedText = normalizer.normalize(text)
 
         // Remove non-ASCII characters by keeping only characters with code <= 127 (ASCII range)
-        val asciiText = normalizedText.filter { it.toInt() <= 127 }
+        val asciiText = normalizedText.filter { it.code <= 127 }
 
         return asciiText
     }

@@ -219,6 +219,21 @@ object LocalStorageOps {
         }
     }
 
+    fun renameGesture(packageName: String, trace: String, event: String, newEventName: String): Boolean {
+        val gestureName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$event.json")
+        val newGestureName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$newEventName.json")
+        if (!gestureName.exists()) {
+            Log.e("FILE", "Gesture to rename does not exist: ${gestureName.path}")
+            return false
+        }
+        return if (gestureName.renameTo(newGestureName)) {
+            true
+        } else {
+            Log.e("FILE", "cannot rename $event screen")
+            false
+        }
+    }
+
     fun saveGesture(packageName: String, trace: String, event: String, gesture: Gesture) : Boolean {
         return try {
             val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")

@@ -52,7 +52,7 @@ class MyAccessibilityService : AccessibilityService() {
     private var windowManager: WindowManager? = null
     private var currRootWindow: AccessibilityNodeInfo? = null
     private var currVHString: String? = null
-    private var lastEventPackageName: String = "null"
+    private var lastTouchPackageName: String = "null"
     private var currTouchTime: String? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     // static variables
@@ -102,9 +102,11 @@ class MyAccessibilityService : AccessibilityService() {
                 currRootWindow!!.packageName == APP_LAUNCHER_PACKAGE ||
                 currRootWindow!!.packageName == SETTINGS_PACKAGE
             ) {
+                lastTouchPackageName = currRootWindow?.packageName.toString()
                 return@setOnTouchListener false
             }
             val rootPackageName = currRootWindow!!.packageName.toString()
+            Log.i("TOUCH_PACKAGE", rootPackageName)
             // get view hierarchy at this time
             serviceScope.launch(Dispatchers.Main) {
                 val vhJob = async(Dispatchers.IO) {
@@ -123,7 +125,7 @@ class MyAccessibilityService : AccessibilityService() {
                     }
                 }
                 // coroutine to take screenshot
-                val screenshotJob = async(Dispatchers.Default) {
+                val screenshotJob = async(Dispatchers.Main.immediate) {
                     measureTimeMillis {
                         takeScreenshot(
                             DEFAULT_DISPLAY,
@@ -154,22 +156,24 @@ class MyAccessibilityService : AccessibilityService() {
                 if (currentBitmap == null) {
                     return@launch
                 }
-                if (rootPackageName != lastEventPackageName) {
+                if (rootPackageName != lastTouchPackageName) {
                     // continue trace even if back and home button pressed
+                    Log.i("TOUCH_PACKAGE", "root: $rootPackageName, last package: $lastTouchPackageName")
                     isNewTrace = true
                 }
-                val tempEventLabel = "${currTouchTime}; TYPE_UNKNOWN"
-                val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel)
+                val tempEventLabel = "${currTouchTime}; ${getString(R.string.type_unknown)}"
+                val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel) ?: return@launch
                 saveScreenshot(rootPackageName, traceLabel, tempEventLabel, currentBitmap!!)
                 saveVH(rootPackageName, traceLabel, tempEventLabel, currVHString!!)
                 isNewTrace = false
+                lastTouchPackageName = rootPackageName
             }
             return@setOnTouchListener false
         }
     }
 
     private fun getInteractionTime(): String {
-        val date = Date(System.currentTimeMillis()) //event.eventTime)
+        val date = Date(System.currentTimeMillis())
         val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
         formatter.timeZone = TimeZone.getTimeZone("UTC")
         return formatter.format(date)
@@ -242,6 +246,7 @@ class MyAccessibilityService : AccessibilityService() {
             return
         }
         var currEventPackageName = event.packageName.toString()
+        Log.i("EVENT_PACKAGE", currEventPackageName)
         // before we decide if new trace, we should check if BACK or HOME button pressed
         val backBtnText = "[Back]"
         val homeBtnText = "[Home]"
@@ -252,7 +257,7 @@ class MyAccessibilityService : AccessibilityService() {
         val isSystemUIBtnPressed = isBackBtnPressed || isHomeBtnPressed || isOverviewBtnPressed
         // ignore new systemui package name update if home or back button pressed
         if (isSystemUIBtnPressed) {
-            currEventPackageName = lastEventPackageName
+            currEventPackageName = lastTouchPackageName
         }
         // ignore this selected list of packages in events
         if (currEventPackageName == "null" ||
@@ -260,12 +265,11 @@ class MyAccessibilityService : AccessibilityService() {
             currEventPackageName == APP_LAUNCHER_PACKAGE ||
             currEventPackageName == SETTINGS_PACKAGE
         ) {
-            lastEventPackageName = currEventPackageName
             return
         }
         // grab latest screen and check if screen is already paired
-        val latestTrace = getLatestTrace(currEventPackageName)
-        val latestEvent = getLatestEvent(currEventPackageName, latestTrace)
+        val latestTrace = getLatestTrace(currEventPackageName) ?: return
+        val latestEvent = getLatestEvent(currEventPackageName, latestTrace) ?: return
         val eventData = listEventData(currEventPackageName, latestTrace, latestEvent)
         var isGestureRecorded = false
         eventData.forEach {
@@ -301,17 +305,11 @@ class MyAccessibilityService : AccessibilityService() {
         val gesture = createGestureFromNode(isSystemUIBtnPressed, className, outbounds, viewId, scrollCoords)
         // Parse event description and rename event with proper interaction name
         val eventLabel = createEventLabel(event.eventType)
-        saveGesture(currEventPackageName, latestTrace, latestEvent, gesture)
         // rename all items in the event dir and event dir as well
         renameScreenshot(currEventPackageName, latestTrace, latestEvent, eventLabel)
         renameVH(currEventPackageName, latestTrace, latestEvent, eventLabel)
         renameEvent(currEventPackageName, latestTrace, latestEvent, eventLabel)
-        // update new last event package to track
-        lastEventPackageName = if (isBackBtnPressed) {
-            currEventPackageName
-        } else {
-            event.packageName.toString()
-        }
+        saveGesture(currEventPackageName, latestTrace, eventLabel, gesture)
     }
 
     private fun createEventLabel(eventType: Int): String {
@@ -320,17 +318,25 @@ class MyAccessibilityService : AccessibilityService() {
         return "$eventTime; $eventTypeString"
     }
 
-    private fun getLatestTrace(eventPackageName: String): String {
+    private fun getLatestTrace(eventPackageName: String): String? {
         val traceList = listTraces(eventPackageName)
-        return traceList.first()  // trace is sorted in descending order
+        return try {
+            traceList.first()  // trace is sorted in descending order
+        } catch (e: NoSuchElementException) {
+            null
+        }
     }
 
-    private fun getLatestEvent(eventPackageName: String, trace: String): String {
+    private fun getLatestEvent(eventPackageName: String, trace: String): String? {
         val eventList = listEvents(eventPackageName, trace)
-        return eventList.last() // trace is sorted in ascending order
+        try {
+            return eventList.last() // trace is sorted in ascending order
+        } catch (e: NoSuchElementException) {
+            return null
+        }
     }
 
-    private fun getCurrentTraceLabel(isNewTrace: Boolean, eventPackageName: String, eventLabel: String): String {
+    private fun getCurrentTraceLabel(isNewTrace: Boolean, eventPackageName: String, eventLabel: String): String? {
         val traceLabel = if (isNewTrace) {
             eventLabel.substringBefore(";")
         } else {
