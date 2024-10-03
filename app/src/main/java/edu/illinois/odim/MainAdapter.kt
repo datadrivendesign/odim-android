@@ -9,11 +9,33 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 
-class MainAdapter(context: Context, itemList: MutableList<String>) : RecyclerView.Adapter<MainViewHolder>() {
+class MainAdapter(
+    context: Context,
+    itemList: MutableList<String>
+) : RecyclerView.Adapter<MainAdapter.MainViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context)
     private var itemList : MutableList<String> = itemList
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
+
+    class MainViewHolder(
+        itemView: View,
+        listener: OnItemClickListener,
+        longClickListener: OnItemLongClickListener
+    ) : RecyclerView.ViewHolder(itemView) {
+        var appNameTextView : TextView = itemView.findViewById(R.id.main_app_name)
+        var appIconImageView : ImageView = itemView.findViewById(R.id.main_app_icon)
+        lateinit var appPackage : String
+
+        init {
+            itemView.setOnClickListener {
+                listener.onItemClick(appPackage)
+            }
+            itemView.setOnLongClickListener {
+                longClickListener.onItemLongClick(appPackage)
+            }
+        }
+    }
 
     interface  OnItemClickListener {
         fun onItemClick(appPackage: String)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
@@ -47,23 +69,5 @@ class MainAdapter(context: Context, itemList: MutableList<String>) : RecyclerVie
 
     override fun getItemCount(): Int {
         return itemList.size
-    }
-}
-
-class MainViewHolder(itemView: View,
-                     listener: MainAdapter.OnItemClickListener,
-                     longClickListener: MainAdapter.OnItemLongClickListener) : RecyclerView.ViewHolder(itemView)
-{
-    var appNameTextView : TextView = itemView.findViewById(R.id.main_app_name)
-    var appIconImageView : ImageView = itemView.findViewById(R.id.main_app_icon)
-    lateinit var appPackage : String
-
-    init {
-        itemView.setOnClickListener {
-            listener.onItemClick(appPackage)
-        }
-        itemView.setOnLongClickListener {
-            longClickListener.onItemLongClick(appPackage)
-        }
     }
 }

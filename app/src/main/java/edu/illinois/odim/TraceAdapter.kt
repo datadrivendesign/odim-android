@@ -13,10 +13,28 @@ class TraceAdapter(
     context: Context,
     private val packageName: String,
     private var itemList: MutableList<String>
-) : RecyclerView.Adapter<MyViewHolder>() {
+) : RecyclerView.Adapter<TraceAdapter.TraceViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context)
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
+
+    class TraceViewHolder(
+        itemView: View,
+        clickListener: OnItemClickListener,
+        longClickListener: OnItemLongClickListener
+    ) : RecyclerView.ViewHolder(itemView) {
+        var traceLabel : TextView = itemView.findViewById(R.id.trace_label)
+        val traceScreensTextView : TextView = itemView.findViewById(R.id.num_trace_screens)
+
+        init {
+            itemView.setOnClickListener {
+                clickListener.onItemClick(traceLabel.text.toString())
+            }
+            itemView.setOnLongClickListener {
+                longClickListener.onItemLongClick(traceLabel.text.toString())
+            }
+        }
+    }
 
     interface OnItemClickListener {
         fun onItemClick(traceLabel: String)
@@ -34,12 +52,12 @@ class TraceAdapter(
         itemLongClickListener = listener
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TraceViewHolder {
         val itemView = inflater.inflate(R.layout.trace_view_row, parent, false)
-        return MyViewHolder(itemView, itemClickListener, itemLongClickListener)
+        return TraceViewHolder(itemView, itemClickListener, itemLongClickListener)
     }
 
-    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: TraceViewHolder, position: Int) {
         val traceLabel = itemList[position]
         val events = listEvents(packageName, traceLabel)
         holder.traceLabel.text = traceLabel
@@ -49,22 +67,5 @@ class TraceAdapter(
 
     override fun getItemCount(): Int {
         return itemList.size
-    }
-}
-
-class MyViewHolder(itemView: View,
-   clickListener: TraceAdapter.OnItemClickListener,
-   longClickListener: TraceAdapter.OnItemLongClickListener) : RecyclerView.ViewHolder(itemView)
-{
-    var traceLabel : TextView = itemView.findViewById(R.id.trace_label)
-    val traceScreensTextView : TextView = itemView.findViewById(R.id.num_trace_screens)
-
-    init {
-        itemView.setOnClickListener {
-            clickListener.onItemClick(traceLabel.text.toString())
-        }
-        itemView.setOnLongClickListener {
-            longClickListener.onItemLongClick(traceLabel.text.toString())
-        }
     }
 }

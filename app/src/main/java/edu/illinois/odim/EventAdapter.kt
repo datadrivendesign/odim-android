@@ -6,10 +6,36 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.CardCellBinding
 
-class EventAdapter(screenPreviews: List<ScreenShotPreview>) : RecyclerView.Adapter<DetailViewHolder>() {
+class EventAdapter(
+    screenPreviews: List<ScreenShotPreview>
+) : RecyclerView.Adapter<EventAdapter.DetailViewHolder>() {
     private var itemList : List<ScreenShotPreview> = screenPreviews
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
+
+    class DetailViewHolder(
+        private val cardBinding : CardCellBinding,
+        clickListener: OnItemClickListener,
+        longClickListener: OnItemLongClickListener
+    ) : RecyclerView.ViewHolder(cardBinding.cardView.rootView) {
+        init {
+            itemView.setOnClickListener {
+                clickListener.onItemClick(cardBinding)
+            }
+            itemView.setOnLongClickListener {
+                longClickListener.onItemLongClick(cardBinding)
+            }
+        }
+
+        fun bindScreenshotPreview(ssp: ScreenShotPreview) {
+            cardBinding.cover.setImageBitmap(ssp.screenShot)
+            if (!ssp.isComplete) {
+                cardBinding.incompleteIndicator.visibility = View.VISIBLE
+            }
+            cardBinding.time.text = ssp.timestamp
+            cardBinding.event.text = ssp.event
+        }
+    }
 
     interface OnItemClickListener {
         fun onItemClick(cardView: CardCellBinding)
@@ -39,29 +65,5 @@ class EventAdapter(screenPreviews: List<ScreenShotPreview>) : RecyclerView.Adapt
 
     override fun getItemCount(): Int {
         return itemList.size
-    }
-}
-
-class DetailViewHolder(
-    private val cardBinding : CardCellBinding,
-    clickListener: EventAdapter.OnItemClickListener,
-    longClickListener: EventAdapter.OnItemLongClickListener) : RecyclerView.ViewHolder(cardBinding.cardView.rootView)
-{
-    init {
-        itemView.setOnClickListener {
-            clickListener.onItemClick(cardBinding)
-        }
-        itemView.setOnLongClickListener {
-            longClickListener.onItemLongClick(cardBinding)
-        }
-    }
-
-    fun bindScreenshotPreview(ssp: ScreenShotPreview) {
-        cardBinding.cover.setImageBitmap(ssp.screenShot)
-        if (!ssp.isComplete) {
-            cardBinding.incompleteIndicator.visibility = View.VISIBLE
-        }
-        cardBinding.time.text = ssp.timestamp
-        cardBinding.event.text = ssp.event
     }
 }
