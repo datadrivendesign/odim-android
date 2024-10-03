@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Point
 import android.graphics.Rect
 import android.icu.text.Normalizer2
 import android.text.Editable
@@ -19,8 +18,6 @@ import android.widget.CheckBox
 import android.widget.EditText
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(context, attrs) {
@@ -38,34 +35,13 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
     private var imageMeasuredHeight = 0
     var currentRedacts = mutableSetOf<Redaction>()
     var drawMode: Boolean = true
-    private var p1: Point? = null
-    private var p2: Point? = null
     private var vhRects: MutableList<Rect> = mutableListOf()
     private lateinit var screenVHRoot: JsonNode
-
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         drawVHBoundingBoxes(canvas)
         drawCurrentRedacts(canvas)
-        if (p1 != null && p2 != null) {
-            val newRect = Rect(p1!!.x, p1!!.y, p2!!.x, p2!!.y)
-            val rectMatch = getMatchingVH(newRect)
-            // quit early if rectangle isn't visible
-            if (rectMatch.height() == 0 || rectMatch.width() == 0) {
-                return
-            }
-            // start creating the label form
-            val inputForm = inflate(context, R.layout.layout_redaction_label, null)
-            val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
-            val redactCheckbox = inputForm.findViewById<CheckBox>(R.id.redact_label_checkbox)
-            val redactKeywordInput =
-                inputForm.findViewById<EditText>(R.id.redact_label_keyword_input)
-            // create the popup
-            createRedactLabelAlertDialog(inputForm, redactInputLabel, redactCheckbox, redactKeywordInput, rectMatch)
-            p1 = null
-            p2 = null
-        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -77,40 +53,41 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         if (convertedX == -1 || convertedY == -1) {
             return false
         }
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                // Delete rectangle if in Delete Mode and touch rectangle
-                if (!drawMode) {
-                    for (redaction in currentRedacts) {
-                        val redactRect = convertRedactToScaleScreenRect(redaction)
-                        if (redactRect.contains(convertedX, convertedY)) {
-                            currentRedacts.remove(redaction)
-                            invalidate()
-                            return true
-                        }
-                    }
-                    return true
-                } else { // edit redaction label if in Draw mode and touch rectangle
-                    for (redaction in currentRedacts) {
-                        val redactRect = convertRedactToScaleScreenRect(redaction)
-                        if (redactRect.contains(convertedX, convertedY)) {
-                            // start creating the label form
-                            val inputForm = inflate(context, R.layout.layout_redaction_label, null)
-                            val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
-                            redactInputLabel.setText(redaction.label)
-                            // create the popup
-                            editRedactLabelAlertDialog(inputForm, redactInputLabel, redaction)
-                        }
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            if (!drawMode) {  // Delete rectangle if in Delete Mode and touch rectangle
+                for (redaction in currentRedacts) {
+                    val redactRect = convertRedactToRect(redaction)
+                    if (redactRect.contains(convertedX, convertedY)) {
+                        currentRedacts.remove(redaction)
+                        invalidate()
+                        return true
                     }
                 }
-                p1 = Point(convertedX, convertedY)
                 return true
-            }
-            MotionEvent.ACTION_UP -> {
-                p2 = Point(convertedX, convertedY)
-            }
-            else -> {
-                return false
+            } else {  // draw mode, redact or edit redaction by tapping on VH rectangle
+                var selectOwnRedact = false
+                for (redaction in currentRedacts) {
+                    val redactRect = convertRedactToRect(redaction)
+                    if (redactRect.contains(convertedX, convertedY)) {
+                        selectOwnRedact = true
+                        // start creating the label form
+                        val inputForm = inflate(context, R.layout.layout_redaction_label, null)
+                        val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
+                        redactInputLabel.setText(redaction.label)
+                        // create the popup
+                        editRedactLabelAlertDialog(inputForm, redactInputLabel, redaction)
+                    }
+                }
+                if (!selectOwnRedact) {  // check if touched a VH to redact
+                    val rectMatch = getMatchingVHFromTap(convertedX, convertedY)
+                    // start creating the label form
+                    val inputForm = inflate(context, R.layout.layout_redaction_label, null)
+                    val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
+                    val redactCheckbox = inputForm.findViewById<CheckBox>(R.id.redact_label_checkbox)
+                    val redactKeywordInput = inputForm.findViewById<EditText>(R.id.redact_label_keyword_input)
+                    // create the popup
+                    createRedactLabelAlertDialog(inputForm, redactInputLabel, redactCheckbox, redactKeywordInput, rectMatch)
+                }
             }
         }
         postInvalidate()
@@ -134,9 +111,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                 val label = labelEditText.text.toString()
                 val redaction = Redaction(redactRect, label)
                 this.currentRedacts.add(redaction)
-
-                // if keyword box is checked and keyword is not null, recursively
-                // find all matching rectangles
+                // if keyword box is checked and keyword is not null, recursively find matching rectangles
                 if (redactCheckbox.isChecked && redactKeywordInput.text != null) {
                     // get elements of VH that match the keyword
                     val keyword = redactKeywordInput.text.toString()
@@ -150,7 +125,6 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                     // reset the keyword input
                     redactKeywordInput.text.clear()
                 }
-
                 invalidate()
             }
             .setNegativeButton("EXIT") { dialogInterface, _ ->
@@ -175,11 +149,9 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
     private fun getKeywordFromRedact(root: JsonNode, redactRect: Rect): String {
         // base case
         val nodeRect = Rect.unflattenFromString(root.get("bounds_in_screen")?.asText())
-
         if (nodeRect == redactRect) {
             return if (root.has("text_field")) root["text_field"].asText() else root["content-desc"].asText()
         }
-
         // recursive case
         if (root.has("children")) {
             val children = root["children"] as ArrayNode
@@ -190,7 +162,6 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                 }
             }
         }
-
         return ""
     }
 
@@ -200,30 +171,27 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
     private fun serializeToASCII(text: String): String {
         // Get the NFKD Normalizer using the recommended method
         val normalizer = Normalizer2.getNFKDInstance()
-
         // Normalize the text using NFKD (decomposition normalization)
         val normalizedText = normalizer.normalize(text)
-
         // Remove non-ASCII characters by keeping only characters with code <= 127 (ASCII range)
         val asciiText = normalizedText.filter { it.code <= 127 }
-
         return asciiText
     }
 
-    /** Return the list of rectangles that recursively match the keyword in the given json node */
+    /**
+     * Return the list of rectangles that recursively match the keyword in the given json node
+     */
     private fun getElementsByKeyword(keyword: String, root: JsonNode): MutableList<Rect> {
         val matchedRects = mutableListOf<Rect>()
         if (root.has("text_field") && root["text_field"].asText().contains(keyword)) {
             Log.d("keyword", root["text_field"].asText())
             Rect.unflattenFromString(root["bounds_in_screen"].asText())?.let { matchedRects.add(it) }
         }
-
         if (root.has("content-desc") && root["content-desc"].asText().contains(keyword)) {
             Log.d("keyword", root["content-desc"].asText())
             Rect.unflattenFromString(root["bounds_in_screen"].asText())
                 ?.let { matchedRects.add(it) }
         }
-
         if (root.has("children")) {
             val children = root["children"] as ArrayNode
             for (i in 0 until children.size()) {
@@ -247,19 +215,6 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         labelDialog.show()
     }
 
-    fun convertRedactToRect(redaction: Redaction): Rect {
-        return Rect(redaction.startX, redaction.startY, redaction.endX, redaction.endY)
-    }
-
-    private fun convertRedactToScaleScreenRect(redaction: Redaction): Rect {
-        return Rect(
-            convertScaleScreenXToBitmapX(redaction.startX),
-            convertScaleScreenYToBitmapY(redaction.startY),
-            convertScaleScreenXToBitmapX(redaction.endX),
-            convertScaleScreenYToBitmapY(redaction.endY)
-        )
-    }
-
     /**
      * Draw red bounding boxes where VH elements are, based on screenshot view hierarchy
      * input takes boxes as an array of rectangles representing locations of VH elements
@@ -268,68 +223,47 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
     private fun drawVHBoundingBoxes(canvas: Canvas) {
         for (element in vhRects) {
             // convert vh elements boxes from screen to bitmap coordinates
-            val scaledElement = Rect(
-                convertScaleScreenXToBitmapX(element.left),
-                convertScaleScreenYToBitmapY(element.top),
-                convertScaleScreenXToBitmapX(element.right),
-                convertScaleScreenYToBitmapY(element.bottom)
-            )
+            val scaledElement = convertRectFromScaleScreenToBitmap(element)
             canvas.drawRect(scaledElement, boundingBoxPaint)
         }
     }
 
-    fun setIntrinsicDimensions(intrinsicWidth: Int, intrinsicHeight: Int, measuredHeight: Int) {
-        imageIntrinsicWidth = intrinsicWidth
-        imageIntrinsicHeight = intrinsicHeight
-        imageMeasuredHeight = measuredHeight
-        invalidate()
-    }
-
-    fun setVHRects(screenVHRects: MutableList<Rect>) {
-        vhRects = screenVHRects
-    }
-
-    fun setScreenVHRoot(vHRoot: JsonNode) {
-        screenVHRoot = vHRoot
-    }
-
     private fun drawCurrentRedacts(canvas: Canvas) {
         for (redact in currentRedacts) {
-            val convertedRect: Rect = convertRedactToRect(redact)
-            val scaledRedactRect = Rect(
-                convertScaleScreenXToBitmapX(convertedRect.left),
-                convertScaleScreenYToBitmapY(convertedRect.top),
-                convertScaleScreenXToBitmapX(convertedRect.right),
-                convertScaleScreenYToBitmapY(convertedRect.bottom)
-            )
+            val redactRect: Rect = convertRedactToRect(redact)
+            val scaledRedactRect = convertRectFromScaleScreenToBitmap(redactRect)
             canvas.drawRect(scaledRedactRect, tempPaint)
         }
     }
 
-    private fun getMatchingVH(rect: Rect): Rect {
-        var maxOverlapRatio = 0.0F
-        var matched = Rect()
-        for (vh in vhRects) {
-            val overLapRatio = calculateOverLapRatio(vh, rect)
-            if (overLapRatio > maxOverlapRatio) {
-                maxOverlapRatio = overLapRatio
-                matched = vh
+    private fun getMatchingVHFromTap(tapX: Int, tapY: Int): Rect {
+        var currCandidateArea = Int.MAX_VALUE
+        var newCandidate = Rect()
+        for (candidateRect in vhRects) {
+            if (candidateRect.contains(tapX, tapY)) {
+                val candidateArea = candidateRect.height() * candidateRect.width()
+                if (candidateArea < currCandidateArea) {
+                    newCandidate = candidateRect
+                    currCandidateArea = candidateArea
+                }
             }
         }
-        return matched
+        return newCandidate
     }
 
-    private fun calculateOverLapRatio(baseRect: Rect, inputRect: Rect): Float {
-        val overlapArea =
-            max(0, min(baseRect.right, inputRect.right) - max(baseRect.left, inputRect.left)) * max(
-                0, min(baseRect.bottom, inputRect.bottom) - max(baseRect.top, inputRect.top)
-            )
-        return overlapArea / getArea(baseRect)
+    fun convertRedactToRect(redaction: Redaction): Rect {
+        return Rect(redaction.startX, redaction.startY, redaction.endX, redaction.endY)
     }
 
-    private fun getArea(rect: Rect): Float {
-        return (rect.width() * rect.height()).toFloat()
+    private fun convertRectFromScaleScreenToBitmap(rect: Rect): Rect {
+        return Rect(
+            convertScaleScreenXToBitmapX(rect.left),
+            convertScaleScreenYToBitmapY(rect.top),
+            convertScaleScreenXToBitmapX(rect.right),
+            convertScaleScreenYToBitmapY(rect.bottom)
+        )
     }
+
 
     private fun convertScaleBitmapXToScreenX(bitmapX: Int) : Int {
         val bitmapWidth = imageIntrinsicWidth  // original image width, height
@@ -379,5 +313,20 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
             return -1
         }
         return bitmapY.roundToInt()
+    }
+
+    fun setIntrinsicDimensions(intrinsicWidth: Int, intrinsicHeight: Int, measuredHeight: Int) {
+        imageIntrinsicWidth = intrinsicWidth
+        imageIntrinsicHeight = intrinsicHeight
+        imageMeasuredHeight = measuredHeight
+        invalidate()
+    }
+
+    fun setVHRects(screenVHRects: MutableList<Rect>) {
+        vhRects = screenVHRects
+    }
+
+    fun setScreenVHRoot(vHRoot: JsonNode) {
+        screenVHRoot = vHRoot
     }
 }

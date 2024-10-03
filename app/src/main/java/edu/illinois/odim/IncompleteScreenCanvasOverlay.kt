@@ -37,24 +37,14 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
             return
         }
         for (candidate in candidateElements) {
-            canvas.drawRect(
-                convertScaleScreenXToBitmapX(candidate.rect.left).toFloat(),
-                convertScaleScreenYToBitmapY(candidate.rect.top).toFloat(),
-                convertScaleScreenXToBitmapX(candidate.rect.right).toFloat(),
-                convertScaleScreenYToBitmapY(candidate.rect.bottom).toFloat(),
-                tempPaint
-            )
+            val scaledCandidate = convertRectFromScaleScreenToBitmap(candidate.rect)
+            canvas.drawRect(scaledCandidate, tempPaint)
             rectsDrawn = true
         }
         if (newVHCandidate != null) {
+            val scaledCandidate = convertRectFromScaleScreenToBitmap(newVHCandidate!!.rect)
             if (currVHCandidate == null) {
-                canvas.drawRect(
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.left).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.top).toFloat(),
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.right).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.bottom).toFloat(),
-                    confirmPaint
-                )
+                canvas.drawRect(scaledCandidate, confirmPaint)
                 currVHCandidate = newVHCandidate
             } else if (currVHCandidate!!.rect.top == newVHCandidate!!.rect.top &&
                 currVHCandidate!!.rect.bottom == newVHCandidate!!.rect.bottom &&
@@ -63,13 +53,7 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
             ) {  // rects are equal, reset currVHCandidate to null
                 currVHCandidate = null
             } else {
-                canvas.drawRect(
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.left).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.top).toFloat(),
-                    convertScaleScreenXToBitmapX(newVHCandidate!!.rect.right).toFloat(),
-                    convertScaleScreenYToBitmapY(newVHCandidate!!.rect.bottom).toFloat(),
-                    confirmPaint
-                )
+                canvas.drawRect(scaledCandidate, confirmPaint)
                 currVHCandidate = newVHCandidate
             }
             newVHCandidate = null
@@ -87,10 +71,15 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         if (convertedX == -1 || convertedY == -1) {
             return false
         }
+        var currCandidateArea = Int.MAX_VALUE
         var newCandidate = GestureCandidate(Rect(), "")
         for (candidate in candidateElements) {
             if (candidate.rect.contains(convertedX, convertedY)) {
-                newCandidate = candidate
+                val candidateArea = candidate.rect.height() * candidate.rect.width()
+                if (candidateArea < currCandidateArea) {
+                    newCandidate = candidate
+                    currCandidateArea = candidateArea
+                }
             }
         }
         when(event.action) {
@@ -107,19 +96,13 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         return super.onTouchEvent(event)
     }
 
-    fun setIntrinsicDimensions(intrinsicWidth: Int, intrinsicHeight: Int, measuredHeight: Int) {
-        imageIntrinsicWidth = intrinsicWidth
-        imageIntrinsicHeight = intrinsicHeight
-        imageMeasuredHeight = measuredHeight
-        invalidate()
-    }
-
-    fun setIncompleteScreenSaveButton(button: MovableFloatingActionButton) {
-        incompleteScreenSaveScreenButton = button
-    }
-
-    fun setCandidateElements(elements: MutableList<GestureCandidate>) {
-        candidateElements = elements.toList()
+    private fun convertRectFromScaleScreenToBitmap(rect: Rect): Rect {
+        return Rect(
+            convertScaleScreenXToBitmapX(rect.left),
+            convertScaleScreenYToBitmapY(rect.top),
+            convertScaleScreenXToBitmapX(rect.right),
+            convertScaleScreenYToBitmapY(rect.bottom)
+        )
     }
 
     private fun convertScaleBitmapXToScreenX(bitmapX: Int) : Int {
@@ -170,5 +153,20 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
             return -1
         }
         return bitmapY.roundToInt()
+    }
+
+    fun setIntrinsicDimensions(intrinsicWidth: Int, intrinsicHeight: Int, measuredHeight: Int) {
+        imageIntrinsicWidth = intrinsicWidth
+        imageIntrinsicHeight = intrinsicHeight
+        imageMeasuredHeight = measuredHeight
+        invalidate()
+    }
+
+    fun setIncompleteScreenSaveButton(button: MovableFloatingActionButton) {
+        incompleteScreenSaveScreenButton = button
+    }
+
+    fun setCandidateElements(elements: MutableList<GestureCandidate>) {
+        candidateElements = elements.toList()
     }
 }
