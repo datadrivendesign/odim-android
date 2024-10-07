@@ -86,7 +86,7 @@ object LocalStorageOps {
         return if (eventDir.renameTo(newEventDirName)) {
             true
         } else {
-            Log.e("FILE", "cannot rename $event directory")
+            Log.e("FILE", "cannot rename directory $event to $newEventName")
             false
         }
     }
@@ -144,7 +144,7 @@ object LocalStorageOps {
         return if (screenshotName.renameTo(newScreenshotName)) {
             true
         } else {
-            Log.e("FILE", "cannot rename $event screen")
+            Log.e("FILE", "cannot rename screen $event to $newEventName")
             false
         }
     }
@@ -187,7 +187,7 @@ object LocalStorageOps {
         return if (vHName.renameTo(newVHName)) {
             true
         } else {
-            Log.e("FILE", "cannot rename $event VH")
+            Log.e("FILE", "cannot rename vh $event to $newEventName")
             false
         }
     }
@@ -229,7 +229,7 @@ object LocalStorageOps {
         return if (gestureName.renameTo(newGestureName)) {
             true
         } else {
-            Log.e("FILE", "cannot rename $event screen")
+            Log.e("FILE", "cannot rename gesture $event to ${newEventName}")
             false
         }
     }

@@ -5,6 +5,7 @@
     <string name="cover">Cover</string>
     <string name="time_stamp">Time Stamp</string>
     <string name="event_function">Event Function</string>
+    <string name="event_index">Index</string>
     <string name="upload_trace_button_text">Upload Trace to AWS</string>
     <string name="upload_all_toast_success">All event data uploaded</string>
     <string name="upload_fail">Upload Interaction Failed</string>

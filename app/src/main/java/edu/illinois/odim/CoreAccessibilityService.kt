@@ -132,7 +132,6 @@ class MyAccessibilityService : AccessibilityService() {
                             appContext.mainExecutor,
                             object : TakeScreenshotCallback {
                                 override fun onSuccess(result: ScreenshotResult) {
-                                    currTouchTime = getInteractionTime()
                                     // TODO: check if screens are equal, filter if so
                                     // update screenshot and record current bitmap globally
                                     currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
@@ -156,6 +155,7 @@ class MyAccessibilityService : AccessibilityService() {
                 if (currentBitmap == null) {
                     return@launch
                 }
+                currTouchTime = getInteractionTime()
                 if (rootPackageName != lastTouchPackageName) {
                     // continue trace even if back and home button pressed
                     Log.i("TOUCH_PACKAGE", "root: $rootPackageName, last package: $lastTouchPackageName")
@@ -186,12 +186,16 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun parseVHToJson(node: AccessibilityNodeInfo, jsonWriter: JsonGenerator) {
         try {
+            val bounds = Rect()
+            node.getBoundsInScreen(bounds)
+            // if negative coordinate, don't record object
+            if (bounds.left < 0 || bounds.top < 0 || bounds.right < 0 || bounds.bottom < 0) {
+                return
+            }
             // "visit" the node on tree
             jsonWriter.writeStartObject()
             // write coordinates as string to json
-            val outbounds = Rect()
-            node.getBoundsInScreen(outbounds)
-            jsonWriter.writeStringField("bounds_in_screen", outbounds.flattenToString())
+            jsonWriter.writeStringField("bounds_in_screen", bounds.flattenToString())
             // id, parent, and class name
             jsonWriter.writeStringField("id", node.viewIdResourceName)
             jsonWriter.writeStringField("package_name", node.packageName?.toString() ?: "null")

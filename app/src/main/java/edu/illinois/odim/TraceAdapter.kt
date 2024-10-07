@@ -40,12 +40,12 @@ class TraceAdapter(
         fun onItemClick(traceLabel: String)
     }
 
-    interface OnItemLongClickListener {
-        fun onItemLongClick(traceLabel: String) : Boolean
-    }
-
     fun setOnItemClickListener(listener : OnItemClickListener) {
         itemClickListener = listener
+    }
+
+    interface OnItemLongClickListener {
+        fun onItemLongClick(traceLabel: String) : Boolean
     }
 
     fun setOnItemLongClickListener(listener: OnItemLongClickListener) {

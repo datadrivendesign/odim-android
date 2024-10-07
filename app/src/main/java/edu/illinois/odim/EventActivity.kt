@@ -64,13 +64,28 @@ class EventActivity : AppCompatActivity() {
         recyclerAdapter = EventAdapter(screenPreview)
         recyclerAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
             override fun onItemLongClick(cardView: CardCellBinding): Boolean {
-                return createDeleteScreenAlertDialog(cardView)
+                if (!recyclerAdapter!!.isMultiSelectMode) {  // enable multi-select by long click
+                    recyclerAdapter!!.isMultiSelectMode = true
+                }
+                if (recyclerAdapter!!.isMultiSelectMode) {
+                    val ind = cardView.index.text.toString().toInt()
+                    screenPreview[ind].isSelected = !screenPreview[ind].isSelected
+                    cardView.root.setBackgroundColor(if (screenPreview[ind].isSelected) Color.LTGRAY else Color.TRANSPARENT)
+                    recyclerAdapter!!.notifyItemChanged(ind)
+                }
+                return true// createDeleteScreenAlertDialog(cardView)
             }
         })
-        // set listener for clicking on screen
         recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
             override fun onItemClick(cardView: CardCellBinding) {
-                navigateToNextActivity(cardView)
+                if (recyclerAdapter!!.isMultiSelectMode) {
+                    val ind = cardView.index.text.toString().toInt()
+                    screenPreview[ind].isSelected = !screenPreview[ind].isSelected
+                    cardView.root.setBackgroundColor(if (screenPreview[ind].isSelected) Color.LTGRAY else Color.TRANSPARENT)
+                    recyclerAdapter!!.notifyItemChanged(ind)
+                } else {
+                    navigateToNextActivity(cardView)
+                }
             }
         })
         recyclerView?.adapter = recyclerAdapter

@@ -41,12 +41,12 @@ class MainAdapter(
         fun onItemClick(appPackage: String)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
     }
 
-    interface OnItemLongClickListener {
-        fun onItemLongClick(appPackage: String) : Boolean
-    }
-
     fun setOnItemClickListener(listener : OnItemClickListener) {
         itemClickListener = listener
+    }
+
+    interface OnItemLongClickListener {
+        fun onItemLongClick(appPackage: String) : Boolean
     }
 
     fun setOnItemLongClickListener(listener: OnItemLongClickListener) {

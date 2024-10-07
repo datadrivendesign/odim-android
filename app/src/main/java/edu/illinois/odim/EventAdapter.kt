@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.CardCellBinding
+import java.util.Locale
 
 class EventAdapter(
     screenPreviews: List<ScreenShotPreview>
@@ -12,6 +13,7 @@ class EventAdapter(
     private var itemList : List<ScreenShotPreview> = screenPreviews
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
+    var isMultiSelectMode: Boolean = false
 
     class DetailViewHolder(
         private val cardBinding : CardCellBinding,
@@ -31,9 +33,15 @@ class EventAdapter(
             cardBinding.cover.setImageBitmap(ssp.screenShot)
             if (!ssp.isComplete) {
                 cardBinding.incompleteIndicator.visibility = View.VISIBLE
+            } else {
+                cardBinding.incompleteIndicator.visibility = View.INVISIBLE
             }
             cardBinding.time.text = ssp.timestamp
             cardBinding.event.text = ssp.event
+        }
+
+        fun bindEventIndex(ind: Int) {
+            cardBinding.index.text = String.format(Locale.getDefault(), "%d", ind)
         }
     }
 
@@ -41,12 +49,12 @@ class EventAdapter(
         fun onItemClick(cardView: CardCellBinding)
     }
 
-    interface OnItemLongClickListener {
-        fun onItemLongClick(cardView: CardCellBinding) : Boolean
-    }
-
     fun setOnItemClickListener(listener : OnItemClickListener) {
         itemClickListener = listener
+    }
+
+    interface OnItemLongClickListener {
+        fun onItemLongClick(cardView: CardCellBinding) : Boolean
     }
 
     fun setOnItemLongClickListener(listener: OnItemLongClickListener) {
@@ -61,6 +69,7 @@ class EventAdapter(
 
     override fun onBindViewHolder(holder: DetailViewHolder, position: Int) {
         holder.bindScreenshotPreview(itemList[position])
+        holder.bindEventIndex(position)
     }
 
     override fun getItemCount(): Int {
