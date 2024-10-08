@@ -35,4 +35,6 @@
     <string name="type_unknown">TYPE_VIEW_UNKNOWN</string>
     <string name="type_view_scroll">TYPE_VIEW_SCROLLED</string>
     <string name="type_view_click">TYPE_VIEW_CLICKED</string>
+    <string name="delete_screens_message">Delete</string>
+    <string name="split_trace_message">Split to New Trace</string>
 </resources>

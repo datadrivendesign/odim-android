@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menu_split_trace"
+        android:title="@string/split_trace_message"
+        android:icon="@drawable/ic_split_trace"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/menu_delete_screens"
+        android:title="@string/delete_screens_message"
+        android:icon="@drawable/ic_delete"
+        app:showAsAction="always" />
+</menu>
+
