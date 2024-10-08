@@ -69,19 +69,21 @@ class EventActivity : AppCompatActivity() {
         recyclerAdapter = EventAdapter(screenPreviews)
         recyclerAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
             override fun onItemLongClick(position: Int): Boolean {
-                Log.i("EVENT", "LONG CLICK")
                 if (actionMode == null) {
                     actionMode = startActionMode(multiSelectActionModeCallback)
                 }
-                screenPreviews[position].isSelected = !screenPreviews[position].isSelected
-                recyclerAdapter!!.notifyItemChanged(position)
+                toggleSelection(position)
                 return true
             }
         })
         recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
             override fun onItemClick(cardView: CardCellBinding): Boolean {
-                Log.i("EVENT", "CLICK")
-                navigateToNextActivity(cardView)
+                if (actionMode != null) {
+                    val position = cardView.index.text.toString().toInt()
+                    toggleSelection(position)
+                } else {
+                    navigateToNextActivity(cardView)
+                }
                 return true
             }
         })
@@ -94,8 +96,21 @@ class EventActivity : AppCompatActivity() {
         uploadTraceButton?.isEnabled = isTraceComplete
     }
 
+    private fun toggleSelection(position: Int) {
+        screenPreviews[position].isSelected = !screenPreviews[position].isSelected
+        recyclerAdapter!!.notifyItemChanged(position)
+        // edit menu title
+        var total = 0
+        for (screen in screenPreviews) {
+            if (screen.isSelected) {
+                total += 1
+            }
+        }
+        actionMode?.title = "Total: $total"
+    }
+
     private val multiSelectActionModeCallback = object : ActionMode.Callback {
-        // Called when the action mode is created. startActionMode() is called.
+        /** Called when the action mode is created. startActionMode() is called. */
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             // Inflate a menu resource providing context menu items.
             val inflater: MenuInflater = mode.menuInflater
@@ -103,13 +118,14 @@ class EventActivity : AppCompatActivity() {
             return true
         }
 
-        // Called each time the action mode is shown. Always called after onCreateActionMode,
-        // and might be called multiple times if the mode is invalidated.
+        /** Called each time the action mode is shown. Always called after onCreateActionMode,
+        * and might be called multiple times if the mode is invalidated.
+        **/
         override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
             return false // Return false if nothing is done
         }
 
-        // Called when the user selects a contextual menu item.
+        /** Called when the user selects a contextual menu item. */
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
             return when (item.itemId) {
                 R.id.menu_split_trace -> {
@@ -118,15 +134,14 @@ class EventActivity : AppCompatActivity() {
                     true
                 }
                 R.id.menu_delete_screens -> {
-                    Log.i("EVENT", "DELETE")
-                    mode.finish()
+                    createDeleteScreenAlertDialog(mode)
                     true
                 }
                 else -> false
             }
         }
 
-        // Called when the user exits the action mode.
+        /** Called when the user exits the action mode. */
         override fun onDestroyActionMode(mode: ActionMode) {
             for (screen in screenPreviews) {
                 screen.isSelected = false
@@ -304,33 +319,35 @@ class EventActivity : AppCompatActivity() {
         }
     }
 
-    private fun createDeleteScreenAlertDialog(cardView: CardCellBinding): Boolean {
+    private fun deleteSelectedScreens(): Boolean {
+        val screenIterator = screenPreviews.iterator()
+        while (screenIterator.hasNext()) {
+            val screen = screenIterator.next()
+            if (screen.isSelected) {
+                val chosenEventLabel = "${screen.timestamp}; ${screen.event}"
+                val result = deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)
+                if (!result) {
+                    return false
+                }
+                screenIterator.remove()
+            }
+        }
+        return true
+    }
+
+    private fun createDeleteScreenAlertDialog(mode: ActionMode): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@EventActivity)
             .setTitle("Delete trace item")
-            .setMessage("Are you sure you want to delete this item from the trace? " +
-                    "You will remove the screen, view hierarchy, and gesture data from this item.")
+            .setMessage("Are you sure you want to delete these screens from the trace? " +
+                    "This will permanently remove all data and metadata from these captures.")
             .setPositiveButton("Yes") { dialog, _ ->
-                val chosenEventLabel = "${cardView.time.text}; ${cardView.event.text}"
-                result = deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)
-                // notify recycler view deletion happened
-                val newScreens = ArrayList(screenPreviews)
-                val ind = screenPreviews.indexOfFirst {
-                        s -> s.timestamp == cardView.time.text.toString()
-                }
-                if (ind < 0) {  // should theoretically never happen
-                    Log.e("EVENT", "could not find screenshot preview to delete")
-                    dialog.dismiss()
-                    return@setPositiveButton
-                }
-                newScreens.removeAt(ind)
-                screenPreviews.clear()
-                screenPreviews.addAll(newScreens)
-                recyclerAdapter!!.notifyItemRemoved(ind)
-                val itemChangeCount = newScreens.size - ind
-                recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
+                result = deleteSelectedScreens()
+                notifyEventAdapter()
+                mode.finish()
             }
             .setNegativeButton("No") { dialog, _ ->
+                mode.finish()
                 dialog.dismiss()
             }
         val deleteAlertDialog = builder.create()
