@@ -49,8 +49,9 @@ class EventActivity : AppCompatActivity() {
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
     private var uploadTraceButton: Button? = null
-    private val screenPreview: ArrayList<ScreenShotPreview> = ArrayList()
+    private val screenPreviews: ArrayList<ScreenShotPreview> = ArrayList()
     private var isTraceComplete: Boolean = true
+    private var actionMode: ActionMode? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,31 +66,23 @@ class EventActivity : AppCompatActivity() {
         // want both screenshot and event information for trace
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
-        recyclerAdapter = EventAdapter(screenPreview)
+        recyclerAdapter = EventAdapter(screenPreviews)
         recyclerAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
-            override fun onItemLongClick(cardView: CardCellBinding): Boolean {
-                if (!recyclerAdapter!!.isMultiSelectMode) {  // enable multi-select by long click
-                    recyclerAdapter!!.isMultiSelectMode = true
+            override fun onItemLongClick(position: Int): Boolean {
+                Log.i("EVENT", "LONG CLICK")
+                if (actionMode == null) {
+                    actionMode = startActionMode(multiSelectActionModeCallback)
                 }
-                if (recyclerAdapter!!.isMultiSelectMode) {
-                    val ind = cardView.index.text.toString().toInt()
-                    screenPreview[ind].isSelected = !screenPreview[ind].isSelected
-                    cardView.root.setBackgroundColor(if (screenPreview[ind].isSelected) Color.LTGRAY else Color.TRANSPARENT)
-                    recyclerAdapter!!.notifyItemChanged(ind)
-                }
-                return true// createDeleteScreenAlertDialog(cardView)
+                screenPreviews[position].isSelected = !screenPreviews[position].isSelected
+                recyclerAdapter!!.notifyItemChanged(position)
+                return true
             }
         })
         recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
-            override fun onItemClick(cardView: CardCellBinding) {
-                if (recyclerAdapter!!.isMultiSelectMode) {
-                    val ind = cardView.index.text.toString().toInt()
-                    screenPreview[ind].isSelected = !screenPreview[ind].isSelected
-                    cardView.root.setBackgroundColor(if (screenPreview[ind].isSelected) Color.LTGRAY else Color.TRANSPARENT)
-                    recyclerAdapter!!.notifyItemChanged(ind)
-                } else {
-                    navigateToNextActivity(cardView)
-                }
+            override fun onItemClick(cardView: CardCellBinding): Boolean {
+                Log.i("EVENT", "CLICK")
+                navigateToNextActivity(cardView)
+                return true
             }
         })
         recyclerView?.adapter = recyclerAdapter
@@ -110,9 +103,8 @@ class EventActivity : AppCompatActivity() {
             return true
         }
 
-        // Called each time the action mode is shown. Always called after
-        // onCreateActionMode, and might be called multiple times if the mode
-        // is invalidated.
+        // Called each time the action mode is shown. Always called after onCreateActionMode,
+        // and might be called multiple times if the mode is invalidated.
         override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
             return false // Return false if nothing is done
         }
@@ -122,7 +114,7 @@ class EventActivity : AppCompatActivity() {
             return when (item.itemId) {
                 R.id.menu_split_trace -> {
                     Log.i("EVENT", "SPLIT")
-                    mode.finish() // Action picked, so close the CAB.
+                    mode.finish() // Action picked, so close the contextual action bar.
                     true
                 }
                 R.id.menu_delete_screens -> {
@@ -136,25 +128,27 @@ class EventActivity : AppCompatActivity() {
 
         // Called when the user exits the action mode.
         override fun onDestroyActionMode(mode: ActionMode) {
-            recyclerAdapter?.isMultiSelectMode = false
-//            actionMode = null
+            for (screen in screenPreviews) {
+                screen.isSelected = false
+            }
+            notifyEventAdapter()
+            actionMode = null
         }
     }
 
-
     override fun onStop() {
         super.onStop()
-        for (screen in screenPreview) {
+        for (screen in screenPreviews) {
             screen.screenShot.recycle()
         }
-        screenPreview.clear()
+        screenPreviews.clear()
         notifyEventAdapter()
     }
 
     override fun onRestart() {
         super.onRestart()
         isTraceComplete = true
-        screenPreview.clear()
+        screenPreviews.clear()
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
         uploadTraceButton?.isEnabled = isTraceComplete
@@ -200,10 +194,10 @@ class EventActivity : AppCompatActivity() {
                     addDrawnGesture(eventType, eventGesture, mutableScreenshot)
                 }
                 val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, isComplete)
-                screenPreview.add(screenshotPreview)
+                screenPreviews.add(screenshotPreview)
             } catch (e: FileNotFoundException) {
                 val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, false)
-                screenPreview.add(screenshotPreview)
+                screenPreviews.add(screenshotPreview)
             }
         }
     }
@@ -320,8 +314,8 @@ class EventActivity : AppCompatActivity() {
                 val chosenEventLabel = "${cardView.time.text}; ${cardView.event.text}"
                 result = deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)
                 // notify recycler view deletion happened
-                val newScreens = ArrayList(screenPreview)
-                val ind = screenPreview.indexOfFirst {
+                val newScreens = ArrayList(screenPreviews)
+                val ind = screenPreviews.indexOfFirst {
                         s -> s.timestamp == cardView.time.text.toString()
                 }
                 if (ind < 0) {  // should theoretically never happen
@@ -330,8 +324,8 @@ class EventActivity : AppCompatActivity() {
                     return@setPositiveButton
                 }
                 newScreens.removeAt(ind)
-                screenPreview.clear()
-                screenPreview.addAll(newScreens)
+                screenPreviews.clear()
+                screenPreviews.addAll(newScreens)
                 recyclerAdapter!!.notifyItemRemoved(ind)
                 val itemChangeCount = newScreens.size - ind
                 recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)

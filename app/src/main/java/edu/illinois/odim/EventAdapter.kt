@@ -1,5 +1,6 @@
 package edu.illinois.odim
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,22 +14,8 @@ class EventAdapter(
     private var itemList : List<ScreenShotPreview> = screenPreviews
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
-    var isMultiSelectMode: Boolean = false
 
-    class DetailViewHolder(
-        private val cardBinding : CardCellBinding,
-        clickListener: OnItemClickListener,
-        longClickListener: OnItemLongClickListener
-    ) : RecyclerView.ViewHolder(cardBinding.cardView.rootView) {
-        init {
-            itemView.setOnClickListener {
-                clickListener.onItemClick(cardBinding)
-            }
-            itemView.setOnLongClickListener {
-                longClickListener.onItemLongClick(cardBinding)
-            }
-        }
-
+    class DetailViewHolder(val cardBinding: CardCellBinding): RecyclerView.ViewHolder(cardBinding.cardView.rootView) {
         fun bindScreenshotPreview(ssp: ScreenShotPreview) {
             cardBinding.cover.setImageBitmap(ssp.screenShot)
             if (!ssp.isComplete) {
@@ -46,7 +33,7 @@ class EventAdapter(
     }
 
     interface OnItemClickListener {
-        fun onItemClick(cardView: CardCellBinding)
+        fun onItemClick(cardView: CardCellBinding): Boolean
     }
 
     fun setOnItemClickListener(listener : OnItemClickListener) {
@@ -54,7 +41,7 @@ class EventAdapter(
     }
 
     interface OnItemLongClickListener {
-        fun onItemLongClick(cardView: CardCellBinding) : Boolean
+        fun onItemLongClick(position: Int): Boolean
     }
 
     fun setOnItemLongClickListener(listener: OnItemLongClickListener) {
@@ -64,12 +51,19 @@ class EventAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DetailViewHolder {
         val from = LayoutInflater.from(parent.context)
         val itemView = CardCellBinding.inflate(from, parent, false)
-        return DetailViewHolder(itemView, itemClickListener, itemLongClickListener)
+        return DetailViewHolder(itemView)
     }
 
     override fun onBindViewHolder(holder: DetailViewHolder, position: Int) {
         holder.bindScreenshotPreview(itemList[position])
         holder.bindEventIndex(position)
+        holder.itemView.setBackgroundColor(if (itemList[position].isSelected) Color.LTGRAY else Color.TRANSPARENT)
+        holder.itemView.setOnLongClickListener {
+            itemLongClickListener.onItemLongClick(position)
+        }
+        holder.itemView.setOnClickListener {
+            itemClickListener.onItemClick(holder.cardBinding)
+        }
     }
 
     override fun getItemCount(): Int {
