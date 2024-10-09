@@ -30,7 +30,7 @@
                     android:id="@+id/cover"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/n1"
+                    android:src="@drawable/round_question_mark_24"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/cover"
                     android:clickable="false" />

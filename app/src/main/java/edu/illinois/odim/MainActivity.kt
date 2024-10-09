@@ -29,7 +29,6 @@ fun notifyPackageAdapter() {
 
 class MainActivity : AppCompatActivity() {
     private var recyclerView : RecyclerView? = null
-    private var workerIdInput : EditText? = null
     private lateinit var appPackageList: MutableList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     private fun createWorkerInputForm() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
         val workerForm = View.inflate(this, R.layout.worker_input_dialog, null)
-        workerIdInput = workerForm.findViewById(R.id.dialog_worker_id_input)
+        val workerIdInput: EditText = workerForm.findViewById(R.id.dialog_worker_id_input)
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             .setTitle("Worker Credentials")
             .setCancelable(false)

@@ -125,7 +125,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
             when(checkedId) {
                 R.id.define_click_type -> {
                     val scrollRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.scroll_radio_group)
-                    scrollRadioGroup.visibility = View.INVISIBLE
+                    scrollRadioGroup.visibility = View.GONE
                     scrollDx = 0F
                     scrollDy = 0F
                 }
