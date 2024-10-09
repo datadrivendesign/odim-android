@@ -76,17 +76,17 @@ object LocalStorageOps {
         }
     }
 
-    fun renameEvent(packageName: String, trace: String, event: String, newEventName: String): Boolean {
+    fun renameEvent(packageName: String, trace: String, event: String, newEvent: String): Boolean {
         val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
-        val newEventDirName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$newEventName")
+        val newEventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$newEvent")
         if (!eventDir.exists()) {
             Log.e("FILE", "Directory to rename does not exist: ${eventDir.path}")
             return false
         }
-        return if (eventDir.renameTo(newEventDirName)) {
+        return if (eventDir.renameTo(newEventDir)) {
             true
         } else {
-            Log.e("FILE", "cannot rename directory $event to $newEventName")
+            Log.e("FILE", "cannot rename directory $event to $newEvent")
             false
         }
     }
@@ -134,17 +134,36 @@ object LocalStorageOps {
         }
     }
 
-    fun renameScreenshot(packageName: String, trace: String, event: String, newEventName: String): Boolean {
-        val screenshotName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
-        val newScreenshotName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$newEventName.png")
-        if (!screenshotName.exists()) {
-            Log.e("FILE", "Screenshot to rename does not exist: ${screenshotName.path}")
+    fun renameScreenshot(packageName: String, trace: String, event: String, newEvent: String): Boolean {
+        val screenshot = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
+        val newScreenshot = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$newEvent.png")
+        if (!screenshot.exists()) {
+            Log.e("FILE", "Screenshot to rename does not exist: ${screenshot.path}")
             return false
         }
-        return if (screenshotName.renameTo(newScreenshotName)) {
+        return if (screenshot.renameTo(newScreenshot)) {
             true
         } else {
-            Log.e("FILE", "cannot rename screen $event to $newEventName")
+            Log.e("FILE", "cannot rename screen $event to $newEvent")
+            false
+        }
+    }
+    
+    fun splitTraceScreenshot(packageName: String, trace: String, newTrace: String, event: String): Boolean {
+        val screenshot = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
+        val newEventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$newTrace/$event")
+        if (!newEventDir.exists()) {
+            newEventDir.mkdirs()
+        }
+        val newScreenshot = File(newEventDir, "$event.png")
+        if (!screenshot.exists()) {
+            Log.e("FILE", "Screenshot to move does not exist: ${screenshot.path}")
+            return false
+        }
+        return if (screenshot.renameTo(newScreenshot)) {
+            true
+        } else {
+            Log.e("FILE", "cannot move screen from $trace to $newTrace")
             false
         }
     }
@@ -177,17 +196,36 @@ object LocalStorageOps {
         }
     }
 
-    fun renameVH(packageName: String, trace: String, event: String, newEventName: String): Boolean {
-        val vHName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$event.json")
-        val newVHName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$newEventName.json")
-        if (!vHName.exists()) {
-            Log.e("FILE", "File to rename does not exist: ${vHName.path}")
+    fun renameVH(packageName: String, trace: String, event: String, newEvent: String): Boolean {
+        val vH = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$event.json")
+        val newVH = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$newEvent.json")
+        if (!vH.exists()) {
+            Log.e("FILE", "File to rename does not exist: ${vH.path}")
             return false
         }
-        return if (vHName.renameTo(newVHName)) {
+        return if (vH.renameTo(newVH)) {
             true
         } else {
-            Log.e("FILE", "cannot rename vh $event to $newEventName")
+            Log.e("FILE", "cannot rename vh $event to $newEvent")
+            false
+        }
+    }
+
+    fun splitTraceVH(packageName: String, trace: String, newTrace: String, event: String): Boolean {
+        val vh = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$VH_PREFIX$event.json")
+        val newEventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$newTrace/$event")
+        if (!newEventDir.exists()) {
+            newEventDir.mkdirs()
+        }
+        val newVH = File(newEventDir, "$VH_PREFIX$event.json")
+        if (!vh.exists()) {
+            Log.e("FILE", "View hierarchy to move does not exist: ${vh.path}")
+            return false
+        }
+        return if (vh.renameTo(newVH)) {
+            true
+        } else {
+            Log.e("FILE", "cannot move vh from $trace to $newTrace")
             false
         }
     }
@@ -219,17 +257,36 @@ object LocalStorageOps {
         }
     }
 
-    fun renameGesture(packageName: String, trace: String, event: String, newEventName: String): Boolean {
-        val gestureName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$event.json")
-        val newGestureName = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$newEventName.json")
-        if (!gestureName.exists()) {
-            Log.e("FILE", "Gesture to rename does not exist: ${gestureName.path}")
+    fun renameGesture(packageName: String, trace: String, event: String, newEvent: String): Boolean {
+        val gesture = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$event.json")
+        val newGesture = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$newEvent.json")
+        if (!gesture.exists()) {
+            Log.e("FILE", "Gesture to rename does not exist: ${gesture.path}")
             return false
         }
-        return if (gestureName.renameTo(newGestureName)) {
+        return if (gesture.renameTo(newGesture)) {
             true
         } else {
-            Log.e("FILE", "cannot rename gesture $event to ${newEventName}")
+            Log.e("FILE", "cannot rename gesture $event to ${newEvent}")
+            false
+        }
+    }
+
+    fun splitTraceGesture(packageName: String, trace: String, newTrace: String, event: String): Boolean {
+        val gesture = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$GESTURE_PREFIX$event.json")
+        val newEventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$newTrace/$event")
+        if (!newEventDir.exists()) {
+            newEventDir.mkdirs()
+        }
+        val newGesture = File(newEventDir, "$GESTURE_PREFIX$event.json")
+        if (!gesture.exists()) {
+            Log.e("FILE", "Gesture to move does not exist: ${gesture.path}")
+            return false
+        }
+        return if (gesture.renameTo(newGesture)) {
+            true
+        } else {
+            Log.e("FILE", "cannot move gesture from $trace to $newTrace")
             false
         }
     }
@@ -263,7 +320,7 @@ object LocalStorageOps {
         }
     }
 
-    fun saveRedactions(packageName: String, trace: String, event: String, redaction: Redaction) : Boolean {
+    fun saveRedaction(packageName: String, trace: String, event: String, redaction: Redaction) : Boolean {
         return try {
             val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
             if (!eventDir.exists()) {
@@ -283,6 +340,25 @@ object LocalStorageOps {
             true
         } catch (e: IOException) {
             e.printStackTrace()
+            false
+        }
+    }
+
+    fun splitTraceRedactions(packageName: String, trace: String, newTrace: String, event: String): Boolean {
+        val redacts = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
+        val newEventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$newTrace/$event")
+        if (!newEventDir.exists()) {
+            newEventDir.mkdirs()
+        }
+        val newRedacts = File(newEventDir, "$REDACT_PREFIX$event.json")
+        if (!redacts.exists()) {
+            Log.e("FILE", "Gesture to move does not exist: ${redacts.path}")
+            return false
+        }
+        return if (redacts.renameTo(newRedacts)) {
+            true
+        } else {
+            Log.e("FILE", "cannot move gesture from $trace to $newTrace")
             false
         }
     }

@@ -7,13 +7,13 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -31,6 +31,10 @@ import edu.illinois.odim.LocalStorageOps.loadGesture
 import edu.illinois.odim.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.LocalStorageOps.loadVH
 import edu.illinois.odim.LocalStorageOps.saveGesture
+import edu.illinois.odim.LocalStorageOps.splitTraceGesture
+import edu.illinois.odim.LocalStorageOps.splitTraceRedactions
+import edu.illinois.odim.LocalStorageOps.splitTraceScreenshot
+import edu.illinois.odim.LocalStorageOps.splitTraceVH
 import edu.illinois.odim.UploadDataOps.uploadFullTraceContent
 import edu.illinois.odim.databinding.CardCellBinding
 import kotlinx.coroutines.CoroutineScope
@@ -129,8 +133,7 @@ class EventActivity : AppCompatActivity() {
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
             return when (item.itemId) {
                 R.id.menu_split_trace -> {
-                    Log.i("EVENT", "SPLIT")
-                    mode.finish() // Action picked, so close the contextual action bar.
+                    createSplitTraceAlertDialog(mode)
                     true
                 }
                 R.id.menu_delete_screens -> {
@@ -319,6 +322,60 @@ class EventActivity : AppCompatActivity() {
         }
     }
 
+    private fun splitTraceEvent(newTraceName: String, chosenEventLabel: String): Boolean {
+        val result = splitTraceScreenshot(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel) &&
+                splitTraceVH(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel)
+        if (!result) {
+            return false
+        }
+        splitTraceGesture(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel)
+        splitTraceRedactions(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel)
+        return true
+    }
+
+    private fun splitSelectedScreensToTrace(newTraceName: String): Boolean {
+        val screenIterator = screenPreviews.iterator()
+        while (screenIterator.hasNext()) {
+            val screen = screenIterator.next()
+            if (screen.isSelected) {
+                val chosenEventLabel = "${screen.timestamp}; ${screen.event}"
+                if (splitTraceEvent(newTraceName, chosenEventLabel) &&
+                    deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)) {
+                    screenIterator.remove()
+                } else {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
+        var result = true
+        val splitTraceForm = View.inflate(this, R.layout.split_trace_dialog, null)
+        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.dialog_split_trace_input)
+        val firstSelectedScreen = screenPreviews.first { it.isSelected }
+        val initTraceName = firstSelectedScreen.timestamp
+        splitTraceInput.setText(initTraceName)
+        val builder = AlertDialog.Builder(this@EventActivity)
+            .setTitle("Split Trace")
+            .setView(splitTraceForm)
+            .setPositiveButton("Yes") { dialog, _ ->
+                val traceName = splitTraceInput.text.toString()
+                result = splitSelectedScreensToTrace(traceName)
+                notifyEventAdapter()
+                mode.finish()
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                mode.finish()
+                dialog.dismiss()
+            }
+        val deleteAlertDialog = builder.create()
+        deleteAlertDialog.show()
+        return result
+    }
+
     private fun deleteSelectedScreens(): Boolean {
         val screenIterator = screenPreviews.iterator()
         while (screenIterator.hasNext()) {
@@ -338,13 +395,13 @@ class EventActivity : AppCompatActivity() {
     private fun createDeleteScreenAlertDialog(mode: ActionMode): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@EventActivity)
-            .setTitle("Delete trace item")
-            .setMessage("Are you sure you want to delete these screens from the trace? " +
-                    "This will permanently remove all data and metadata from these captures.")
+            .setTitle("Delete Trace")
+            .setMessage(getString(R.string.delete_screens_label))
             .setPositiveButton("Yes") { dialog, _ ->
                 result = deleteSelectedScreens()
                 notifyEventAdapter()
                 mode.finish()
+                dialog.dismiss()
             }
             .setNegativeButton("No") { dialog, _ ->
                 mode.finish()

@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import edu.illinois.odim.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.LocalStorageOps.loadVH
-import edu.illinois.odim.LocalStorageOps.saveRedactions
+import edu.illinois.odim.LocalStorageOps.saveRedaction
 import edu.illinois.odim.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.LocalStorageOps.saveVH
 
@@ -88,7 +88,7 @@ class ScreenShotActivity : AppCompatActivity() {
                 val redactRect = scrubbingOverlayView.convertRedactToRect(drawnRedaction)
                 traverse(screenVHRoot, redactRect)
                 saveVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, mapper.writeValueAsString(screenVHRoot))
-                saveRedactions(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, drawnRedaction)
+                saveRedaction(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, drawnRedaction)
             }
             // update screenshot bitmap in the map (no need to set in map, just set bitmap property)
             saveScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, canvasBitmap)
