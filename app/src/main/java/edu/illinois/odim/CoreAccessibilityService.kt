@@ -36,12 +36,14 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.coroutines.resume
 import kotlin.system.measureTimeMillis
 
 internal var workerId = "test_user"
@@ -126,24 +128,29 @@ class MyAccessibilityService : AccessibilityService() {
                 }
                 // coroutine to take screenshot
                 val screenshotJob = async(Dispatchers.Main.immediate) {
-                    measureTimeMillis {
-                        takeScreenshot(
-                            DEFAULT_DISPLAY,
-                            appContext.mainExecutor,
-                            object : TakeScreenshotCallback {
-                                override fun onSuccess(result: ScreenshotResult) {
-                                    // TODO: check if screens are equal, filter if so
-                                    // update screenshot and record current bitmap globally
-                                    currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                                    result.hardwareBuffer.close()
-                                    Log.d("screenshot", "update screen")
+                    suspendCancellableCoroutine<Long> { continuation ->
+                        val startTime = System.currentTimeMillis()
+                        measureTimeMillis {
+                            takeScreenshot(
+                                DEFAULT_DISPLAY,
+                                appContext.mainExecutor,
+                                object : TakeScreenshotCallback {
+                                    override fun onSuccess(result: ScreenshotResult) {
+                                        // TODO: check if screens are equal, filter if so
+                                        // update screenshot and record current bitmap globally
+                                        currentBitmap = wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                                        result.hardwareBuffer.close()
+                                        Log.d("screenshot", "update screen")
+                                        continuation.resume(System.currentTimeMillis() - startTime)
+                                    }
+                                    override fun onFailure(errCode: Int) {
+                                        currentBitmap = null
+                                        Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
+                                        continuation.resume(System.currentTimeMillis() - startTime)
+                                    }
                                 }
-                                override fun onFailure(errCode: Int) {
-                                    currentBitmap = null
-                                    Log.e("edu.illinois.odim", "Screenshot error code: $errCode")
-                                }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
                 // wait for coroutine jobs to finish
