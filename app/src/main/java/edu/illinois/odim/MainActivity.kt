@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
         val workerForm = View.inflate(this, R.layout.worker_input_dialog, null)
         val workerIdInput: EditText = workerForm.findViewById(R.id.dialog_worker_id_input)
+        workerIdInput.setText(workerId)
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             .setTitle("Worker Credentials")
             .setCancelable(false)
@@ -71,7 +72,6 @@ class MainActivity : AppCompatActivity() {
                 workerId = workerIdInput.text.toString()
             }
         val alertDialog = builder.show()
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
         workerIdInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}

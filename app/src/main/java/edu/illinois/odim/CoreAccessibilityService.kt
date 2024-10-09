@@ -332,7 +332,7 @@ class MyAccessibilityService : AccessibilityService() {
     private fun getLatestTrace(eventPackageName: String): String? {
         val traceList = listTraces(eventPackageName)
         return try {
-            traceList.first()  // trace is sorted in descending order
+            traceList.first().traceLabel  // trace is sorted in descending order
         } catch (e: NoSuchElementException) {
             null
         }

@@ -44,5 +44,8 @@
     <string name="type_view_scroll">TYPE_VIEW_SCROLLED</string>
     <string name="type_view_click">TYPE_VIEW_CLICKED</string>
     <string name="delete_screens_icon_title">Delete</string>
+    <string name="rename_trace_icon_title">Rename Trace</string>
     <string name="split_trace_icon_title">Split to New Trace</string>
+    <string name="split_trace_edittext_hint">Add a name for the trace</string>
+    <string name="split_trace_autofill_hint">New Trace Name</string>
 </resources>

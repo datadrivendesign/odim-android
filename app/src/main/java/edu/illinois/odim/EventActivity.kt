@@ -121,7 +121,7 @@ class EventActivity : AppCompatActivity() {
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             // Inflate a menu resource providing context menu items.
             val inflater: MenuInflater = mode.menuInflater
-            inflater.inflate(R.menu.multi_select_menu, menu)
+            inflater.inflate(R.menu.multi_select_event_menu, menu)
             return true
         }
 
@@ -355,8 +355,10 @@ class EventActivity : AppCompatActivity() {
 
     private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
-        val splitTraceForm = View.inflate(this, R.layout.split_trace_dialog, null)
-        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.dialog_split_trace_input)
+        val splitTraceForm = View.inflate(this, R.layout.new_trace_dialog, null)
+        val splitTraceTitle: TextView = splitTraceForm.findViewById(R.id.new_trace_label)
+        splitTraceTitle.text = getString(R.string.split_trace_label)
+        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.new_trace_input)
         val firstSelectedScreen = screenPreviews.first { it.isSelected }
         val initTraceName = firstSelectedScreen.timestamp
         splitTraceInput.setText(initTraceName)
@@ -374,14 +376,15 @@ class EventActivity : AppCompatActivity() {
                 mode.finish()
                 dialog.dismiss()
             }
-        val deleteAlertDialog = builder.show()
-        deleteAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+        val splitAlertDialog = builder.show()
+        val positiveButton = splitAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton.isEnabled = !((splitTraceInput.text).contentEquals(chosenTraceLabel))
         splitTraceInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun afterTextChanged(str: Editable?) {
-                deleteAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
+            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                positiveButton.isEnabled = !TextUtils.isEmpty(str) && !str.contentEquals(chosenTraceLabel)
             }
+            override fun afterTextChanged(str: Editable?) {}
         })
         return result
     }

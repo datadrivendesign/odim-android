@@ -37,17 +37,31 @@ object LocalStorageOps {
         }
     }
 
-    fun listTraces(packageName: String): MutableList<String> {
+    fun listTraces(packageName: String): MutableList<TraceItem> {
         val traceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName")
         return if (traceDir.exists()) {
-            return traceDir.listFiles()?.filter {
-                it.isDirectory
-            }?.map {
-                it.name
-            }?.sortedDescending()?.toMutableList() ?: arrayListOf()
+            return traceDir.listFiles()?.asSequence()?.filter { it.isDirectory }
+                ?.map { it.name }?.sortedDescending()
+                ?.map { TraceItem(it) }?.toMutableList()
+                    ?: arrayListOf()
         } else {
             traceDir.mkdirs()
             arrayListOf()
+        }
+    }
+
+    fun renameTrace(packageName: String, trace: String, newTrace: String): Boolean {
+        val traceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
+        val newTraceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$newTrace")
+        if (!traceDir.exists()) {
+            Log.e("FILE", "Directory to rename does not exist: ${traceDir.path}")
+            return false
+        }
+        return if (traceDir.renameTo(newTraceDir)) {
+            true
+        } else {
+            Log.e("FILE", "cannot rename directory $trace to $newTrace")
+            false
         }
     }
 
