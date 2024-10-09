@@ -18,10 +18,8 @@ import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.LocalStorageOps.deleteApp
 import edu.illinois.odim.LocalStorageOps.listPackages
 
-
 // this should be static
 private var recyclerAdapter : MainAdapter? = null
-
 
 fun notifyPackageAdapter() {
     recyclerAdapter?.notifyDataSetChanged()
@@ -70,11 +68,11 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .setView(workerForm)
             .setPositiveButton("DONE") { _, _ ->
-                workerId = workerIdInput?.text.toString()
+                workerId = workerIdInput.text.toString()
             }
         val alertDialog = builder.show()
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-        workerIdInput?.addTextChangedListener(object : TextWatcher {
+        workerIdInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(str: Editable?) {

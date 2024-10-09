@@ -7,6 +7,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
@@ -371,8 +374,15 @@ class EventActivity : AppCompatActivity() {
                 mode.finish()
                 dialog.dismiss()
             }
-        val deleteAlertDialog = builder.create()
-        deleteAlertDialog.show()
+        val deleteAlertDialog = builder.show()
+        deleteAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+        splitTraceInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun afterTextChanged(str: Editable?) {
+                deleteAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
+            }
+        })
         return result
     }
 

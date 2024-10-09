@@ -62,7 +62,7 @@ class MyAccessibilityService : AccessibilityService() {
         lateinit var appContext: Context
         fun isAppContextInitialized(): Boolean { return ::appContext.isInitialized }
         lateinit var APP_LAUNCHER_PACKAGE: String
-        private const val TIME_DIFF = 150
+        private const val TIME_DIFF = 100
         const val SYSTEMUI_PACKAGE = "com.android.systemui"
         private const val ODIM_PACKAGE = "edu.illinois.odim"
         private const val SETTINGS_PACKAGE = "com.android.settings"
