@@ -84,7 +84,7 @@ class ScreenShotActivity : AppCompatActivity() {
     private fun setUpVHTextRedactFloatingActionButton() {
         val vhItemFAB: MovableFloatingActionButton = findViewById(R.id.vh_list_redact_fab)
         vhItemFAB.setOnClickListener {
-            val vhListView = View.inflate(this, R.layout.vh_item_dialog_list, null)
+            val vhListView = View.inflate(this, R.layout.dialog_vh_list, null)
             val vhRecyclerView: RecyclerView = vhListView.findViewById(R.id.vhItemList)
             vhRecyclerView.layoutManager = LinearLayoutManager(this)
             val vhTextList: ArrayList<VHItem> = arrayListOf()

@@ -54,4 +54,6 @@
     <string name="vh_dialog_title">View Hierarchy Items</string>
     <string name="vh_item_text_label">Text: </string>
     <string name="vh_item_content_desc_label">Content Desc: </string>
+    <string name="app_icon_content_desc">App icon of recorded app.</string>
+    <string name="chevron_icon_content_desc">Pointer to indicate navigate to next screen.</string>
 </resources>

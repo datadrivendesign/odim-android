@@ -19,10 +19,10 @@ import edu.illinois.odim.LocalStorageOps.deleteApp
 import edu.illinois.odim.LocalStorageOps.listPackages
 
 // this should be static
-private var recyclerAdapter : MainAdapter? = null
+private var mainAdapter : MainAdapter? = null
 
 fun notifyPackageAdapter() {
-    recyclerAdapter?.notifyDataSetChanged()
+    mainAdapter?.notifyDataSetChanged()
 }
 
 class MainActivity : AppCompatActivity() {
@@ -39,18 +39,18 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.package_recycler_view)
         recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         appPackageList = listPackages()
-        recyclerAdapter = MainAdapter(this, appPackageList) // getPackages())
-        recyclerView?.adapter = recyclerAdapter
+        mainAdapter = MainAdapter(this, appPackageList) // getPackages())
+        recyclerView?.adapter = mainAdapter
         // set up recycler view listeners
         val decoratorVertical = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         decoratorVertical.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider)!!)
         recyclerView?.addItemDecoration(decoratorVertical)
-        recyclerAdapter!!.setOnItemLongClickListener(object: MainAdapter.OnItemLongClickListener {
+        mainAdapter!!.setOnItemLongClickListener(object: MainAdapter.OnItemLongClickListener {
             override fun onItemLongClick(appPackage: String): Boolean {
                 return createDeleteAppAlertDialog(appPackage)
             }
         })
-        recyclerAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
+        mainAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
             override fun onItemClick(appPackage: String) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
                 intent.putExtra("package_name", appPackage)
@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createWorkerInputForm() {
         // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
-        val workerForm = View.inflate(this, R.layout.worker_input_dialog, null)
+        val workerForm = View.inflate(this, R.layout.dialog_worker_input, null)
         val workerIdInput: EditText = workerForm.findViewById(R.id.dialog_worker_id_input)
         workerIdInput.setText(workerId)
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
@@ -71,7 +71,8 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("DONE") { _, _ ->
                 workerId = workerIdInput.text.toString()
             }
-        val alertDialog = builder.show()
+        val alertDialog = builder.create()
+        alertDialog.show()
         workerIdInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
@@ -91,9 +92,7 @@ class MainActivity : AppCompatActivity() {
                 result = deleteApp(appPackage)
                 // notify recycler view deletion happened
                 val newPackages = ArrayList(appPackageList)
-                val ind = appPackageList.indexOfFirst {
-                        app -> app == appPackage
-                }
+                val ind = appPackageList.indexOfFirst { app -> app == appPackage }
                 if (ind < 0) {  // should theoretically never happen
                     Log.e("APP", "could not find trace to delete")
                     dialog.dismiss()
@@ -102,9 +101,9 @@ class MainActivity : AppCompatActivity() {
                 newPackages.removeAt(ind)
                 appPackageList.clear()
                 appPackageList.addAll(newPackages)
-                recyclerAdapter!!.notifyItemRemoved(ind)
+                mainAdapter!!.notifyItemRemoved(ind)
                 val itemChangeCount = newPackages.size - ind
-                recyclerAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
+                mainAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
             }
             .setNegativeButton("No") { dialog, _ ->
                 dialog.dismiss()

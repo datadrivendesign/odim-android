@@ -71,7 +71,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                     if (redactRect.contains(convertedX, convertedY)) {
                         selectOwnRedact = true
                         // start creating the label form
-                        val inputForm = inflate(context, R.layout.layout_redaction_label, null)
+                        val inputForm = inflate(context, R.layout.dialog_label_redaction, null)
                         val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
                         redactInputLabel.setText(redaction.label)
                         // create the popup
@@ -81,7 +81,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                 if (!selectOwnRedact) {  // check if touched a VH to redact
                     val rectMatch = getMatchingVHFromTap(convertedX, convertedY)
                     // start creating the label form
-                    val inputForm = inflate(context, R.layout.layout_redaction_label, null)
+                    val inputForm = inflate(context, R.layout.dialog_label_redaction, null)
                     val redactInputLabel = inputForm.findViewById<EditText>(R.id.redact_label_input)
                     val redactCheckbox = inputForm.findViewById<CheckBox>(R.id.redact_label_checkbox)
                     val redactKeywordInput = inputForm.findViewById<EditText>(R.id.redact_label_keyword_input)

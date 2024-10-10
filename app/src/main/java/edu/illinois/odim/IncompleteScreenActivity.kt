@@ -104,7 +104,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
         saveScreenButton = findViewById(R.id.save_gesture_fab)
         incompleteOverlayView.setIncompleteScreenSaveButton(saveScreenButton)
         saveScreenButton.setOnClickListener { _ ->
-            val confirmGestureView = View.inflate(this, R.layout.confirm_gesture_dialog, null)
+            val confirmGestureView = View.inflate(this, R.layout.dialog_confirm_gesture, null)
             var updateGesture: Triple<Float, Float, Boolean> = Triple(0F, 0F, false)
             if (chosenEventLabel!!.contains(getString(R.string.type_unknown)) || isEditGesture) {
                 updateGesture = setUpDefineGestureTypeRadioGroup(confirmGestureView)

@@ -9,7 +9,7 @@
 
     <include
         android:id="@+id/main_app_header"
-        layout="@layout/odim_app_bar"
+        layout="@layout/app_bar_odim"
         android:layout_height="wrap_content"
         android:layout_width="match_parent" />
 
@@ -36,5 +36,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_bias="0" />
+        app:layout_constraintVertical_bias="0"
+        tools:listitem="@layout/recycler_row_main"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

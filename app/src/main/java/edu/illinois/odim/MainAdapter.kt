@@ -54,7 +54,7 @@ class MainAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainViewHolder {
-        val itemView = inflater.inflate(R.layout.main_recycler_row, parent, false)
+        val itemView = inflater.inflate(R.layout.recycler_row_main, parent, false)
         return MainViewHolder(itemView, itemClickListener, itemLongClickListener)
     }
 

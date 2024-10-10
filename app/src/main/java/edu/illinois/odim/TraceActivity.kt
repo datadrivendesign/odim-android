@@ -132,19 +132,14 @@ class TraceActivity : AppCompatActivity(){
         traceList[position].isSelected = !traceList[position].isSelected
         recyclerAdapter!!.notifyItemChanged(position)
         // edit menu title
-        var total = 0
-        for (trace in traceList) {
-            if (trace.isSelected) {
-                total += 1
-            }
-        }
+        val total = traceList.count { it.isSelected }
         actionMode?.menu?.findItem(R.id.menu_rename_trace)?.setVisible(total == 1)
         actionMode?.title = "Total: $total"
     }
 
     private fun createRenameTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
-        val newTraceForm = View.inflate(this, R.layout.new_trace_dialog, null)
+        val newTraceForm = View.inflate(this, R.layout.dialog_new_trace, null)
         val newTraceTitle: TextView = newTraceForm.findViewById(R.id.new_trace_label)
         newTraceTitle.text = getString(R.string.split_trace_label)
         val newTraceInput: EditText = newTraceForm.findViewById(R.id.new_trace_input)
@@ -166,7 +161,8 @@ class TraceActivity : AppCompatActivity(){
                 mode.finish()
                 dialog.dismiss()
             }
-        val deleteAlertDialog = builder.show()
+        val deleteAlertDialog = builder.create()
+        deleteAlertDialog.show()
         val positiveButton = deleteAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
         val oldTraceName = traceList.first { it.isSelected }.traceLabel
         positiveButton.isEnabled = !((positiveButton.text).contentEquals(oldTraceName))

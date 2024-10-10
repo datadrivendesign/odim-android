@@ -11,7 +11,7 @@
 
     <include
         android:id="@+id/event_app_header"
-        layout="@layout/odim_app_bar"
+        layout="@layout/app_bar_odim"
         android:layout_height="wrap_content"
         android:layout_width="match_parent" />
 
@@ -20,11 +20,15 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="10dp"
+        android:layout_gravity="center"
         app:layout_constraintTop_toBottomOf="@+id/event_app_header"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintVertical_bias="0"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="2"
+        tools:listitem="@layout/recycler_row_event"
     />
 
     <com.google.android.material.button.MaterialButton

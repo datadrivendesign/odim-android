@@ -7,7 +7,7 @@
 
     <include
         android:id="@+id/trace_app_header"
-        layout="@layout/odim_app_bar"
+        layout="@layout/app_bar_odim"
         android:layout_height="wrap_content"
         android:layout_width="match_parent" />
 

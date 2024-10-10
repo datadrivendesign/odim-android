@@ -14,7 +14,7 @@ class TraceAdapter(
     context: Context,
     private val packageName: String,
     private var itemList: MutableList<TraceItem>
-) : RecyclerView.Adapter<TraceAdapter.TraceViewHolder>() {
+): RecyclerView.Adapter<TraceAdapter.TraceViewHolder>() {
     private var inflater : LayoutInflater = LayoutInflater.from(context)
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
@@ -41,7 +41,7 @@ class TraceAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TraceViewHolder {
-        val itemView = inflater.inflate(R.layout.trace_view_row, parent, false)
+        val itemView = inflater.inflate(R.layout.recycler_row_trace, parent, false)
         return TraceViewHolder(itemView)
     }
 

@@ -106,13 +106,7 @@ class EventActivity : AppCompatActivity() {
     private fun toggleSelection(position: Int) {
         screenPreviews[position].isSelected = !screenPreviews[position].isSelected
         recyclerAdapter!!.notifyItemChanged(position)
-        // edit menu title
-        var total = 0
-        for (screen in screenPreviews) {
-            if (screen.isSelected) {
-                total += 1
-            }
-        }
+        val total = screenPreviews.count { it.isSelected }
         var setEditGestureVisible = false
         if (total == 1 && screenPreviews.first{it.isSelected}.isComplete) {
          setEditGestureVisible = true
@@ -371,7 +365,7 @@ class EventActivity : AppCompatActivity() {
 
     private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
-        val splitTraceForm = View.inflate(this, R.layout.new_trace_dialog, null)
+        val splitTraceForm = View.inflate(this, R.layout.dialog_new_trace, null)
         val splitTraceTitle: TextView = splitTraceForm.findViewById(R.id.new_trace_label)
         splitTraceTitle.text = getString(R.string.split_trace_label)
         val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.new_trace_input)
@@ -392,7 +386,8 @@ class EventActivity : AppCompatActivity() {
                 mode.finish()
                 dialog.dismiss()
             }
-        val splitAlertDialog = builder.show()
+        val splitAlertDialog = builder.create()
+        splitAlertDialog.show()
         val positiveButton = splitAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
         positiveButton.isEnabled = !((splitTraceInput.text).contentEquals(chosenTraceLabel))
         splitTraceInput.addTextChangedListener(object : TextWatcher {
@@ -442,7 +437,7 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun createUploadTraceAlertDialog(uploadButtonView: View) {
-        val traceDescInput = View.inflate(this, R.layout.upload_trace_dialog, null)
+        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
         val uploadDialog = AlertDialog.Builder(this)
             .setTitle("Upload Trace")
             .setView(traceDescInput)
