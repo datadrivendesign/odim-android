@@ -31,7 +31,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
     private lateinit var saveScreenButton: MovableFloatingActionButton
     private var screenBitmap: Bitmap? = null
     private val mapper = ObjectMapper()
-
+    private var isEditGesture: Boolean = false
     private enum class CandidateId {
         CLASS,
         VIEW,
@@ -47,12 +47,17 @@ class IncompleteScreenActivity: AppCompatActivity() {
         chosenPackageName = intent.extras!!.getString("package_name")
         chosenTraceLabel = intent.extras!!.getString("trace_label")
         chosenEventLabel = intent.extras!!.getString("event_label")
+        isEditGesture = intent.extras!!.getBoolean("edit_gesture")
         // load screen
         screenBitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val incompleteVH = loadVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         val vhRootJson = mapper.readTree(incompleteVH.trim())
         val incompleteGesture: Gesture? = try {
-            loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+            if (isEditGesture) {
+                null
+            } else {
+                loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+            }
         } catch (e: FileNotFoundException) {
             null
         }
@@ -100,34 +105,35 @@ class IncompleteScreenActivity: AppCompatActivity() {
         incompleteOverlayView.setIncompleteScreenSaveButton(saveScreenButton)
         saveScreenButton.setOnClickListener { _ ->
             val confirmGestureView = View.inflate(this, R.layout.confirm_gesture_dialog, null)
-            val scrollDx: Float
-            val scrollDy: Float
-            var updateScrolls: Pair<Float, Float> = Pair(0F, 0F)
-            if (chosenEventLabel!!.contains(getString(R.string.type_unknown))) {
-                updateScrolls = setUpDefineGestureTypeRadioGroup(confirmGestureView)
+            var updateGesture: Triple<Float, Float, Boolean> = Triple(0F, 0F, false)
+            if (chosenEventLabel!!.contains(getString(R.string.type_unknown)) || isEditGesture) {
+                updateGesture = setUpDefineGestureTypeRadioGroup(confirmGestureView)
             } else if (chosenEventLabel!!.contains(getString(R.string.type_view_scroll))) {
-                updateScrolls = setUpScrollGestureRadioGroup(confirmGestureView)
+                updateGesture = setUpScrollGestureRadioGroup(confirmGestureView)
+            } else if (chosenEventLabel!!.contains(getString(R.string.type_view_long_click))) {
+                updateGesture = Triple(0F, 0F, true)  // set long click flag true
             }
-            // create alert dialog
-            scrollDx = updateScrolls.first
-            scrollDy = updateScrolls.second
-            createSaveUserGestureAlertDialog(confirmGestureView, incompleteImageView, incompleteOverlayView, scrollDx, scrollDy)
+            createSaveUserGestureAlertDialog(confirmGestureView, incompleteImageView, incompleteOverlayView, updateGesture)
         }
     }
 
-    private fun setUpDefineGestureTypeRadioGroup(confirmGestureView: View): Pair<Float, Float> {
+    private fun setUpDefineGestureTypeRadioGroup(confirmGestureView: View): Triple<Float, Float, Boolean> {
         var scrollDx = 0F
         var scrollDy = 0F
+        var isLongClick = false
         // make define gesture radio group visible if type is unknown
         val defineRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.define_gesture_type_group)
         defineRadioGroup.visibility = View.VISIBLE
         defineRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             when(checkedId) {
-                R.id.define_click_type -> {
+                R.id.define_click_type, R.id.define_long_click_type -> {
                     val scrollRadioGroup: RadioGroup = confirmGestureView.findViewById(R.id.scroll_radio_group)
                     scrollRadioGroup.visibility = View.GONE
                     scrollDx = 0F
                     scrollDy = 0F
+                    if (checkedId == R.id.define_long_click_type) {
+                        isLongClick = true
+                    }
                 }
                 R.id.define_scroll_type -> {
                     val (dX, dY) = setUpScrollGestureRadioGroup(confirmGestureView)
@@ -136,10 +142,10 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 }
             }
         }
-        return Pair(scrollDx, scrollDy)
+        return Triple(scrollDx, scrollDy, isLongClick)
     }
     
-    private fun setUpScrollGestureRadioGroup(confirmGestureView: View): Pair<Float, Float> {
+    private fun setUpScrollGestureRadioGroup(confirmGestureView: View): Triple<Float, Float, Boolean> {
         var scrollDx = 0F
         var scrollDy = 0F
         // show scroll radio group option if event is a scroll
@@ -157,15 +163,21 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 }
             }
         }
-        return Pair(scrollDx, scrollDy)
+        return Triple(scrollDx, scrollDy, false)
+    }
+
+    private fun renameEventFromNewGesture(newEventName: String): Boolean {
+        return renameGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newEventName) &&
+        renameScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newEventName) &&
+        renameVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newEventName) &&
+        renameEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newEventName)
     }
     
     private fun createSaveUserGestureAlertDialog(
         confirmGestureView: View,
         incompleteImageView: ImageView,
         incompleteOverlayView: IncompleteScreenCanvasOverlay,
-        scrollDx: Float,
-        scrollDy: Float
+        updateGesture: Triple<Float, Float, Boolean>
     ) {
         val builder = AlertDialog.Builder(this)
             .setTitle("Confirm Gesture")
@@ -175,6 +187,9 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 val screenWidth = incompleteImageView.drawable.intrinsicWidth
                 val screenHeight = incompleteImageView.drawable.intrinsicHeight
                 val vhCandidateRect = incompleteOverlayView.currVHCandidate!!.rect
+                val scrollDx = updateGesture.first
+                val scrollDy = updateGesture.second
+                val isLongClick = updateGesture.third
                 val newGesture = Gesture(
                     vhCandidateRect.exactCenterX() / screenWidth,
                     vhCandidateRect.exactCenterY() / screenHeight,
@@ -185,17 +200,24 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 newGesture.verified = true
                 saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
                 var eventNameDest: String = chosenEventLabel!!
-                if (chosenEventLabel!!.contains(getString(R.string.type_unknown))) {
+                if (chosenEventLabel!!.contains(getString(R.string.type_unknown)) || isEditGesture) {
+                    // get gesture to replace
+                    var replaceGesture = R.string.type_view_scroll
+                    if (scrollDx == 0F && scrollDy == 0F) {
+                        replaceGesture = if (isLongClick) {
+                            R.string.type_view_long_click
+                        } else {
+                            R.string.type_view_click
+                        }
+                    }
                     // replace the gesture name from unknown to click or scroll
+                    val oldEventType = chosenEventLabel!!.substringAfter(";").trim()
                     eventNameDest = chosenEventLabel!!.replace(
-                        getString(R.string.type_unknown),
-                        getString(if (scrollDx == 0F && scrollDy == 0F) R.string.type_view_click else R.string.type_view_scroll),
-                        false
+                        oldEventType,
+                        getString(replaceGesture),
+                        ignoreCase=false
                     )
-                    renameGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
-                    renameScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
-                    renameVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
-                    renameEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, eventNameDest)
+                    renameEventFromNewGesture(eventNameDest)
                 }
                 // transfer directly to ScreenShotActivity
                 val intent = Intent(

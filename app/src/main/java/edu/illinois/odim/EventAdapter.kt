@@ -33,7 +33,7 @@ class EventAdapter(
     }
 
     interface OnItemClickListener {
-        fun onItemClick(cardView: CardCellBinding): Boolean
+        fun onItemClick(position: Int): Boolean
     }
 
     fun setOnItemClickListener(listener : OnItemClickListener) {
@@ -62,7 +62,7 @@ class EventAdapter(
             itemLongClickListener.onItemLongClick(position)
         }
         holder.itemView.setOnClickListener {
-            itemClickListener.onItemClick(holder.cardBinding)
+            itemClickListener.onItemClick(position)
         }
     }
 

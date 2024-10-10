@@ -20,6 +20,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -39,7 +40,6 @@ import edu.illinois.odim.LocalStorageOps.splitTraceRedactions
 import edu.illinois.odim.LocalStorageOps.splitTraceScreenshot
 import edu.illinois.odim.LocalStorageOps.splitTraceVH
 import edu.illinois.odim.UploadDataOps.uploadFullTraceContent
-import edu.illinois.odim.databinding.CardCellBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -84,12 +84,12 @@ class EventActivity : AppCompatActivity() {
             }
         })
         recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
-            override fun onItemClick(cardView: CardCellBinding): Boolean {
+            override fun onItemClick(position: Int): Boolean {
                 if (actionMode != null) {
-                    val position = cardView.index.text.toString().toInt()
                     toggleSelection(position)
                 } else {
-                    navigateToNextActivity(cardView)
+                    val isGestureIncomplete = !screenPreviews[position].isComplete
+                    navigateToNextActivity(screenPreviews[position], isGestureIncomplete, isEditGesture=false)
                 }
                 return true
             }
@@ -113,6 +113,11 @@ class EventActivity : AppCompatActivity() {
                 total += 1
             }
         }
+        var setEditGestureVisible = false
+        if (total == 1 && screenPreviews.first{it.isSelected}.isComplete) {
+         setEditGestureVisible = true
+        }
+        actionMode?.menu?.findItem(R.id.menu_edit_gesture)?.setVisible(setEditGestureVisible)
         actionMode?.title = "Total: $total"
     }
 
@@ -122,6 +127,7 @@ class EventActivity : AppCompatActivity() {
             // Inflate a menu resource providing context menu items.
             val inflater: MenuInflater = mode.menuInflater
             inflater.inflate(R.menu.multi_select_event_menu, menu)
+            findViewById<CoordinatorLayout>(R.id.event_app_header).visibility = View.GONE
             return true
         }
 
@@ -135,6 +141,12 @@ class EventActivity : AppCompatActivity() {
         /** Called when the user selects a contextual menu item. */
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
             return when (item.itemId) {
+                R.id.menu_edit_gesture -> {
+                    val screen = screenPreviews.first { it.isSelected }
+                    navigateToNextActivity(screen, isCreateGesture=false, isEditGesture=true)
+                    mode.finish()
+                    true
+                }
                 R.id.menu_split_trace -> {
                     createSplitTraceAlertDialog(mode)
                     true
@@ -153,6 +165,7 @@ class EventActivity : AppCompatActivity() {
                 screen.isSelected = false
             }
             notifyEventAdapter()
+            findViewById<CoordinatorLayout>(R.id.event_app_header).visibility = View.VISIBLE
             actionMode = null
         }
     }
@@ -294,18 +307,13 @@ class EventActivity : AppCompatActivity() {
         }
         // set up canvas and paint
         val canvas = Canvas(bitmap)
-        val clickPaint = Paint().apply {
-            color = Color.rgb(255, 165, 0)
-            alpha = 100
-        }
-        val scrollPaint = Paint().apply {
-            color = Color.rgb(165, 0, 255)
-            alpha = 100
-        }
         // start drawing gestures
         val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
-
-        if (eventType == "TYPE_VIEW_SCROLLED") {
+        if (eventType == getString(R.string.type_view_scroll)) {
+            val scrollPaint = Paint().apply {
+                color = Color.rgb(165, 0, 255)
+                alpha = 100
+            }
             val scrollGestureOffsetSize = 40
             canvas.drawOval(
                 (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),
@@ -315,12 +323,20 @@ class EventActivity : AppCompatActivity() {
                 scrollPaint
             )
         } else {
+            val clickPaint = Paint().apply {
+                color = Color.rgb(0, 165, 255)
+                alpha = 100
+            }
+            val longClickPaint = Paint().apply {
+                color = Color.rgb(255, 165, 0)
+                alpha = 100
+            }
             val radiusFactor = 0.25
             canvas.drawCircle(
                 rect.centerX().toFloat(),
                 rect.centerY().toFloat(),
                 (((rect.height() + rect.width()) * radiusFactor).toFloat()),
-                clickPaint
+                if (eventType == getString(R.string.type_view_click)) clickPaint else longClickPaint
             )
         }
     }
@@ -459,20 +475,18 @@ class EventActivity : AppCompatActivity() {
         uploadDialog.show()
     }
 
-    private fun navigateToNextActivity(cardView: CardCellBinding) {
-        val nextClass = if (cardView.incompleteIndicator.visibility != View.VISIBLE) {
+    private fun navigateToNextActivity(screen: ScreenShotPreview, isCreateGesture: Boolean, isEditGesture: Boolean) {
+        val nextClass = if (!isCreateGesture && !isEditGesture) {
             ScreenShotActivity::class.java
         } else {
             IncompleteScreenActivity::class.java
         }
-        val intent = Intent(
-            applicationContext,
-            nextClass
-        )
+        val intent = Intent(applicationContext, nextClass)
         intent.putExtra("package_name", chosenPackageName)
         intent.putExtra("trace_label", chosenTraceLabel)
-        val chosenEventLabel = "${cardView.time.text}; ${cardView.event.text}"
+        val chosenEventLabel = "${screen.timestamp}; ${screen.event}"
         intent.putExtra("event_label", chosenEventLabel)
+        intent.putExtra("edit_gesture", isEditGesture)
         startActivity(intent)
     }
 }

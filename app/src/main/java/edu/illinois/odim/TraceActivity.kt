@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -64,7 +65,6 @@ class TraceActivity : AppCompatActivity(){
                 }
                 toggleSelection(position)
                 return true
-//                return createDeleteTraceAlertDialog(traceLabel)
             }
         })
         recyclerAdapter!!.setOnItemClickListener(object : TraceAdapter.OnItemClickListener {
@@ -91,6 +91,7 @@ class TraceActivity : AppCompatActivity(){
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             val inflater: MenuInflater = mode.menuInflater
             inflater.inflate(R.menu.multi_select_trace_menu, menu)
+            findViewById<CoordinatorLayout>(R.id.trace_app_header).visibility = View.GONE
             return true
         }
 
@@ -122,6 +123,7 @@ class TraceActivity : AppCompatActivity(){
                 trace.isSelected = false
             }
             notifyTraceAdapter()
+            findViewById<CoordinatorLayout>(R.id.trace_app_header).visibility = View.VISIBLE
             actionMode = null
         }
     }
