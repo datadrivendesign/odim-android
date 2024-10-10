@@ -51,4 +51,7 @@
     <string name="split_trace_icon_title">Split to New Trace</string>
     <string name="split_trace_edittext_hint">Add a name for the trace</string>
     <string name="split_trace_autofill_hint">New Trace Name</string>
+    <string name="vh_dialog_title">View Hierarchy Items</string>
+    <string name="vh_item_text_label">Text: </string>
+    <string name="vh_item_content_desc_label">Content Desc: </string>
 </resources>

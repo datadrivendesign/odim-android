@@ -7,9 +7,13 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
+import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.ImageView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -69,10 +73,60 @@ class ScreenShotActivity : AppCompatActivity() {
         extractVHBoxes(screenVHRoot, vhBoxes)
         scrubbingOverlayView.setVHRects(vhBoxes)
         canvas = Canvas(canvasBitmap)
+        // VH Item listener
+        setUpVHTextRedactFloatingActionButton()
         // Save Listener
         setUpSaveRedactFloatingActionButton()
         // Delete Listener
         setUpDeleteRedactFloatingActionButton()
+    }
+
+    private fun setUpVHTextRedactFloatingActionButton() {
+        val vhItemFAB: MovableFloatingActionButton = findViewById(R.id.vh_list_redact_fab)
+        vhItemFAB.setOnClickListener {
+            val vhListView = View.inflate(this, R.layout.vh_item_dialog_list, null)
+            val vhRecyclerView: RecyclerView = vhListView.findViewById(R.id.vhItemList)
+            vhRecyclerView.layoutManager = LinearLayoutManager(this)
+            val vhTextList: ArrayList<VHItem> = arrayListOf()
+            extractVHText(screenVHRoot, vhTextList)
+            val vhAdapter = VHAdapter(vhTextList)
+            vhAdapter.setOnItemClickListener(object: VHAdapter.OnItemClickListener {
+                override fun onItemClick(position: Int, vhItem: VHItem): Boolean {
+                    val redactDialog = AlertDialog.Builder(this@ScreenShotActivity)
+                        .setMessage("Are you sure you want to redact the text? This will " +
+                                "only redact metadata, not the visual screen.\n" +
+                            "text: ${vhItem.text}\n" +
+                            "content description: ${vhItem.contentDesc}")
+                        .setPositiveButton("Redact") { _, _  ->
+                            redactVHMetadataByText(screenVHRoot, vhItem)
+                            saveVH(  // update VH metadata only
+                                chosenPackageName!!,
+                                chosenTraceLabel!!,
+                                chosenEventLabel!!,
+                                mapper.writeValueAsString(screenVHRoot)
+                            )
+                            vhTextList.removeAt(position)
+                            vhAdapter.notifyItemRemoved(position)
+                            val itemChangeCount = vhTextList.size - position
+                            vhAdapter.notifyItemRangeChanged(position, itemChangeCount)
+                        }
+                        .setNegativeButton("Close") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        .create()
+                    redactDialog.show()
+                    return true
+                }
+            })
+            vhRecyclerView.adapter = vhAdapter
+            val vhTextListDialog = AlertDialog.Builder(this)
+                .setView(vhListView)
+                .setNeutralButton("Close") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .create()
+            vhTextListDialog.show()
+        }
     }
 
     private fun setUpSaveRedactFloatingActionButton() {
@@ -86,7 +140,7 @@ class ScreenShotActivity : AppCompatActivity() {
             for (drawnRedaction: Redaction in scrubbingOverlayView.currentRedacts) {
                 // traverse each rectangle
                 val redactRect = scrubbingOverlayView.convertRedactToRect(drawnRedaction)
-                traverse(screenVHRoot, redactRect)
+                redactVHElemByRect(screenVHRoot, redactRect)
                 saveVH(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, mapper.writeValueAsString(screenVHRoot))
                 saveRedaction(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, drawnRedaction)
             }
@@ -171,22 +225,39 @@ class ScreenShotActivity : AppCompatActivity() {
         }
     }
 
-    private fun traverse(root: JsonNode?, newRect: Rect): Triple<Boolean, Boolean, JsonNode?> {
+    private fun extractVHText(root: JsonNode, vhTextList: ArrayList<VHItem>) {
+        val textField = if (root.has("text_field")) root.get("text_field").asText() else ""
+        val contentDesc = if (root.has("content-desc")) root.get("content-desc").asText() else ""
+        // do not add elements where both text and contentDesc are empty or redacted
+        if ((textField.isNotEmpty() && textField != "text redacted.") ||
+            (contentDesc != "none" && contentDesc.isNotEmpty() && contentDesc != "description redacted.")) {
+            vhTextList.add(VHItem(textField, contentDesc))
+        }
         // Base Case
-        if (nodeIsMatch(root, newRect)) {
-            // matching child is found to the rectangle
-            return Triple(true, false, root)  // return pair of isFound flag, isContentRemoved flag, currentVHTreeRoot in recursive case
+        val children = root.get("children") ?: return
+        val childrenArr = children as ArrayNode
+        if (childrenArr.isEmpty) {
+            return
+        }
+        // Recursive Case
+        for (i in 0 until childrenArr.size()) {
+            val child = childrenArr[i]
+            extractVHText(child, vhTextList)
+        }
+    }
+
+    private fun redactVHMetadataByText(root: JsonNode?, vhItem: VHItem): Triple<Boolean, Boolean, JsonNode?> {
+        // Base Case
+        if (nodeIsMatchText(root, vhItem)) {
+            // return pair of isFound flag, isContentRemoved flag, currentVHTreeRoot in recursive case
+            return Triple(true, false, root)
         }
         // Recursive Case
         val children = root?.get("children") ?: return Triple(false, false, null)
         val childrenArr = children as ArrayNode
         for (i in 0 until childrenArr.size()) {
             val child = childrenArr[i] as ObjectNode
-            // skip children already redacted
-            if (child.has("content-desc") && child["content-desc"].asText() == "description redacted.") {
-                continue
-            }
-            val isMatch = traverse(child, newRect)
+            val isMatch = redactVHMetadataByText(child, vhItem)
             if (isMatch.first && !isMatch.second) {
                 if (child.has("text_field")) {
                     child.remove("text_field")
@@ -194,11 +265,9 @@ class ScreenShotActivity : AppCompatActivity() {
                 }
                 child.remove("content-desc")
                 child.put("content-desc", "description redacted.")
-                canvas.drawRect(newRect, confirmPaint)
-                scrubbingImageView.invalidate()
                 return Triple(true, true, root)
             } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
-                childrenArr[i] = isMatch.third!!
+                childrenArr[i] = isMatch.third!!  // update parent with updated child
                 return Triple(true, true, root)
             }
         }
@@ -206,7 +275,57 @@ class ScreenShotActivity : AppCompatActivity() {
         return Triple(false, false, null)
     }
 
-    private fun nodeIsMatch(node: JsonNode?, newRect: Rect): Boolean {
+    private fun nodeIsMatchText(node: JsonNode?, vhItem: VHItem): Boolean {
+        if (node == null) {
+            return false
+        }
+        var isMatch = false
+        if (node.has("text_field")) {
+            isMatch = (node.get("text_field").asText() == vhItem.text)
+            if (!isMatch) {
+                return false
+            }
+        }
+        if (node.has("content-desc")) {
+            isMatch = (node.get("content-desc").asText() == vhItem.contentDesc)
+        }
+        return isMatch
+    }
+
+    private fun redactVHElemByRect(root: JsonNode?, newRect: Rect): Triple<Boolean, Boolean, JsonNode?> {
+        // Base Case
+        if (nodeIsMatchRect(root, newRect)) {
+            // return pair of isFound flag, isContentRemoved flag, currentVHTreeRoot in recursive case
+            return Triple(true, false, root)
+        }
+        // Recursive Case
+        val children = root?.get("children") ?: return Triple(false, false, null)
+        val childrenArr = children as ArrayNode
+        for (i in 0 until childrenArr.size()) {
+            val child = childrenArr[i] as ObjectNode
+            val isMatch = redactVHElemByRect(child, newRect)
+            if (isMatch.first && !isMatch.second) {
+                if (child.has("text_field") && child["text_field"].asText() != "text redacted.") {
+                    child.remove("text_field")
+                    child.put("text_field", "text redacted.")
+                }
+                if (child["content-desc"].asText() != "description redacted.") {
+                    child.remove("content-desc")
+                    child.put("content-desc", "description redacted.")
+                }
+                canvas.drawRect(newRect, confirmPaint)
+                scrubbingImageView.invalidate()
+                return Triple(true, true, root)
+            } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
+                childrenArr[i] = isMatch.third!!  // need to update child state since we made changes to properties
+                return Triple(true, true, root)
+            }
+        }
+        // something went wrong?
+        return Triple(false, false, null)
+    }
+
+    private fun nodeIsMatchRect(node: JsonNode?, newRect: Rect): Boolean {
         val nodeRect = Rect.unflattenFromString(node?.get("bounds_in_screen")?.asText())
         return nodeRect == newRect
     }
