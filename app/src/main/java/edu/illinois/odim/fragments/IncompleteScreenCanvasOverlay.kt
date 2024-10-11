@@ -9,6 +9,9 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import edu.illinois.odim.dataclasses.GestureCandidate
+import edu.illinois.odim.utils.ScreenDimensionsOps.convertRectFromScaleScreenToBitmap
+import edu.illinois.odim.utils.ScreenDimensionsOps.convertScaleBitmapXToScreenX
+import edu.illinois.odim.utils.ScreenDimensionsOps.convertScaleBitmapYToScreenY
 import kotlin.math.roundToInt
 
 class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View(context, attrs) {
@@ -38,12 +41,22 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
             return
         }
         for (candidate in candidateElements) {
-            val scaledCandidate = convertRectFromScaleScreenToBitmap(candidate.rect)
+            val scaledCandidate = convertRectFromScaleScreenToBitmap(
+                candidate.rect,
+                imageIntrinsicWidth,
+                imageIntrinsicHeight,
+                imageMeasuredHeight
+            )
             canvas.drawRect(scaledCandidate, tempPaint)
             rectsDrawn = true
         }
         if (newVHCandidate != null) {
-            val scaledCandidate = convertRectFromScaleScreenToBitmap(newVHCandidate!!.rect)
+            val scaledCandidate = convertRectFromScaleScreenToBitmap(
+                newVHCandidate!!.rect,
+                imageIntrinsicWidth,
+                imageIntrinsicHeight,
+                imageMeasuredHeight
+            )
             if (currVHCandidate == null) {
                 canvas.drawRect(scaledCandidate, confirmPaint)
                 currVHCandidate = newVHCandidate
@@ -67,8 +80,13 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         val pointX = event.x.roundToInt()
         val pointY = event.y.roundToInt()
         // convert coordinates to image size scale
-        val convertedX = convertScaleBitmapXToScreenX(pointX)
-        val convertedY = convertScaleBitmapYToScreenY(pointY)
+        val convertedX = convertScaleBitmapXToScreenX(
+            pointX,
+            imageIntrinsicWidth,
+            imageIntrinsicHeight,
+            imageMeasuredHeight
+        )
+        val convertedY = convertScaleBitmapYToScreenY(pointY, imageIntrinsicHeight, imageMeasuredHeight)
         if (convertedX == -1 || convertedY == -1) {
             return false
         }
@@ -95,65 +113,6 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
             }
         }
         return super.onTouchEvent(event)
-    }
-
-    private fun convertRectFromScaleScreenToBitmap(rect: Rect): Rect {
-        return Rect(
-            convertScaleScreenXToBitmapX(rect.left),
-            convertScaleScreenYToBitmapY(rect.top),
-            convertScaleScreenXToBitmapX(rect.right),
-            convertScaleScreenYToBitmapY(rect.bottom)
-        )
-    }
-
-    private fun convertScaleBitmapXToScreenX(bitmapX: Int): Int {
-        val bitmapWidth = imageIntrinsicWidth  // original image width, height
-        val bitmapHeight = imageIntrinsicHeight
-        val canvasImageHeight = imageMeasuredHeight  // canvas height space available
-        val canvasImageWidth = bitmapWidth * (canvasImageHeight.toDouble() / bitmapHeight)
-        val canvasImageWidthOffset = (bitmapWidth - canvasImageWidth) / 2
-        val screenX = (bitmapHeight.toDouble() / canvasImageHeight) * (bitmapX - canvasImageWidthOffset)
-        // out of range of screen, return a -1. This can happen if users touch outside image
-        if (screenX < 0 || screenX > bitmapWidth) {
-            return -1
-        }
-        return screenX.roundToInt()
-    }
-
-    private fun convertScaleScreenXToBitmapX(screenX: Int): Int {
-        val bitmapWidth = imageIntrinsicWidth  // original image width, height
-        val bitmapHeight = imageIntrinsicHeight
-        val canvasImageHeight = imageMeasuredHeight  // canvas height space available
-        val canvasImageWidth = bitmapWidth * (canvasImageHeight.toDouble() / bitmapHeight)
-        val canvasImageWidthOffset = (bitmapWidth - canvasImageWidth) / 2
-        val bitmapX = (screenX * canvasImageHeight.toDouble()) / bitmapHeight + canvasImageWidthOffset
-        // out of range of screen, return a -1. This can happen if users touch outside image
-        if (bitmapX < 0 || bitmapX > bitmapWidth) {
-            return -1
-        }
-        return bitmapX.roundToInt()
-    }
-
-    private fun convertScaleBitmapYToScreenY(bitmapY: Int): Int {
-        val bitmapHeight = imageIntrinsicHeight
-        val canvasImageHeight = this.measuredHeight  // canvas height space available
-        val screenY = (bitmapHeight.toDouble() / canvasImageHeight) * bitmapY
-        // out of range check, just in case int multiplication causes edge cases
-        if (screenY < 0 || screenY > bitmapHeight) {
-            return -1
-        }
-        return screenY.roundToInt()
-    }
-
-    private fun convertScaleScreenYToBitmapY(screenY: Int): Int {
-        val bitmapHeight = imageIntrinsicHeight
-        val canvasImageHeight = this.measuredHeight  // canvas height space available
-        val bitmapY = (canvasImageHeight.toDouble() / bitmapHeight) * screenY
-        // out of range check, just in case int multiplication causes edge cases
-        if (bitmapY < 0 || bitmapY > bitmapHeight) {
-            return -1
-        }
-        return bitmapY.roundToInt()
     }
 
     fun setIntrinsicDimensions(intrinsicWidth: Int, intrinsicHeight: Int, measuredHeight: Int) {
