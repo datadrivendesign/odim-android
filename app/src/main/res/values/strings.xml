@@ -85,4 +85,7 @@
     <string name="dialog_edit_redact_title">Set Label</string>
     <string name="dialog_done">DONE</string>
     <string name="dialog_label_redact_title">Set Redact Label</string>
+    <string name="vh_list_redact_fab_desc">Floating Action Button to redact view hierarchy text metadata</string>
+    <string name="secondary_redact_fab_desc">Floating Action Button that toggles redact draw/erase mode</string>
+    <string name="save_redact_fab_desc">Floating Action button to save visual redactions</string>
 </resources>
