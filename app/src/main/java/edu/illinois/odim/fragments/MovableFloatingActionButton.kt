@@ -8,8 +8,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.abs
 
-class MovableFloatingActionButton : FloatingActionButton,
-    View.OnTouchListener {
+class MovableFloatingActionButton : FloatingActionButton, View.OnTouchListener {
     private var downRawX = 0f
     private var downRawY = 0f
     private var dX = 0f
@@ -35,6 +34,16 @@ class MovableFloatingActionButton : FloatingActionButton,
         setOnTouchListener(this)
     }
 
+    interface OnPositionChangeListener {
+        fun onPositionChanged(newX: Float, newY: Float)
+    }
+
+    private var onPositionChangeListener: OnPositionChangeListener? = null
+
+    fun setOnPositionChangeListener(listener: OnPositionChangeListener) {
+        onPositionChangeListener = listener
+    }
+
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
         val layoutParams = view.layoutParams as MarginLayoutParams
         val action = motionEvent.action
@@ -56,11 +65,9 @@ class MovableFloatingActionButton : FloatingActionButton,
             var newY = motionEvent.rawY + dY
             newY = layoutParams.topMargin.toFloat().coerceAtLeast(newY) // Don't allow the FAB past the top of the parent
             newY = (parentHeight - viewHeight - layoutParams.bottomMargin).toFloat().coerceAtMost(newY) // Don't allow the FAB past the bottom of the parent
-            view.animate()
-                .x(newX)
-                .y(newY)
-                .setDuration(0)
-                .start()
+            view.animate().x(newX).y(newY).setDuration(0).start()
+            // Notify listener of position change
+            onPositionChangeListener?.onPositionChanged(newX, newY)
             true // Consumed
         } else if (action == MotionEvent.ACTION_UP) {
             val upRawX = motionEvent.rawX

@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.ImageView
@@ -19,33 +20,43 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import edu.illinois.odim.R
+import edu.illinois.odim.adapters.VHAdapter
+import edu.illinois.odim.dataclasses.Redaction
+import edu.illinois.odim.dataclasses.VHItem
+import edu.illinois.odim.fragments.MovableFloatingActionButton
+import edu.illinois.odim.fragments.ScrubbingScreenshotOverlay
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.utils.LocalStorageOps.saveRedaction
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
-import edu.illinois.odim.fragments.MovableFloatingActionButton
-import edu.illinois.odim.R
-import edu.illinois.odim.dataclasses.Redaction
-import edu.illinois.odim.adapters.VHAdapter
-import edu.illinois.odim.dataclasses.VHItem
-import edu.illinois.odim.fragments.ScrubbingScreenshotOverlay
 
-class ScreenShotActivity : AppCompatActivity() {
+
+class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPositionChangeListener {
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
     private var chosenEventLabel: String? = null
-    private lateinit var canvas: Canvas
     private val confirmPaint = Paint().apply {
         color = Color.BLACK
         style = Paint.Style.FILL
     }
-    private lateinit var canvasBitmap: Bitmap
-    private var vhBoxes: MutableList<Rect> = arrayListOf()
+    private var isAllFABsVisible = false
     private val mapper = ObjectMapper()
+    private var vhBoxes: MutableList<Rect> = arrayListOf()
+
+    private lateinit var canvasBitmap: Bitmap
     private lateinit var screenVHRoot: JsonNode
     private lateinit var scrubbingImageView: ImageView
     private lateinit var scrubbingOverlayView: ScrubbingScreenshotOverlay
+    private lateinit var canvas: Canvas
+    // FAB UI components
+    private lateinit var primaryRedactFAB: MovableFloatingActionButton
+    private lateinit var secondaryRedactFAB: FloatingActionButton
+    private lateinit var vhItemFAB: FloatingActionButton
+    private lateinit var saveFAB: FloatingActionButton
+    // Define dynamic spacing and offset variables
+    private var offsetFABSpacing: Int = 0 // Spacing between FABs
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,11 +66,9 @@ class ScreenShotActivity : AppCompatActivity() {
         chosenTraceLabel = intent.extras!!.getString("trace_label")
         chosenEventLabel = intent.extras!!.getString("event_label")
         title = getString(R.string.activity_screenshot_title)
-        // populate UI elements
         val screenshot: Bitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
-        canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
-        scrubbingImageView = findViewById(R.id.scrubbing_image)
-        scrubbingImageView.setImageBitmap(canvasBitmap)
+        // populate UI elements
+        setUpUIComponents(screenshot)
         // once imageview is rendered, get image heights and widths for scaling conversion calculations
         scrubbingImageView.viewTreeObserver.addOnGlobalLayoutListener(object: ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
@@ -83,12 +92,50 @@ class ScreenShotActivity : AppCompatActivity() {
         setUpVHTextRedactFloatingActionButton()
         // Save Listener
         setUpSaveRedactFloatingActionButton()
-        // Delete Listener
-        setUpDeleteRedactFloatingActionButton()
+        // Primary Listener
+        setUpPrimaryRedactFloatingActionButton()
+        // Secondary (Toggle) Listener
+        setUpSecondaryRedactFloatingActionButton()
+    }
+
+    private fun setUpUIComponents(screenshot: Bitmap) {
+        canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
+        scrubbingImageView = findViewById(R.id.scrubbing_image)
+        scrubbingImageView.setImageBitmap(canvasBitmap)
+        // FAB set up
+        primaryRedactFAB = findViewById(R.id.primary_redact_fab)
+        vhItemFAB = findViewById(R.id.vh_list_redact_fab)
+        secondaryRedactFAB = findViewById(R.id.secondary_redact_fab)
+        saveFAB = findViewById(R.id.save_redact_fab)
+        primaryRedactFAB.setOnPositionChangeListener(this)
+        offsetFABSpacing = dpToPx(64) // Spacing between FABs
+    }
+
+    override fun onPositionChanged(newX: Float, newY: Float) {
+        // Calculate offsets dynamically based on primary FAB's position
+        val secondaryFabX = newX + offsetFABSpacing
+        val secondaryFabY = newY - offsetFABSpacing
+        val vhItemFabY = newY - offsetFABSpacing
+        val saveFabX = newX + offsetFABSpacing
+        // Update positions of the secondary FABs relative to the primary FAB
+        if (secondaryRedactFAB.visibility == View.VISIBLE) {
+            secondaryRedactFAB.animate().x(secondaryFabX) // Adjust X based on your layout requirements
+                .y(secondaryFabY) // Adjust Y based on your layout requirements
+                .setDuration(0).start()
+        }
+        if (vhItemFAB.visibility == View.VISIBLE) {
+            vhItemFAB.animate().x(newX)
+                .y(vhItemFabY)
+                .setDuration(0).start()
+        }
+        if (saveFAB.visibility == View.VISIBLE) {
+            saveFAB.animate().x(saveFabX)
+                .y(newY)
+                .setDuration(0).start()
+        }
     }
 
     private fun setUpVHTextRedactFloatingActionButton() {
-        val vhItemFAB: MovableFloatingActionButton = findViewById(R.id.vh_list_redact_fab)
         vhItemFAB.setOnClickListener {
             val vhListView = View.inflate(this, R.layout.dialog_vh_list, null)
             val vhRecyclerView: RecyclerView = vhListView.findViewById(R.id.vhItemList)
@@ -132,8 +179,70 @@ class ScreenShotActivity : AppCompatActivity() {
         }
     }
 
+    private fun setUpPrimaryRedactFloatingActionButton() {
+        primaryRedactFAB.setOnClickListener { view ->
+            isAllFABsVisible = !isAllFABsVisible
+            if (isAllFABsVisible) {
+                // set up for FABs to appear relative to moveableFAB
+                val location = IntArray(2)
+                view.getLocationOnScreen(location)  // returns top left corner of view
+                val offset = dpToPx(29)
+                val locationX = location[0].toFloat()// - offset  // offset to bottom, right
+                val locationY = location[1].toFloat() - offset
+                // Calculate offsets dynamically based on primary FAB position
+                val secondaryFabX = locationX + offsetFABSpacing
+                val secondaryFabY = locationY - offsetFABSpacing
+                val vhItemFabY = locationY - offsetFABSpacing
+                val saveFabX = locationX + offsetFABSpacing
+                secondaryRedactFAB.visibility = View.VISIBLE
+                secondaryRedactFAB.animate()
+                    .x(secondaryFabX)
+                    .y(secondaryFabY)
+                    .setDuration(0).start()
+                vhItemFAB.visibility = View.VISIBLE
+                vhItemFAB.animate()
+                    .x(locationX)
+                    .y(vhItemFabY)
+                    .setDuration(0).start()
+                saveFAB.visibility = View.VISIBLE
+                saveFAB.animate()
+                    .x(saveFabX)
+                    .y(locationY)
+                    .setDuration(0).start()
+            } else {
+                secondaryRedactFAB.visibility = View.GONE
+                vhItemFAB.visibility = View.GONE
+                saveFAB.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun setUpSecondaryRedactFloatingActionButton() {
+        secondaryRedactFAB.setOnClickListener { view ->
+            val primaryFAB: MovableFloatingActionButton = findViewById(R.id.primary_redact_fab)
+            scrubbingOverlayView.drawMode = !scrubbingOverlayView.drawMode
+            val drawColor = Color.argb(250, 181, 202, 215)
+            val deleteColor = Color.argb(250, 255, 100, 150)
+            if (scrubbingOverlayView.drawMode) {
+                primaryFAB.backgroundTintList = ColorStateList.valueOf(drawColor)
+                (primaryFAB as FloatingActionButton).setImageResource(android.R.drawable.ic_menu_edit)
+                view.backgroundTintList = ColorStateList.valueOf(deleteColor)
+                (view as FloatingActionButton).setImageResource(android.R.drawable.ic_delete)
+            } else {
+                primaryFAB.backgroundTintList = ColorStateList.valueOf(deleteColor)
+                (primaryFAB as FloatingActionButton).setImageResource(android.R.drawable.ic_delete)
+                view.backgroundTintList = ColorStateList.valueOf(drawColor)
+                (view as FloatingActionButton).setImageResource(android.R.drawable.ic_menu_edit)
+            }
+            // hide additional FABs
+            secondaryRedactFAB.visibility = View.GONE
+            vhItemFAB.visibility = View.GONE
+            saveFAB.visibility = View.GONE
+            isAllFABsVisible = false
+        }
+    }
+
     private fun setUpSaveRedactFloatingActionButton() {
-        val saveFAB: MovableFloatingActionButton = findViewById(R.id.save_redact_fab)
         saveFAB.setOnClickListener {
             // don't save if no redactions have been drawn
             if (scrubbingOverlayView.currentRedacts.isEmpty()) {
@@ -153,23 +262,6 @@ class ScreenShotActivity : AppCompatActivity() {
             scrubbingOverlayView.currentRedacts.clear()
             scrubbingOverlayView.invalidate()
             notifyEventAdapter()
-        }
-    }
-
-
-    private fun setUpDeleteRedactFloatingActionButton() {
-        val deleteFAB: MovableFloatingActionButton = findViewById(R.id.delete_redact_fab)
-        deleteFAB.setOnClickListener { view ->
-            scrubbingOverlayView.drawMode = !scrubbingOverlayView.drawMode
-            if (scrubbingOverlayView.drawMode) {
-                val drawColor = Color.argb(250, 181, 202, 215)
-                view.backgroundTintList = ColorStateList.valueOf(drawColor)
-                (view as FloatingActionButton).setImageResource(android.R.drawable.ic_menu_edit)
-            } else {
-                val deleteColor = Color.argb(250, 255, 100, 150)
-                view.backgroundTintList = ColorStateList.valueOf(deleteColor)
-                (view as FloatingActionButton).setImageResource(android.R.drawable.ic_delete)
-            }
         }
     }
 
@@ -205,6 +297,11 @@ class ScreenShotActivity : AppCompatActivity() {
         super.onDestroy()
         canvasBitmap.recycle()
         vhBoxes.clear()
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        val displayMetrics: DisplayMetrics = applicationContext.resources.displayMetrics
+        return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT))
     }
 
     private fun extractVHBoxes(root: JsonNode, vhBoxes: MutableList<Rect>) {
