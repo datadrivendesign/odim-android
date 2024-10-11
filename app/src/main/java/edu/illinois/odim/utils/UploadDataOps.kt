@@ -99,12 +99,13 @@ object UploadDataOps {
         return PackageInfoCompat.getLongVersionCode(pInfo)
     }
 
-    private suspend fun uploadTrace(client: OkHttpClient,
-                                    mapper: ObjectMapper,
-                                    screenIds: ArrayList<String>,
-                                    packageName: String,
-                                    traceLabel: String,
-                                    traceDescription: String): Response {
+    private suspend fun uploadTrace(
+        client: OkHttpClient,
+        mapper: ObjectMapper,
+        screenIds: List<String>,
+        packageName: String,
+        traceLabel: String,
+        traceDescription: String): Response {
         val jsonMediaType = "application/json; charset=utf-8".toMediaType()
         // construct request body
         val reqBodyJSONObj = mapper.createObjectNode()
@@ -146,6 +147,27 @@ object UploadDataOps {
         return true
     }
 
+    private suspend fun updateScreen(
+        client: OkHttpClient,
+        mapper: ObjectMapper,
+        screenBody: ObjectNode,
+        traceId: String
+    ): Response {
+        val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+        // construct request body
+        screenBody.put("trace", traceId)
+        val screenId = screenBody.get("_id").asText()
+        val reqBody = mapper.writeValueAsString(screenBody)
+        // send post request
+        val screenPutRequest = Request.Builder()
+            .url("$API_URL_PREFIX/screens/${screenId}")
+            .addHeader("Content-Type", "application/json; charset=utf-8")
+            .header("Connection", "close")
+            .put(reqBody.toRequestBody(jsonMediaType))
+            .build()
+        return client.newCall(screenPutRequest).await()
+    }
+
     suspend fun uploadFullTraceContent(
         packageName: String,
         traceLabel: String,
@@ -166,20 +188,20 @@ object UploadDataOps {
         try {
             // Upload VH file
             val mapper = ObjectMapper()
-            val screenIds = ArrayList<String>()
+            val screenBodyData = ArrayList<ObjectNode>()
             val traceEvents: List<String> = listEvents(packageName, traceLabel)
-            for (event: String in traceEvents) {
+            for (event in traceEvents) {
                 // add POST request for screens
-                var screenId: String
+                val returnedScreen: ObjectNode
                 uploadScreen(client, mapper, packageName, traceLabel, event).use {
                     isSuccessUpload = it.isSuccessful
                     val screenResBodyStr = it.body?.string() ?: "{}"
-                    val returnedScreen = mapper.readTree(screenResBodyStr)
-                    screenId = returnedScreen.get("_id").asText()
+                    returnedScreen = mapper.readTree(screenResBodyStr).deepCopy()
                 }
+                val screenId = returnedScreen.get("_id").asText()
                 if (isSuccessUpload && screenId.isNotEmpty()) {
                     Log.d("api", "success upload screenshot")
-                    screenIds.add(screenId)
+                    screenBodyData.add(returnedScreen)
                 } else {
                     Log.e("api", "fail upload screenshot")
                     return false
@@ -199,9 +221,19 @@ object UploadDataOps {
                 }
             }
             // add POST request for traces
+            val screenIds = screenBodyData.map{ it.get("_id").asText() }
+            val traceId: String
             uploadTrace(client, mapper, screenIds, packageName, traceLabel, traceDescription).use {
-                // TODO: update screens with traceId
                 isSuccessUpload = it.isSuccessful
+                val traceResBodyStr = it.body?.string() ?: "{}"
+                traceId = mapper.readTree(traceResBodyStr).get("_id").asText()
+            }
+            if (isSuccessUpload && traceId.isNotEmpty()) {
+                for (screenBody in screenBodyData) {
+                    updateScreen(client, mapper, screenBody, traceId).use {
+                        isSuccessUpload = it.isSuccessful
+                    }
+                }
             }
             if (isSuccessUpload) {
                 Log.d("api", "success upload trace")
