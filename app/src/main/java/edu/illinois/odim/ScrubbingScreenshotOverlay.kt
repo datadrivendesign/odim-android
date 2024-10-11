@@ -105,9 +105,9 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         val guessedKeyword = serializeToASCII(getKeywordFromRedact(screenVHRoot, redactRect))
         redactKeywordInput.setText(guessedKeyword)
         val labelDialog = AlertDialog.Builder(context)
-            .setTitle("Set Label")
+            .setTitle(context.getString(R.string.dialog_label_redact_title))
             .setView(inputForm)
-            .setPositiveButton("DONE") { _, _ ->
+            .setPositiveButton(context.getString(R.string.dialog_done)) { _, _ ->
                 val label = labelEditText.text.toString()
                 val redaction = Redaction(redactRect, label)
                 this.currentRedacts.add(redaction)
@@ -127,7 +127,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
                 }
                 invalidate()
             }
-            .setNegativeButton("EXIT") { dialogInterface, _ ->
+            .setNegativeButton(context.getString(R.string.dialog_close)) { dialogInterface, _ ->
                 dialogInterface.cancel()
             }.create()
         labelDialog.show()
@@ -203,13 +203,13 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
 
     private fun editRedactLabelAlertDialog(inputForm: View, labelEditText: EditText, redaction: Redaction) {
         val labelDialog = AlertDialog.Builder(context)
-            .setTitle("Set Label")
+            .setTitle(context.getString(R.string.dialog_edit_redact_title))
             .setView(inputForm)
-            .setPositiveButton("DONE") { _, _ ->
+            .setPositiveButton(context.getString(R.string.dialog_done)) { _, _ ->
                 val label = labelEditText.text.toString()
                 redaction.label = label
             }
-            .setNegativeButton("EXIT") { dialogInterface, _ ->
+            .setNegativeButton(context.getString(R.string.dialog_close)) { dialogInterface, _ ->
                 dialogInterface.cancel()
             }.create()
         labelDialog.show()
@@ -265,7 +265,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
     }
 
 
-    private fun convertScaleBitmapXToScreenX(bitmapX: Int) : Int {
+    private fun convertScaleBitmapXToScreenX(bitmapX: Int): Int {
         val bitmapWidth = imageIntrinsicWidth  // original image width, height
         val bitmapHeight = imageIntrinsicHeight
         val canvasImageHeight = imageMeasuredHeight  // canvas height space available
@@ -279,7 +279,7 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         return screenX.roundToInt()
     }
 
-    private fun convertScaleBitmapYToScreenY(bitmapY: Int) : Int {
+    private fun convertScaleBitmapYToScreenY(bitmapY: Int): Int {
         val bitmapHeight = imageIntrinsicHeight
         val canvasImageHeight = this.measuredHeight  // canvas height space available
         val screenY = (bitmapHeight.toDouble() / canvasImageHeight) * bitmapY

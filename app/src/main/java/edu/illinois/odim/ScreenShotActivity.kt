@@ -48,7 +48,7 @@ class ScreenShotActivity : AppCompatActivity() {
         chosenPackageName = intent.extras!!.getString("package_name")
         chosenTraceLabel = intent.extras!!.getString("trace_label")
         chosenEventLabel = intent.extras!!.getString("event_label")
-        title = "ScreenShot (Click Image for VH)"
+        title = getString(R.string.activity_screenshot_title)
         // populate UI elements
         val screenshot: Bitmap = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
         canvasBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true)
@@ -93,11 +93,8 @@ class ScreenShotActivity : AppCompatActivity() {
             vhAdapter.setOnItemClickListener(object: VHAdapter.OnItemClickListener {
                 override fun onItemClick(position: Int, vhItem: VHItem): Boolean {
                     val redactDialog = AlertDialog.Builder(this@ScreenShotActivity)
-                        .setMessage("Are you sure you want to redact the text? This will " +
-                                "only redact metadata, not the visual screen.\n" +
-                            "text: ${vhItem.text}\n" +
-                            "content description: ${vhItem.contentDesc}")
-                        .setPositiveButton("Redact") { _, _  ->
+                        .setMessage(getString(R.string.dialog_text_redact_message, vhItem.text, vhItem.contentDesc))
+                        .setPositiveButton(getString(R.string.dialog_text_redact_positive)) { _, _  ->
                             redactVHMetadataByText(screenVHRoot, vhItem)
                             saveVH(  // update VH metadata only
                                 chosenPackageName!!,
@@ -110,7 +107,7 @@ class ScreenShotActivity : AppCompatActivity() {
                             val itemChangeCount = vhTextList.size - position
                             vhAdapter.notifyItemRangeChanged(position, itemChangeCount)
                         }
-                        .setNegativeButton("Close") { dialog, _ ->
+                        .setNegativeButton(getString(R.string.dialog_close)) { dialog, _ ->
                             dialog.dismiss()
                         }
                         .create()
@@ -121,7 +118,7 @@ class ScreenShotActivity : AppCompatActivity() {
             vhRecyclerView.adapter = vhAdapter
             val vhTextListDialog = AlertDialog.Builder(this)
                 .setView(vhListView)
-                .setNeutralButton("Close") { dialog, _ ->
+                .setNeutralButton(getString(R.string.dialog_close)) { dialog, _ ->
                     dialog.dismiss()
                 }
                 .create()
@@ -229,8 +226,8 @@ class ScreenShotActivity : AppCompatActivity() {
         val textField = if (root.has("text_field")) root.get("text_field").asText() else ""
         val contentDesc = if (root.has("content-desc")) root.get("content-desc").asText() else ""
         // do not add elements where both text and contentDesc are empty or redacted
-        if ((textField.isNotEmpty() && textField != "text redacted.") ||
-            (contentDesc != "none" && contentDesc.isNotEmpty() && contentDesc != "description redacted.")) {
+        if ((textField.isNotEmpty() && textField != getString(R.string.redact_text_val)) ||
+            (contentDesc != "none" && contentDesc.isNotEmpty() && contentDesc != getString(R.string.redact_desc_val))) {
             vhTextList.add(VHItem(textField, contentDesc))
         }
         // Base Case
@@ -261,10 +258,10 @@ class ScreenShotActivity : AppCompatActivity() {
             if (isMatch.first && !isMatch.second) {
                 if (child.has("text_field")) {
                     child.remove("text_field")
-                    child.put("text_field", "text redacted.")
+                    child.put("text_field", getString(R.string.redact_text_val))
                 }
                 child.remove("content-desc")
-                child.put("content-desc", "description redacted.")
+                child.put("content-desc", getString(R.string.redact_desc_val))
                 return Triple(true, true, root)
             } else if (isMatch.first && isMatch.second) { // if already deleted just return and move back up
                 childrenArr[i] = isMatch.third!!  // update parent with updated child
@@ -305,13 +302,13 @@ class ScreenShotActivity : AppCompatActivity() {
             val child = childrenArr[i] as ObjectNode
             val isMatch = redactVHElemByRect(child, newRect)
             if (isMatch.first && !isMatch.second) {
-                if (child.has("text_field") && child["text_field"].asText() != "text redacted.") {
+                if (child.has("text_field") && child["text_field"].asText() != getString(R.string.redact_text_val)) {
                     child.remove("text_field")
-                    child.put("text_field", "text redacted.")
+                    child.put("text_field", getString(R.string.redact_text_val))
                 }
-                if (child["content-desc"].asText() != "description redacted.") {
+                if (child["content-desc"].asText() != getString(R.string.redact_desc_val)) {
                     child.remove("content-desc")
-                    child.put("content-desc", "description redacted.")
+                    child.put("content-desc", getString(R.string.redact_desc_val))
                 }
                 canvas.drawRect(newRect, confirmPaint)
                 scrubbingImageView.invalidate()

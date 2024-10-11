@@ -134,20 +134,20 @@ class TraceActivity : AppCompatActivity(){
         // edit menu title
         val total = traceList.count { it.isSelected }
         actionMode?.menu?.findItem(R.id.menu_rename_trace)?.setVisible(total == 1)
-        actionMode?.title = "Total: $total"
+        actionMode?.title = getString(R.string.options_bar_text_num, total)
     }
 
     private fun createRenameTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
-        val newTraceForm = View.inflate(this, R.layout.dialog_new_trace, null)
-        val newTraceTitle: TextView = newTraceForm.findViewById(R.id.new_trace_label)
+        val newTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
+        val newTraceTitle: TextView = newTraceForm.findViewById(R.id.rename_trace_label)
         newTraceTitle.text = getString(R.string.split_trace_label)
-        val newTraceInput: EditText = newTraceForm.findViewById(R.id.new_trace_input)
-        newTraceInput.setText(getString(R.string.split_trace_autofill_hint))
+        val newTraceInput: EditText = newTraceForm.findViewById(R.id.rename_trace_input)
+        newTraceInput.setText(getString(R.string.rename_trace_autofill_hint))
         val builder = AlertDialog.Builder(this@TraceActivity)
-            .setTitle("Split Trace")
+            .setTitle(getString(R.string.dialog_rename_trace_title))
             .setView(newTraceForm)
-            .setPositiveButton("Yes") { dialog, _ ->
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
                 val renameTraceInd = traceList.indexOfFirst { it.isSelected }
                 val oldTraceName = traceList[renameTraceInd].traceLabel
                 val newTraceName = newTraceInput.text.toString()
@@ -157,7 +157,7 @@ class TraceActivity : AppCompatActivity(){
                 mode.finish()
                 dialog.dismiss()
             }
-            .setNegativeButton("No") { dialog, _ ->
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 mode.finish()
                 dialog.dismiss()
             }
@@ -194,16 +194,15 @@ class TraceActivity : AppCompatActivity(){
     fun createDeleteTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@TraceActivity)
-            .setTitle("Delete trace")
-            .setMessage("Are you sure you want to delete this trace recording? " +
-                    "You will remove the entire trace, including all screens, view hierarchies, and gestures.")
-            .setPositiveButton("Yes") { dialog, _ ->
+            .setTitle(getString(R.string.dialog_delete_trace_title))
+            .setMessage(getString(R.string.dialog_delete_trace_message))
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
                 result = deleteSelectedTraces()
                 notifyTraceAdapter()
                 mode.finish()
                 dialog.dismiss()
             }
-            .setNegativeButton("No") { dialog, _ ->
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 dialog.dismiss()
             }
         val deleteAlertDialog = builder.create()

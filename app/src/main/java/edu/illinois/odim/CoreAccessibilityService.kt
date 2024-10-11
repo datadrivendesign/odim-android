@@ -47,6 +47,7 @@ import kotlin.coroutines.resume
 import kotlin.system.measureTimeMillis
 
 internal var workerId = "test_user"
+var DELIM = "; "
 
 class MyAccessibilityService : AccessibilityService() {
     private var currentBitmap: Bitmap? = null
@@ -168,7 +169,7 @@ class MyAccessibilityService : AccessibilityService() {
                     Log.i("TOUCH_PACKAGE", "root: $rootPackageName, last package: $lastTouchPackageName")
                     isNewTrace = true
                 }
-                val tempEventLabel = "${currTouchTime}; ${getString(R.string.type_unknown)}"
+                val tempEventLabel = "${currTouchTime}$DELIM${getString(R.string.type_unknown)}"
                 val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel) ?: return@launch
                 saveScreenshot(rootPackageName, traceLabel, tempEventLabel, currentBitmap!!)
                 saveVH(rootPackageName, traceLabel, tempEventLabel, currVHString!!)
@@ -326,7 +327,7 @@ class MyAccessibilityService : AccessibilityService() {
     private fun createEventLabel(eventType: Int): String {
         val eventTime = currTouchTime
         val eventTypeString = eventTypeToString(eventType)
-        return "$eventTime; $eventTypeString"
+        return "$eventTime$DELIM$eventTypeString"
     }
 
     private fun getLatestTrace(eventPackageName: String): String? {
@@ -349,7 +350,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun getCurrentTraceLabel(isNewTrace: Boolean, eventPackageName: String, eventLabel: String): String? {
         val traceLabel = if (isNewTrace) {
-            eventLabel.substringBefore(";")
+            eventLabel.substringBefore(DELIM)
         } else {
             getLatestTrace(eventPackageName)
         }

@@ -180,9 +180,9 @@ class IncompleteScreenActivity: AppCompatActivity() {
         updateGesture: Triple<Float, Float, Boolean>
     ) {
         val builder = AlertDialog.Builder(this)
-            .setTitle("Confirm Gesture")
+            .setTitle(getString(R.string.dialog_save_gesture_title))
             .setView(confirmGestureView)
-            .setPositiveButton("SAVE") { _, _ ->
+            .setPositiveButton(getString(R.string.dialog_save_gesture_positive)) { _, _ ->
                 // gesture needs to be in percentage form
                 val screenWidth = incompleteImageView.drawable.intrinsicWidth
                 val screenHeight = incompleteImageView.drawable.intrinsicHeight
@@ -211,7 +211,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
                         }
                     }
                     // replace the gesture name from unknown to click or scroll
-                    val oldEventType = chosenEventLabel!!.substringAfter(";").trim()
+                    val oldEventType = chosenEventLabel!!.substringAfter(DELIM)
                     eventNameDest = chosenEventLabel!!.replace(
                         oldEventType,
                         getString(replaceGesture),
@@ -230,7 +230,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 startActivity(intent)
                 finish()
             }
-            .setNegativeButton("CANCEL") { dialogInterface, _ ->
+            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
                 dialogInterface.cancel()
             }
         val saveDialog = builder.create()

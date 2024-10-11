@@ -6,7 +6,7 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/new_trace_label"
+        android:id="@+id/rename_trace_label"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:textStyle="bold"
@@ -18,7 +18,7 @@
         android:layout_gravity="center" />
 
     <EditText
-        android:id="@+id/new_trace_input"
+        android:id="@+id/rename_trace_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
@@ -26,7 +26,7 @@
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
         android:autofillHints="@string/split_trace_autofill_hint"
-        android:hint="@string/split_trace_edittext_hint"
+        android:hint="@string/rename_trace_text_hint"
         android:inputType="text"
         android:minHeight="48dp" />
 

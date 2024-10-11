@@ -105,7 +105,7 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         )
     }
 
-    private fun convertScaleBitmapXToScreenX(bitmapX: Int) : Int {
+    private fun convertScaleBitmapXToScreenX(bitmapX: Int): Int {
         val bitmapWidth = imageIntrinsicWidth  // original image width, height
         val bitmapHeight = imageIntrinsicHeight
         val canvasImageHeight = imageMeasuredHeight  // canvas height space available
@@ -133,7 +133,7 @@ class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View
         return bitmapX.roundToInt()
     }
 
-    private fun convertScaleBitmapYToScreenY(bitmapY: Int) : Int {
+    private fun convertScaleBitmapYToScreenY(bitmapY: Int): Int {
         val bitmapHeight = imageIntrinsicHeight
         val canvasImageHeight = this.measuredHeight  // canvas height space available
         val screenY = (bitmapHeight.toDouble() / canvasImageHeight) * bitmapY

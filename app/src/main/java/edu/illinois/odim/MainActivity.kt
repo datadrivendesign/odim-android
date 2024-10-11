@@ -85,10 +85,9 @@ class MainActivity : AppCompatActivity() {
     private fun createDeleteAppAlertDialog(appPackage: String): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@MainActivity)
-            .setTitle("Delete app")
-            .setMessage("Are you sure you want to delete this item from the trace? " +
-                    "You will remove the every trace recorded by this app.")
-            .setPositiveButton("Yes") { dialog, _ ->
+            .setTitle(getString(R.string.delete_app_dialog_title))
+            .setMessage(getString(R.string.delete_app_dialog_message))
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
                 result = deleteApp(appPackage)
                 // notify recycler view deletion happened
                 val newPackages = ArrayList(appPackageList)
@@ -105,7 +104,7 @@ class MainActivity : AppCompatActivity() {
                 val itemChangeCount = newPackages.size - ind
                 mainAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
             }
-            .setNegativeButton("No") { dialog, _ ->
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 dialog.dismiss()
             }
         val deleteAlertDialog = builder.create()

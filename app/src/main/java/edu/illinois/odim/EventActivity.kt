@@ -112,7 +112,7 @@ class EventActivity : AppCompatActivity() {
          setEditGestureVisible = true
         }
         actionMode?.menu?.findItem(R.id.menu_edit_gesture)?.setVisible(setEditGestureVisible)
-        actionMode?.title = "Total: $total"
+        actionMode?.title = getString(R.string.options_bar_text_num, total)
     }
 
     private val multiSelectActionModeCallback = object : ActionMode.Callback {
@@ -146,7 +146,7 @@ class EventActivity : AppCompatActivity() {
                     true
                 }
                 R.id.menu_delete_screens -> {
-                    createDeleteScreenAlertDialog(mode)
+                    createDeleteScreensAlertDialog(mode)
                     true
                 }
                 else -> false
@@ -191,8 +191,7 @@ class EventActivity : AppCompatActivity() {
             val screenshot = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, event)
             val mutableScreenshot = screenshot.copy(Bitmap.Config.ARGB_8888, true)
             screenshot.recycle()
-            val eventDelimiter = "; "
-            val eventInfo = event.split(eventDelimiter)
+            val eventInfo = event.split(DELIM)
             val eventTime = eventInfo[0]
             val eventType = eventInfo[1]
             try {  // check if source was null and gesture was not found
@@ -351,7 +350,7 @@ class EventActivity : AppCompatActivity() {
         while (screenIterator.hasNext()) {
             val screen = screenIterator.next()
             if (screen.isSelected) {
-                val chosenEventLabel = "${screen.timestamp}; ${screen.event}"
+                val chosenEventLabel = "${screen.timestamp}$DELIM${screen.event}"
                 if (splitTraceEvent(newTraceName, chosenEventLabel) &&
                     deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)) {
                     screenIterator.remove()
@@ -365,24 +364,24 @@ class EventActivity : AppCompatActivity() {
 
     private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
-        val splitTraceForm = View.inflate(this, R.layout.dialog_new_trace, null)
-        val splitTraceTitle: TextView = splitTraceForm.findViewById(R.id.new_trace_label)
+        val splitTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
+        val splitTraceTitle: TextView = splitTraceForm.findViewById(R.id.rename_trace_label)
         splitTraceTitle.text = getString(R.string.split_trace_label)
-        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.new_trace_input)
+        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.rename_trace_input)
         val firstSelectedScreen = screenPreviews.first { it.isSelected }
         val initTraceName = firstSelectedScreen.timestamp
         splitTraceInput.setText(initTraceName)
         val builder = AlertDialog.Builder(this@EventActivity)
-            .setTitle("Split Trace")
+            .setTitle(getString(R.string.dialog_split_trace_title))
             .setView(splitTraceForm)
-            .setPositiveButton("Yes") { dialog, _ ->
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
                 val traceName = splitTraceInput.text.toString()
                 result = splitSelectedScreensToTrace(traceName)
                 notifyEventAdapter()
                 mode.finish()
                 dialog.dismiss()
             }
-            .setNegativeButton("No") { dialog, _ ->
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 mode.finish()
                 dialog.dismiss()
             }
@@ -405,7 +404,7 @@ class EventActivity : AppCompatActivity() {
         while (screenIterator.hasNext()) {
             val screen = screenIterator.next()
             if (screen.isSelected) {
-                val chosenEventLabel = "${screen.timestamp}; ${screen.event}"
+                val chosenEventLabel = "${screen.timestamp}$DELIM${screen.event}"
                 val result = deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)
                 if (!result) {
                     return false
@@ -416,18 +415,18 @@ class EventActivity : AppCompatActivity() {
         return true
     }
 
-    private fun createDeleteScreenAlertDialog(mode: ActionMode): Boolean {
+    private fun createDeleteScreensAlertDialog(mode: ActionMode): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@EventActivity)
-            .setTitle("Delete Trace")
-            .setMessage(getString(R.string.delete_screens_label))
-            .setPositiveButton("Yes") { dialog, _ ->
+            .setTitle(getString(R.string.dialog_delete_screens_title))
+            .setMessage(getString(R.string.dialog_delete_screens_message))
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
                 result = deleteSelectedScreens()
                 notifyEventAdapter()
                 mode.finish()
                 dialog.dismiss()
             }
-            .setNegativeButton("No") { dialog, _ ->
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 mode.finish()
                 dialog.dismiss()
             }
@@ -439,9 +438,9 @@ class EventActivity : AppCompatActivity() {
     private fun createUploadTraceAlertDialog(uploadButtonView: View) {
         val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
         val uploadDialog = AlertDialog.Builder(this)
-            .setTitle("Upload Trace")
+            .setTitle(getString(R.string.dialog_upload_trace_title))
             .setView(traceDescInput)
-            .setPositiveButton("UPLOAD") { _, _ ->
+            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
                 CoroutineScope(Dispatchers.IO).launch {
                     val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
                     val uploadSuccess = uploadFullTraceContent(
@@ -463,7 +462,7 @@ class EventActivity : AppCompatActivity() {
                     }
                 }
             }
-            .setNegativeButton("CANCEL") { dialogInterface, _ ->
+            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
                 dialogInterface.cancel()
             }
             .create()
@@ -479,7 +478,7 @@ class EventActivity : AppCompatActivity() {
         val intent = Intent(applicationContext, nextClass)
         intent.putExtra("package_name", chosenPackageName)
         intent.putExtra("trace_label", chosenTraceLabel)
-        val chosenEventLabel = "${screen.timestamp}; ${screen.event}"
+        val chosenEventLabel = "${screen.timestamp}$DELIM${screen.event}"
         intent.putExtra("event_label", chosenEventLabel)
         intent.putExtra("edit_gesture", isEditGesture)
         startActivity(intent)
