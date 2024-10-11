@@ -45,14 +45,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 
-// these were static in java
-private var recyclerAdapter: EventAdapter? = null
+private var eventAdapter: EventAdapter? = null
+
 fun notifyEventAdapter() {
-    recyclerAdapter?.notifyDataSetChanged()
+    eventAdapter?.notifyDataSetChanged()
 }
 
 class EventActivity : AppCompatActivity() {
-    private var recyclerView: RecyclerView? = null
+    private var eventRecyclerView: RecyclerView? = null
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
     private var uploadTraceButton: Button? = null
@@ -67,14 +67,20 @@ class EventActivity : AppCompatActivity() {
         chosenTraceLabel = intent.extras!!.getString("trace_label")
         title = "$chosenPackageName: $chosenTraceLabel"
         // change the way we do this with recyclerview
-        recyclerView = findViewById(R.id.event_recycler_view)
+        eventRecyclerView = findViewById(R.id.event_recycler_view)
         // use gridview instead of linear
-        recyclerView?.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
+        val gridRowCount = 2
+        eventRecyclerView?.layoutManager = GridLayoutManager(
+            this,
+            gridRowCount,
+            RecyclerView.VERTICAL,
+            false
+        )
         // want both screenshot and event information for trace
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
-        recyclerAdapter = EventAdapter(screenPreviews)
-        recyclerAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
+        eventAdapter = EventAdapter(screenPreviews)
+        eventAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
             override fun onItemLongClick(position: Int): Boolean {
                 if (actionMode == null) {
                     actionMode = startActionMode(multiSelectActionModeCallback)
@@ -83,7 +89,7 @@ class EventActivity : AppCompatActivity() {
                 return true
             }
         })
-        recyclerAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
+        eventAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
             override fun onItemClick(position: Int): Boolean {
                 if (actionMode != null) {
                     toggleSelection(position)
@@ -94,7 +100,7 @@ class EventActivity : AppCompatActivity() {
                 return true
             }
         })
-        recyclerView?.adapter = recyclerAdapter
+        eventRecyclerView?.adapter = eventAdapter
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
@@ -105,7 +111,7 @@ class EventActivity : AppCompatActivity() {
 
     private fun toggleSelection(position: Int) {
         screenPreviews[position].isSelected = !screenPreviews[position].isSelected
-        recyclerAdapter!!.notifyItemChanged(position)
+        eventAdapter!!.notifyItemChanged(position)
         val total = screenPreviews.count { it.isSelected }
         var setEditGestureVisible = false
         if (total == 1 && screenPreviews.first{it.isSelected}.isComplete) {
@@ -124,14 +130,12 @@ class EventActivity : AppCompatActivity() {
             findViewById<CoordinatorLayout>(R.id.event_app_header).visibility = View.GONE
             return true
         }
-
         /** Called each time the action mode is shown. Always called after onCreateActionMode,
         * and might be called multiple times if the mode is invalidated.
         **/
         override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
             return false // Return false if nothing is done
         }
-
         /** Called when the user selects a contextual menu item. */
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
             return when (item.itemId) {
@@ -152,7 +156,6 @@ class EventActivity : AppCompatActivity() {
                 else -> false
             }
         }
-
         /** Called when the user exits the action mode. */
         override fun onDestroyActionMode(mode: ActionMode) {
             for (screen in screenPreviews) {
@@ -180,8 +183,6 @@ class EventActivity : AppCompatActivity() {
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
         uploadTraceButton?.isEnabled = isTraceComplete
-        // redraw views
-        recyclerView?.adapter = recyclerAdapter
         notifyEventAdapter()
     }
 

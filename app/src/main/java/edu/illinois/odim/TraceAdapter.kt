@@ -1,27 +1,27 @@
 package edu.illinois.odim
 
-import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import edu.illinois.odim.LocalStorageOps.listEvents
+import edu.illinois.odim.databinding.RecyclerRowTraceBinding
 
 
-class TraceAdapter(
-    context: Context,
-    private val packageName: String,
-    private var itemList: MutableList<TraceItem>
-): RecyclerView.Adapter<TraceAdapter.TraceViewHolder>() {
-    private var inflater : LayoutInflater = LayoutInflater.from(context)
+class TraceAdapter(private var traceList: MutableList<TraceItem>):
+    RecyclerView.Adapter<TraceAdapter.TraceViewHolder>() {
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
 
-    class TraceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var traceLabel : TextView = itemView.findViewById(R.id.trace_label)
-        val traceScreensTextView : TextView = itemView.findViewById(R.id.num_trace_screens)
+    class TraceViewHolder(private val traceItemView: RecyclerRowTraceBinding):
+        RecyclerView.ViewHolder(traceItemView.root) {
+        fun bindTraceItem(traceItem: TraceItem) {
+            traceItemView.numTraceScreens.text = traceItemView.root.context.getString(
+                R.string.traceNumScreens,
+                traceItem.numEvents
+            )
+            traceItemView.traceLabel.text = traceItem.traceLabel
+            traceItemView.root.setBackgroundColor(if (traceItem.isSelected) Color.LTGRAY else Color.TRANSPARENT)
+        }
     }
 
     interface OnItemClickListener {
@@ -41,16 +41,14 @@ class TraceAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TraceViewHolder {
-        val itemView = inflater.inflate(R.layout.recycler_row_trace, parent, false)
+        val from = LayoutInflater.from(parent.context)
+        val itemView = RecyclerRowTraceBinding.inflate(from, parent, false)
         return TraceViewHolder(itemView)
     }
 
     override fun onBindViewHolder(holder: TraceViewHolder, position: Int) {
-        val traceItem = itemList[position]
-        val events = listEvents(packageName, traceItem.traceLabel)
-        holder.traceScreensTextView.text = inflater.context.getString(R.string.traceNumScreens, events.size)
-        holder.traceLabel.text = traceItem.traceLabel
-        holder.itemView.setBackgroundColor(if (itemList[position].isSelected) Color.LTGRAY else Color.TRANSPARENT)
+        val traceItem = traceList[position]
+        holder.bindTraceItem(traceItem)
         holder.itemView.setOnClickListener {
             itemClickListener.onItemClick(position)
         }
@@ -59,7 +57,5 @@ class TraceAdapter(
         }
     }
 
-    override fun getItemCount(): Int {
-        return itemList.size
-    }
+    override fun getItemCount(): Int { return traceList.size }
 }

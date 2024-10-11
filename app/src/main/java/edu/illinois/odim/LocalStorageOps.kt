@@ -37,13 +37,13 @@ object LocalStorageOps {
         }
     }
 
-    fun listTraces(packageName: String): MutableList<TraceItem> {
+    fun listTraces(packageName: String): MutableList<String> {
         val traceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName")
         return if (traceDir.exists()) {
             return traceDir.listFiles()?.asSequence()?.filter { it.isDirectory }
-                ?.map { it.name }?.sortedDescending()
-                ?.map { TraceItem(it) }?.toMutableList()
-                    ?: arrayListOf()
+                ?.map { it.name }
+                ?.sortedDescending()
+                ?.toMutableList() ?: arrayListOf()
         } else {
             traceDir.mkdirs()
             arrayListOf()

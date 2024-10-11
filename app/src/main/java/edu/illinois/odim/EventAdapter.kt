@@ -59,15 +59,13 @@ class EventAdapter(
         holder.bindScreenshotPreview(screenList[position])
         holder.bindEventIndex(position)
         holder.itemView.setBackgroundColor(if (screenList[position].isSelected) Color.LTGRAY else Color.TRANSPARENT)
-        holder.itemView.setOnLongClickListener {
-            itemLongClickListener.onItemLongClick(position)
-        }
         holder.itemView.setOnClickListener {
             itemClickListener.onItemClick(position)
         }
+        holder.itemView.setOnLongClickListener {
+            itemLongClickListener.onItemLongClick(position)
+        }
     }
 
-    override fun getItemCount(): Int {
-        return screenList.size
-    }
+    override fun getItemCount(): Int { return screenList.size }
 }

@@ -1,44 +1,26 @@
 package edu.illinois.odim
 
-import android.content.Context
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import edu.illinois.odim.databinding.RecyclerRowMainBinding
 
 
-class MainAdapter(
-    context: Context,
-    itemList: MutableList<String>
-) : RecyclerView.Adapter<MainAdapter.MainViewHolder>() {
-    private var inflater : LayoutInflater = LayoutInflater.from(context)
-    private var itemList : MutableList<String> = itemList
+class MainAdapter(private var appList: MutableList<MainItem>):
+    RecyclerView.Adapter<MainAdapter.MainViewHolder>() {
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
 
-    class MainViewHolder(
-        itemView: View,
-        listener: OnItemClickListener,
-        longClickListener: OnItemLongClickListener
-    ) : RecyclerView.ViewHolder(itemView) {
-        var appNameTextView : TextView = itemView.findViewById(R.id.main_app_name)
-        var appIconImageView : ImageView = itemView.findViewById(R.id.main_app_icon)
-        lateinit var appPackage : String
-
-        init {
-            itemView.setOnClickListener {
-                listener.onItemClick(appPackage)
-            }
-            itemView.setOnLongClickListener {
-                longClickListener.onItemLongClick(appPackage)
-            }
+    class MainViewHolder(private var mainItemView: RecyclerRowMainBinding):
+        RecyclerView.ViewHolder(mainItemView.root) {
+        fun bindAppItem(mainItem: MainItem) {
+            mainItemView.mainAppName.text = mainItem.appName
+            mainItemView.mainAppIcon.setImageDrawable(mainItem.appIcon)
         }
     }
 
     interface  OnItemClickListener {
-        fun onItemClick(appPackage: String)//parent: AdapterView<*>?, view: View, position: Int, id: Long)
+        fun onItemClick(position: Int)
     }
 
     fun setOnItemClickListener(listener : OnItemClickListener) {
@@ -46,7 +28,7 @@ class MainAdapter(
     }
 
     interface OnItemLongClickListener {
-        fun onItemLongClick(appPackage: String) : Boolean
+        fun onItemLongClick(position: Int): Boolean
     }
 
     fun setOnItemLongClickListener(listener: OnItemLongClickListener) {
@@ -54,20 +36,20 @@ class MainAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainViewHolder {
-        val itemView = inflater.inflate(R.layout.recycler_row_main, parent, false)
-        return MainViewHolder(itemView, itemClickListener, itemLongClickListener)
+        val from = LayoutInflater.from(parent.context)
+        val itemView = RecyclerRowMainBinding.inflate(from, parent, false)
+        return MainViewHolder(itemView)
     }
 
     override fun onBindViewHolder(holder: MainViewHolder, position: Int) {
-        holder.appPackage = itemList[position]
-        val packageManager = this.inflater.context.packageManager
-        val appInfo = packageManager.getApplicationInfo(itemList[position], 0)
-        holder.appNameTextView.text = packageManager.getApplicationLabel(appInfo)
-        val icon = packageManager.getApplicationIcon(itemList[position])
-        holder.appIconImageView.setImageDrawable(icon)
+        holder.bindAppItem(appList[position])
+        holder.itemView.setOnClickListener {
+            itemClickListener.onItemClick(position)
+        }
+        holder.itemView.setOnLongClickListener {
+            itemLongClickListener.onItemLongClick(position)
+        }
     }
 
-    override fun getItemCount(): Int {
-        return itemList.size
-    }
+    override fun getItemCount(): Int { return appList.size }
 }

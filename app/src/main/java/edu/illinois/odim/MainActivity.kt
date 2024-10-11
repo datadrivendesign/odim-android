@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
-import android.util.Log
 import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
@@ -18,7 +17,6 @@ import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.LocalStorageOps.deleteApp
 import edu.illinois.odim.LocalStorageOps.listPackages
 
-// this should be static
 private var mainAdapter : MainAdapter? = null
 
 fun notifyPackageAdapter() {
@@ -26,8 +24,8 @@ fun notifyPackageAdapter() {
 }
 
 class MainActivity : AppCompatActivity() {
-    private var recyclerView : RecyclerView? = null
-    private lateinit var appPackageList: MutableList<String>
+    private var mainRecyclerView : RecyclerView? = null
+    private lateinit var appList: MutableList<MainItem>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,27 +34,44 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.odim_app_header))
         createWorkerInputForm()
         // set up recycler view
-        recyclerView = findViewById(R.id.package_recycler_view)
-        recyclerView?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        appPackageList = listPackages()
-        mainAdapter = MainAdapter(this, appPackageList) // getPackages())
-        recyclerView?.adapter = mainAdapter
+        mainRecyclerView = findViewById(R.id.package_recycler_view)
+        mainRecyclerView?.layoutManager = LinearLayoutManager(
+            this,
+            RecyclerView.VERTICAL,
+            false
+        )
+        val appPackageList = listPackages()
+        appList = populateAppList(appPackageList)
+        mainAdapter = MainAdapter(appList)
+        mainRecyclerView?.adapter = mainAdapter
         // set up recycler view listeners
         val decoratorVertical = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         decoratorVertical.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider)!!)
-        recyclerView?.addItemDecoration(decoratorVertical)
+        mainRecyclerView?.addItemDecoration(decoratorVertical)
         mainAdapter!!.setOnItemLongClickListener(object: MainAdapter.OnItemLongClickListener {
-            override fun onItemLongClick(appPackage: String): Boolean {
-                return createDeleteAppAlertDialog(appPackage)
+            override fun onItemLongClick(position: Int): Boolean {
+                return createDeleteAppAlertDialog(position)
             }
         })
         mainAdapter!!.setOnItemClickListener(object: MainAdapter.OnItemClickListener {
-            override fun onItemClick(appPackage: String) {
+            override fun onItemClick(position: Int) {
                 val intent = Intent(applicationContext, TraceActivity::class.java)
-                intent.putExtra("package_name", appPackage)
+                intent.putExtra("package_name", appList[position].appPackage)
                 startActivity(intent)
             }
         })
+    }
+
+    private fun populateAppList(appPackageList: List<String>): MutableList<MainItem> {
+        val mainList = mutableListOf<MainItem>()
+        for (appPackage in appPackageList) {
+            val packageManager = applicationContext.packageManager
+            val appInfo = packageManager.getApplicationInfo(appPackage, 0)
+            val appName = packageManager.getApplicationLabel(appInfo).toString()
+            val appIcon = packageManager.getApplicationIcon(appPackage)
+            mainList.add(MainItem(appPackage, appName, appIcon))
+        }
+        return mainList
     }
 
     private fun createWorkerInputForm() {
@@ -82,27 +97,17 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun createDeleteAppAlertDialog(appPackage: String): Boolean {
+    private fun createDeleteAppAlertDialog(position: Int): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@MainActivity)
             .setTitle(getString(R.string.delete_app_dialog_title))
             .setMessage(getString(R.string.delete_app_dialog_message))
             .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
-                result = deleteApp(appPackage)
-                // notify recycler view deletion happened
-                val newPackages = ArrayList(appPackageList)
-                val ind = appPackageList.indexOfFirst { app -> app == appPackage }
-                if (ind < 0) {  // should theoretically never happen
-                    Log.e("APP", "could not find trace to delete")
-                    dialog.dismiss()
-                    return@setPositiveButton
-                }
-                newPackages.removeAt(ind)
-                appPackageList.clear()
-                appPackageList.addAll(newPackages)
-                mainAdapter!!.notifyItemRemoved(ind)
-                val itemChangeCount = newPackages.size - ind
-                mainAdapter!!.notifyItemRangeChanged(ind, itemChangeCount)
+                result = deleteApp(appList[position].appPackage)
+                appList.removeAt(position)
+                mainAdapter!!.notifyItemRemoved(position)
+                val itemChangeCount = appList.size - position
+                mainAdapter!!.notifyItemRangeChanged(position, itemChangeCount)
             }
             .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 dialog.dismiss()
@@ -114,8 +119,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        appPackageList.clear()
-        appPackageList.addAll(listPackages())
+        appList.clear()
+        val appPackages = listPackages()
+        appList.addAll(populateAppList(appPackages))
         notifyPackageAdapter()
     }
 }
