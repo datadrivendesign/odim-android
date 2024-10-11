@@ -67,7 +67,7 @@
         Are you sure you want to delete this trace recording? You will remove the entire trace, including all screens, view hierarchies, and gestures.
     </string>
     <string name="dialog_delete_trace_title">Delete trace</string>
-    <string name="options_bar_text_num">Total: %1$s</string>
+    <string name="options_bar_text_num">Total: %1$d</string>
     <string name="dialog_split_trace_title">Split Trace</string>
     <string name="dialog_delete_screens_title">Delete Screens</string>
     <string name="dialog_close">CLOSE</string>
