@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.activities
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -29,17 +29,23 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
-import edu.illinois.odim.LocalStorageOps.deleteEvent
-import edu.illinois.odim.LocalStorageOps.listEvents
-import edu.illinois.odim.LocalStorageOps.loadGesture
-import edu.illinois.odim.LocalStorageOps.loadScreenshot
-import edu.illinois.odim.LocalStorageOps.loadVH
-import edu.illinois.odim.LocalStorageOps.saveGesture
-import edu.illinois.odim.LocalStorageOps.splitTraceGesture
-import edu.illinois.odim.LocalStorageOps.splitTraceRedactions
-import edu.illinois.odim.LocalStorageOps.splitTraceScreenshot
-import edu.illinois.odim.LocalStorageOps.splitTraceVH
-import edu.illinois.odim.UploadDataOps.uploadFullTraceContent
+import edu.illinois.odim.DELIM
+import edu.illinois.odim.dataclasses.Gesture
+import edu.illinois.odim.dataclasses.GestureCandidate
+import edu.illinois.odim.utils.LocalStorageOps.deleteEvent
+import edu.illinois.odim.utils.LocalStorageOps.listEvents
+import edu.illinois.odim.utils.LocalStorageOps.loadGesture
+import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.loadVH
+import edu.illinois.odim.utils.LocalStorageOps.saveGesture
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceVH
+import edu.illinois.odim.R
+import edu.illinois.odim.adapters.EventAdapter
+import edu.illinois.odim.dataclasses.ScreenShotPreview
+import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -449,13 +455,15 @@ class EventActivity : AppCompatActivity() {
                         chosenTraceLabel!!,
                         traceDescription.text.toString())
                     if (!uploadSuccess) {
-                        val errSnackbar = Snackbar.make(uploadButtonView, R.string.upload_fail, Snackbar.LENGTH_LONG)
+                        val errSnackbar = Snackbar.make(uploadButtonView,
+                            R.string.upload_fail, Snackbar.LENGTH_LONG)
                         errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
                         errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
                             .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
                         errSnackbar.show()
                     } else {
-                        val successSnackbar = Snackbar.make(uploadButtonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                        val successSnackbar = Snackbar.make(uploadButtonView,
+                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
                         successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
                         successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
                             .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))

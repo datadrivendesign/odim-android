@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.dataclasses
 
 data class Gesture(
     var centerX: Float,

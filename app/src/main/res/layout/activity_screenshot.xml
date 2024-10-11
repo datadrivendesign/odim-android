@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:contentDescription="@string/incomplete_screen_content_desc" />
 
-    <edu.illinois.odim.ScrubbingScreenshotOverlay
+    <edu.illinois.odim.fragments.ScrubbingScreenshotOverlay
         android:id="@+id/scrubbing_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -19,7 +19,7 @@
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="27dp" />
 
-    <edu.illinois.odim.MovableFloatingActionButton
+    <edu.illinois.odim.fragments.MovableFloatingActionButton
         android:id="@+id/vh_list_redact_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -37,7 +37,7 @@
         app:maxImageSize="28dp"
         app:srcCompat="@drawable/ic_menu_open" />
 
-    <edu.illinois.odim.MovableFloatingActionButton
+    <edu.illinois.odim.fragments.MovableFloatingActionButton
         android:id="@+id/delete_redact_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -55,7 +55,7 @@
         app:layout_constraintVertical_bias="0.814"
         app:srcCompat="@drawable/ic_menu_edit" />
 
-    <edu.illinois.odim.MovableFloatingActionButton
+    <edu.illinois.odim.fragments.MovableFloatingActionButton
         android:id="@+id/save_redact_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

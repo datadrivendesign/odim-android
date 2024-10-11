@@ -1,21 +1,22 @@
-package edu.illinois.odim
+package edu.illinois.odim.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import edu.illinois.odim.databinding.RecyclerRowMainBinding
+import edu.illinois.odim.databinding.RecyclerRowAppBinding
+import edu.illinois.odim.dataclasses.AppItem
 
 
-class MainAdapter(private var appList: MutableList<MainItem>):
-    RecyclerView.Adapter<MainAdapter.MainViewHolder>() {
+class AppAdapter(private var appList: MutableList<AppItem>):
+    RecyclerView.Adapter<AppAdapter.MainViewHolder>() {
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
 
-    class MainViewHolder(private var mainItemView: RecyclerRowMainBinding):
+    class MainViewHolder(private var mainItemView: RecyclerRowAppBinding):
         RecyclerView.ViewHolder(mainItemView.root) {
-        fun bindAppItem(mainItem: MainItem) {
-            mainItemView.mainAppName.text = mainItem.appName
-            mainItemView.mainAppIcon.setImageDrawable(mainItem.appIcon)
+        fun bindAppItem(appItem: AppItem) {
+            mainItemView.appName.text = appItem.appName
+            mainItemView.appIcon.setImageDrawable(appItem.appIcon)
         }
     }
 
@@ -37,7 +38,7 @@ class MainAdapter(private var appList: MutableList<MainItem>):
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainViewHolder {
         val from = LayoutInflater.from(parent.context)
-        val itemView = RecyclerRowMainBinding.inflate(from, parent, false)
+        val itemView = RecyclerRowAppBinding.inflate(from, parent, false)
         return MainViewHolder(itemView)
     }
 

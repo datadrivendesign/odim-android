@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.utils
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -6,8 +6,10 @@ import android.util.Log
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.isAppContextInitialized
+import edu.illinois.odim.dataclasses.Redaction
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream

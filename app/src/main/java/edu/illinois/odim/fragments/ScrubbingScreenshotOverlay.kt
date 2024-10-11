@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.fragments
 
 import android.app.AlertDialog
 import android.content.Context
@@ -18,6 +18,8 @@ import android.widget.CheckBox
 import android.widget.EditText
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import edu.illinois.odim.R
+import edu.illinois.odim.dataclasses.Redaction
 import kotlin.math.roundToInt
 
 class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(context, attrs) {

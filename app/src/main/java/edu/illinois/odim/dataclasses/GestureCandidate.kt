@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.dataclasses
 
 import android.graphics.Rect
 

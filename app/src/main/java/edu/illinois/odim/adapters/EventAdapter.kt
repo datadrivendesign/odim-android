@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.adapters
 
 import android.graphics.Color
 import android.view.LayoutInflater
@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.RecyclerRowEventBinding
+import edu.illinois.odim.dataclasses.ScreenShotPreview
 import java.util.Locale
 
 class EventAdapter(

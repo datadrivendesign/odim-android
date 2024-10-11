@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.activities
 
 import android.content.Intent
 import android.os.Bundle
@@ -21,10 +21,13 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import edu.illinois.odim.LocalStorageOps.deleteTrace
-import edu.illinois.odim.LocalStorageOps.listEvents
-import edu.illinois.odim.LocalStorageOps.listTraces
-import edu.illinois.odim.LocalStorageOps.renameTrace
+import edu.illinois.odim.utils.LocalStorageOps.deleteTrace
+import edu.illinois.odim.utils.LocalStorageOps.listEvents
+import edu.illinois.odim.utils.LocalStorageOps.listTraces
+import edu.illinois.odim.utils.LocalStorageOps.renameTrace
+import edu.illinois.odim.R
+import edu.illinois.odim.adapters.TraceAdapter
+import edu.illinois.odim.dataclasses.TraceItem
 
 private var traceAdapter: TraceAdapter? = null
 

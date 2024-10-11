@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.fragments
 
 import android.content.Context
 import android.graphics.Canvas
@@ -8,6 +8,7 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import edu.illinois.odim.dataclasses.GestureCandidate
 import kotlin.math.roundToInt
 
 class IncompleteScreenCanvasOverlay(context: Context, attrs: AttributeSet): View(context, attrs) {

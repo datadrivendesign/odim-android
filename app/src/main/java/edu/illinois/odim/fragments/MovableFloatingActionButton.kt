@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.fragments
 
 import android.content.Context
 import android.util.AttributeSet

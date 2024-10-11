@@ -31,16 +31,16 @@
         </service>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.AppActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".TraceActivity" />
-        <activity android:name=".EventActivity" />
-        <activity android:name=".ScreenShotActivity" />
-        <activity android:name=".IncompleteScreenActivity" />
+        <activity android:name=".activities.TraceActivity" />
+        <activity android:name=".activities.EventActivity" />
+        <activity android:name=".activities.ScreenShotActivity" />
+        <activity android:name=".activities.IncompleteScreenActivity" />
     </application>
 </manifest>

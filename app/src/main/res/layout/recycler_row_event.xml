@@ -29,7 +29,7 @@
                     android:id="@+id/cover"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/round_question_mark_24"
+                    android:src="@drawable/ic_question_mark"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/cover"
                     android:clickable="false" />
@@ -37,7 +37,7 @@
                     android:id="@+id/incomplete_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/round_question_mark_24"
+                    android:src="@drawable/ic_question_mark"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/question_mark_icon"
                     android:layout_gravity="center"

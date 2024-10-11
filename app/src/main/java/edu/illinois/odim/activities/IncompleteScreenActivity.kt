@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.activities
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -14,14 +14,20 @@ import androidx.appcompat.app.AppCompatActivity
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import edu.illinois.odim.LocalStorageOps.loadGesture
-import edu.illinois.odim.LocalStorageOps.loadScreenshot
-import edu.illinois.odim.LocalStorageOps.loadVH
-import edu.illinois.odim.LocalStorageOps.renameEvent
-import edu.illinois.odim.LocalStorageOps.renameGesture
-import edu.illinois.odim.LocalStorageOps.renameScreenshot
-import edu.illinois.odim.LocalStorageOps.renameVH
-import edu.illinois.odim.LocalStorageOps.saveGesture
+import edu.illinois.odim.DELIM
+import edu.illinois.odim.dataclasses.Gesture
+import edu.illinois.odim.dataclasses.GestureCandidate
+import edu.illinois.odim.utils.LocalStorageOps.loadGesture
+import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.loadVH
+import edu.illinois.odim.utils.LocalStorageOps.renameEvent
+import edu.illinois.odim.utils.LocalStorageOps.renameGesture
+import edu.illinois.odim.utils.LocalStorageOps.renameScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.renameVH
+import edu.illinois.odim.utils.LocalStorageOps.saveGesture
+import edu.illinois.odim.fragments.MovableFloatingActionButton
+import edu.illinois.odim.R
+import edu.illinois.odim.fragments.IncompleteScreenCanvasOverlay
 import java.io.FileNotFoundException
 
 class IncompleteScreenActivity: AppCompatActivity() {

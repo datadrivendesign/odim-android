@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.activities
 
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
@@ -19,11 +19,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import edu.illinois.odim.LocalStorageOps.loadScreenshot
-import edu.illinois.odim.LocalStorageOps.loadVH
-import edu.illinois.odim.LocalStorageOps.saveRedaction
-import edu.illinois.odim.LocalStorageOps.saveScreenshot
-import edu.illinois.odim.LocalStorageOps.saveVH
+import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.loadVH
+import edu.illinois.odim.utils.LocalStorageOps.saveRedaction
+import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.saveVH
+import edu.illinois.odim.fragments.MovableFloatingActionButton
+import edu.illinois.odim.R
+import edu.illinois.odim.dataclasses.Redaction
+import edu.illinois.odim.adapters.VHAdapter
+import edu.illinois.odim.dataclasses.VHItem
+import edu.illinois.odim.fragments.ScrubbingScreenshotOverlay
 
 class ScreenShotActivity : AppCompatActivity() {
     private var chosenPackageName: String? = null
@@ -152,7 +158,7 @@ class ScreenShotActivity : AppCompatActivity() {
 
 
     private fun setUpDeleteRedactFloatingActionButton() {
-        val deleteFAB: FloatingActionButton = findViewById(R.id.delete_redact_fab)
+        val deleteFAB: MovableFloatingActionButton = findViewById(R.id.delete_redact_fab)
         deleteFAB.setOnClickListener { view ->
             scrubbingOverlayView.drawMode = !scrubbingOverlayView.drawMode
             if (scrubbingOverlayView.drawMode) {

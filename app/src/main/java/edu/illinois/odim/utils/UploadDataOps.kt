@@ -1,4 +1,4 @@
-package edu.illinois.odim
+package edu.illinois.odim.utils
 
 import android.content.Context
 import android.content.pm.PackageInfo
@@ -13,12 +13,16 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import edu.illinois.odim.LocalStorageOps.listEvents
-import edu.illinois.odim.LocalStorageOps.loadGesture
-import edu.illinois.odim.LocalStorageOps.loadRedactions
-import edu.illinois.odim.LocalStorageOps.loadScreenshot
-import edu.illinois.odim.LocalStorageOps.loadVH
+import edu.illinois.odim.DELIM
+import edu.illinois.odim.dataclasses.Gesture
+import edu.illinois.odim.utils.LocalStorageOps.listEvents
+import edu.illinois.odim.utils.LocalStorageOps.loadGesture
+import edu.illinois.odim.utils.LocalStorageOps.loadRedactions
+import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
+import edu.illinois.odim.dataclasses.Redaction
+import edu.illinois.odim.workerId
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -63,7 +67,7 @@ object UploadDataOps {
             // retrieve vh
             val vhString = loadVH(packageName, traceLabel, eventLabel)
             // retrieve screen timestamp
-            val screenCreatedAt = eventLabel.substringBefore(";")
+            val screenCreatedAt = eventLabel.substringBefore(DELIM)
             // retrieve gesture for screen
             val gesture: Gesture = loadGesture(packageName, traceLabel, eventLabel)
             // construct request body
@@ -196,6 +200,7 @@ object UploadDataOps {
             }
             // add POST request for traces
             uploadTrace(client, mapper, screenIds, packageName, traceLabel, traceDescription).use {
+                // TODO: update screens with traceId
                 isSuccessUpload = it.isSuccessful
             }
             if (isSuccessUpload) {

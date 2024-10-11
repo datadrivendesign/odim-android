@@ -10,14 +10,14 @@
         android:layout_height="match_parent"
         android:contentDescription="@string/incomplete_screen_content_desc" />
 
-    <edu.illinois.odim.IncompleteScreenCanvasOverlay
+    <edu.illinois.odim.fragments.IncompleteScreenCanvasOverlay
         android:id="@+id/incomplete_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent" />
 
 
-    <edu.illinois.odim.MovableFloatingActionButton
+    <edu.illinois.odim.fragments.MovableFloatingActionButton
         android:id="@+id/save_gesture_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -1,9 +1,10 @@
-package edu.illinois.odim
+package edu.illinois.odim.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.illinois.odim.databinding.RecyclerRowVhBinding
+import edu.illinois.odim.dataclasses.VHItem
 
 class VHAdapter(vhItems: List<VHItem>): RecyclerView.Adapter<VHAdapter.VHViewHolder>() {
     private var vhList: List<VHItem> = vhItems

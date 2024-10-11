@@ -13,7 +13,7 @@
     android:clickable="true" >
 
     <ImageView
-        android:id="@+id/main_app_icon"
+        android:id="@+id/app_icon"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:contentDescription="@string/app_icon_content_desc"
@@ -27,14 +27,14 @@
         android:clickable="false" />
 
     <TextView
-        android:id="@+id/main_app_name"
+        android:id="@+id/app_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:text="@string/appNameStringSize"
         android:textColor="@color/black"
         android:textStyle="bold"
-        app:layout_constraintLeft_toRightOf="@+id/main_app_icon"
+        app:layout_constraintLeft_toRightOf="@+id/app_icon"
         app:layout_constraintRight_toLeftOf="@+id/main_chevron_icon"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -51,7 +51,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:srcCompat="@drawable/ic_baseline_chevron_right_24"
+        app:srcCompat="@drawable/ic_baseline_chevron"
         android:clickable="false" />
 
 
