@@ -1,5 +1,6 @@
 package edu.illinois.odim.adapters
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -12,11 +13,12 @@ class AppAdapter(private var appList: MutableList<AppItem>):
     private lateinit var itemClickListener : OnItemClickListener
     private lateinit var itemLongClickListener: OnItemLongClickListener
 
-    class MainViewHolder(private var mainItemView: RecyclerRowAppBinding):
-        RecyclerView.ViewHolder(mainItemView.root) {
+    class MainViewHolder(private var appItemView: RecyclerRowAppBinding):
+        RecyclerView.ViewHolder(appItemView.root) {
         fun bindAppItem(appItem: AppItem) {
-            mainItemView.appName.text = appItem.appName
-            mainItemView.appIcon.setImageDrawable(appItem.appIcon)
+            appItemView.appName.text = appItem.appName
+            appItemView.appIcon.setImageDrawable(appItem.appIcon)
+            appItemView.root.setBackgroundColor(if (appItem.isSelected) Color.LTGRAY else Color.TRANSPARENT)
         }
     }
 

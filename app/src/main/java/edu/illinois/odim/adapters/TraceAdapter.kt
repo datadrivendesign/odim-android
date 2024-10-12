@@ -49,8 +49,7 @@ class TraceAdapter(private var traceList: MutableList<TraceItem>):
     }
 
     override fun onBindViewHolder(holder: TraceViewHolder, position: Int) {
-        val traceItem = traceList[position]
-        holder.bindTraceItem(traceItem)
+        holder.bindTraceItem(traceList[position])
         holder.itemView.setOnClickListener {
             itemClickListener.onItemClick(position)
         }

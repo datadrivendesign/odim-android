@@ -2,16 +2,12 @@ package edu.illinois.odim.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextUtils
-import android.text.TextWatcher
 import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -21,13 +17,12 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import edu.illinois.odim.utils.LocalStorageOps.deleteTrace
-import edu.illinois.odim.utils.LocalStorageOps.listEvents
-import edu.illinois.odim.utils.LocalStorageOps.listTraces
-import edu.illinois.odim.utils.LocalStorageOps.renameTrace
 import edu.illinois.odim.R
 import edu.illinois.odim.adapters.TraceAdapter
 import edu.illinois.odim.dataclasses.TraceItem
+import edu.illinois.odim.utils.LocalStorageOps.deleteTrace
+import edu.illinois.odim.utils.LocalStorageOps.listEvents
+import edu.illinois.odim.utils.LocalStorageOps.listTraces
 
 private var traceAdapter: TraceAdapter? = null
 
@@ -116,7 +111,7 @@ class TraceActivity : AppCompatActivity(){
         /** Called when the action mode is created. startActionMode() is called. */
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             val inflater: MenuInflater = mode.menuInflater
-            inflater.inflate(R.menu.multi_select_trace_menu, menu)
+            inflater.inflate(R.menu.multi_select_row_menu, menu)
             findViewById<CoordinatorLayout>(R.id.trace_app_header).visibility = View.GONE
             return true
         }
@@ -129,11 +124,7 @@ class TraceActivity : AppCompatActivity(){
         /** Called when the user selects a contextual menu item. */
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
             return when (item.itemId) {
-                R.id.menu_rename_trace -> {
-                    createRenameTraceAlertDialog(mode)
-                    true
-                }
-                R.id.menu_delete_traces -> {
+                R.id.menu_row_traces -> {
                     createDeleteTraceAlertDialog(mode)
                     true
                 }
@@ -156,47 +147,7 @@ class TraceActivity : AppCompatActivity(){
         traceAdapter!!.notifyItemChanged(position)
         // edit menu title
         val total = traceList.count { it.isSelected }
-        actionMode?.menu?.findItem(R.id.menu_rename_trace)?.setVisible(total == 1)
         actionMode?.title = getString(R.string.options_bar_text_num, total)
-    }
-
-    private fun createRenameTraceAlertDialog(mode: ActionMode): Boolean {
-        var result = true
-        val newTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
-        val newTraceTitle: TextView = newTraceForm.findViewById(R.id.rename_trace_label)
-        newTraceTitle.text = getString(R.string.split_trace_label)
-        val newTraceInput: EditText = newTraceForm.findViewById(R.id.rename_trace_input)
-        newTraceInput.setText(getString(R.string.rename_trace_autofill_hint))
-        val builder = AlertDialog.Builder(this@TraceActivity)
-            .setTitle(getString(R.string.dialog_rename_trace_title))
-            .setView(newTraceForm)
-            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
-                val renameTraceInd = traceList.indexOfFirst { it.isSelected }
-                val oldTraceName = traceList[renameTraceInd].traceLabel
-                val newTraceName = newTraceInput.text.toString()
-                result = renameTrace(chosenPackageName!!, oldTraceName, newTraceName)
-                traceList[renameTraceInd].traceLabel = newTraceName
-                traceAdapter?.notifyItemChanged(renameTraceInd)
-                mode.finish()
-                dialog.dismiss()
-            }
-            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
-                mode.finish()
-                dialog.dismiss()
-            }
-        val deleteAlertDialog = builder.create()
-        deleteAlertDialog.show()
-        val positiveButton = deleteAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
-        val oldTraceName = traceList.first { it.isSelected }.traceLabel
-        positiveButton.isEnabled = !((positiveButton.text).contentEquals(oldTraceName))
-        newTraceInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                positiveButton.isEnabled = !TextUtils.isEmpty(str) && !str.contentEquals(oldTraceName)
-            }
-            override fun afterTextChanged(str: Editable?) {}
-        })
-        return result
     }
 
     private fun deleteSelectedTraces(): Boolean {

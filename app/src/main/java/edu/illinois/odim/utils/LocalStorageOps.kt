@@ -52,21 +52,6 @@ object LocalStorageOps {
         }
     }
 
-    fun renameTrace(packageName: String, trace: String, newTrace: String): Boolean {
-        val traceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
-        val newTraceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$newTrace")
-        if (!traceDir.exists()) {
-            Log.e("FILE", "Directory to rename does not exist: ${traceDir.path}")
-            return false
-        }
-        return if (traceDir.renameTo(newTraceDir)) {
-            true
-        } else {
-            Log.e("FILE", "cannot rename directory $trace to $newTrace")
-            false
-        }
-    }
-
     fun listEvents(packageName: String, trace: String): MutableList<String>  {
         val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
         return if (eventDir.exists()) {
@@ -283,7 +268,7 @@ object LocalStorageOps {
         return if (gesture.renameTo(newGesture)) {
             true
         } else {
-            Log.e("FILE", "cannot rename gesture $event to ${newEvent}")
+            Log.e("FILE", "cannot rename gesture $event to $newEvent")
             false
         }
     }

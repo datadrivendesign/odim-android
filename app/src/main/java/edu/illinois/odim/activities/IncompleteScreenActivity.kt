@@ -223,7 +223,7 @@ class IncompleteScreenActivity: AppCompatActivity() {
                         getString(replaceGesture),
                         ignoreCase=false
                     )
-                    renameEventFromNewGesture(eventNameDest)
+                    renameEventFromNewGesture(eventNameDest)  // TODO: rename gesture Scroll keeps defaulting to Click
                 }
                 // transfer directly to ScreenShotActivity
                 val intent = Intent(

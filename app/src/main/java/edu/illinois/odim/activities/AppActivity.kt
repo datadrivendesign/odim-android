@@ -6,30 +6,36 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
+import android.view.ActionMode
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import edu.illinois.odim.utils.LocalStorageOps.deleteApp
-import edu.illinois.odim.utils.LocalStorageOps.listPackages
 import edu.illinois.odim.R
 import edu.illinois.odim.adapters.AppAdapter
 import edu.illinois.odim.dataclasses.AppItem
+import edu.illinois.odim.utils.LocalStorageOps.deleteApp
+import edu.illinois.odim.utils.LocalStorageOps.listPackages
 import edu.illinois.odim.workerId
 
 private var appAdapter : AppAdapter? = null
 
-fun notifyPackageAdapter() {
+fun notifyAppAdapter() {
     appAdapter?.notifyDataSetChanged()
 }
 
 class AppActivity : AppCompatActivity() {
     private var mainRecyclerView : RecyclerView? = null
     private lateinit var appList: MutableList<AppItem>
+    private var actionMode: ActionMode? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,16 +60,67 @@ class AppActivity : AppCompatActivity() {
         mainRecyclerView?.addItemDecoration(decoratorVertical)
         appAdapter!!.setOnItemLongClickListener(object: AppAdapter.OnItemLongClickListener {
             override fun onItemLongClick(position: Int): Boolean {
-                return createDeleteAppAlertDialog(position)
+                if (actionMode == null) {
+                    actionMode = startActionMode(multiSelectActionModeCallback)
+                }
+                toggleSelection(position)
+                return true
             }
         })
         appAdapter!!.setOnItemClickListener(object: AppAdapter.OnItemClickListener {
             override fun onItemClick(position: Int) {
-                val intent = Intent(applicationContext, TraceActivity::class.java)
-                intent.putExtra("package_name", appList[position].appPackage)
-                startActivity(intent)
+                if (actionMode != null) {
+                    toggleSelection(position)
+                } else {
+                    val intent = Intent(applicationContext, TraceActivity::class.java)
+                    intent.putExtra("package_name", appList[position].appPackage)
+                    startActivity(intent)
+                }
             }
         })
+    }
+
+    private val multiSelectActionModeCallback = object : ActionMode.Callback {
+        /** Called when the action mode is created. startActionMode() is called. */
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            val inflater: MenuInflater = mode.menuInflater
+            inflater.inflate(R.menu.multi_select_row_menu, menu)
+            findViewById<CoordinatorLayout>(R.id.main_app_header).visibility = View.GONE
+            return true
+        }
+        /** Called each time the action mode is shown. Always called after onCreateActionMode,
+         * and might be called multiple times if the mode is invalidated.
+         **/
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+            return false
+        }
+        /** Called when the user selects a contextual menu item. */
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            return when (item.itemId) {
+                R.id.menu_row_traces -> {
+                    createDeleteAppAlertDialog(mode)
+                    true
+                }
+                else -> false
+            }
+        }
+        /** Called when the user exits the action mode. */
+        override fun onDestroyActionMode(mode: ActionMode) {
+            for (app in appList) {
+                app.isSelected = false
+            }
+            notifyTraceAdapter()
+            findViewById<CoordinatorLayout>(R.id.main_app_header).visibility = View.VISIBLE
+            actionMode = null
+        }
+    }
+
+    private fun toggleSelection(position: Int) {
+        appList[position].isSelected = !appList[position].isSelected
+        appAdapter!!.notifyItemChanged(position)
+        // edit menu title
+        val total = appList.count { it.isSelected }
+        actionMode?.title = getString(R.string.options_bar_text_num, total)
     }
 
     private fun populateAppList(appPackageList: List<String>): MutableList<AppItem> {
@@ -101,17 +158,31 @@ class AppActivity : AppCompatActivity() {
         })
     }
 
-    private fun createDeleteAppAlertDialog(position: Int): Boolean {
+    private fun deleteSelectedApps(): Boolean {
+        val appIterator = appList.iterator()
+        while (appIterator.hasNext()) {
+            val appItem = appIterator.next()
+            if (appItem.isSelected) {
+                val result = deleteApp(appItem.appPackage)
+                if (!result) {
+                    return false
+                }
+                appIterator.remove()
+            }
+        }
+        return true
+    }
+
+    private fun createDeleteAppAlertDialog(mode: ActionMode): Boolean {
         var result = true
         val builder = AlertDialog.Builder(this@AppActivity)
             .setTitle(getString(R.string.delete_app_dialog_title))
             .setMessage(getString(R.string.delete_app_dialog_message))
             .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
-                result = deleteApp(appList[position].appPackage)
-                appList.removeAt(position)
-                appAdapter!!.notifyItemRemoved(position)
-                val itemChangeCount = appList.size - position
-                appAdapter!!.notifyItemRangeChanged(position, itemChangeCount)
+                result = deleteSelectedApps()
+                notifyAppAdapter()
+                mode.finish()
+                dialog.dismiss()
             }
             .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
                 dialog.dismiss()
@@ -126,7 +197,7 @@ class AppActivity : AppCompatActivity() {
         appList.clear()
         val appPackages = listPackages()
         appList.addAll(populateAppList(appPackages))
-        notifyPackageAdapter()
+        notifyAppAdapter()
     }
 }
 

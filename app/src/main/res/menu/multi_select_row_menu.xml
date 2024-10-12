@@ -2,12 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/menu_rename_trace"
-        android:title="@string/rename_trace_icon_title"
-        android:icon="@drawable/ic_edit"
-        app:showAsAction="always"/>
-    <item
-        android:id="@+id/menu_delete_traces"
+        android:id="@+id/menu_row_traces"
         android:title="@string/delete_screens_icon_title"
         android:icon="@drawable/ic_delete"
         app:showAsAction="always" />

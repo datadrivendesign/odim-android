@@ -7,16 +7,12 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextUtils
-import android.text.TextWatcher
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -30,8 +26,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import edu.illinois.odim.DELIM
+import edu.illinois.odim.R
+import edu.illinois.odim.adapters.EventAdapter
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.dataclasses.GestureCandidate
+import edu.illinois.odim.dataclasses.ScreenShotPreview
 import edu.illinois.odim.utils.LocalStorageOps.deleteEvent
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
 import edu.illinois.odim.utils.LocalStorageOps.loadGesture
@@ -42,9 +41,6 @@ import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceVH
-import edu.illinois.odim.R
-import edu.illinois.odim.adapters.EventAdapter
-import edu.illinois.odim.dataclasses.ScreenShotPreview
 import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -372,12 +368,10 @@ class EventActivity : AppCompatActivity() {
     private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
         var result = true
         val splitTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
-        val splitTraceTitle: TextView = splitTraceForm.findViewById(R.id.rename_trace_label)
-        splitTraceTitle.text = getString(R.string.split_trace_label)
-        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.rename_trace_input)
+        val splitTraceInput: TextView = splitTraceForm.findViewById(R.id.rename_trace_input)
         val firstSelectedScreen = screenPreviews.first { it.isSelected }
         val initTraceName = firstSelectedScreen.timestamp
-        splitTraceInput.setText(initTraceName)
+        splitTraceInput.text = initTraceName
         val builder = AlertDialog.Builder(this@EventActivity)
             .setTitle(getString(R.string.dialog_split_trace_title))
             .setView(splitTraceForm)
@@ -394,15 +388,6 @@ class EventActivity : AppCompatActivity() {
             }
         val splitAlertDialog = builder.create()
         splitAlertDialog.show()
-        val positiveButton = splitAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
-        positiveButton.isEnabled = !((splitTraceInput.text).contentEquals(chosenTraceLabel))
-        splitTraceInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                positiveButton.isEnabled = !TextUtils.isEmpty(str) && !str.contentEquals(chosenTraceLabel)
-            }
-            override fun afterTextChanged(str: Editable?) {}
-        })
         return result
     }
 
