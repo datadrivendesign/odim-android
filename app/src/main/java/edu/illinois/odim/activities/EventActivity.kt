@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.RectF
 import android.os.Bundle
 import android.view.ActionMode
 import android.view.Menu
@@ -282,42 +283,35 @@ class EventActivity : AppCompatActivity() {
 
     private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
         // calculate gesture dimensions
-        val gestureOffsetSize = 50
         val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
         val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
         val centerX = gesture.centerX * windowWidth
         val centerY = gesture.centerY * windowHeight
         val scrollDXPixel = gesture.scrollDX * windowWidth
         val scrollDYPixel = gesture.scrollDY * windowHeight
-        var rectLeft = (if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0).toInt()
-        var rectTop = (if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0).toInt()
-        var rectRight = (if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth).toInt()
-        var rectBottom = (if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight).toInt()
-        if (scrollDXPixel > 0) {
-            rectLeft = (centerX - scrollDXPixel).toInt()
-            rectRight = (centerX + scrollDXPixel).toInt()
-        }
-        if (scrollDYPixel > 0) {
-            rectTop = (centerY - scrollDYPixel).toInt()
-            rectBottom = (centerY + scrollDYPixel).toInt()
-        }
         // set up canvas and paint
         val canvas = Canvas(bitmap)
-        // start drawing gestures
-        val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
         if (eventType == getString(R.string.type_view_scroll)) {
             val scrollPaint = Paint().apply {
                 color = Color.rgb(165, 0, 255)
                 alpha = 100
             }
-            val scrollGestureOffsetSize = 40
-            canvas.drawOval(
-                (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),
-                (rect.centerY() - scrollDYPixel - scrollGestureOffsetSize),
-                (rect.centerX() + scrollDXPixel + scrollGestureOffsetSize),
-                (rect.centerY() + scrollDYPixel + scrollGestureOffsetSize),
-                scrollPaint
-            )
+            // define circle draw settings
+            val numCircles = 5
+            val maxRadius = 60F
+            val minRadius = 10F
+            val endX = centerX + scrollDXPixel
+            val endY = centerY + scrollDYPixel
+            // draw circles
+            for (i in 0 until numCircles) {
+                // Linear interpolation between start and end for center of circles
+                val fraction = i / (numCircles - 1).toFloat()
+                val currentX = centerX + fraction * (endX - centerX)
+                val currentY = centerY + fraction * (endY - centerY)
+                val currentRadius = maxRadius - fraction * (maxRadius - minRadius)
+                // Draw the circle with decreasing radius
+                canvas.drawCircle(currentX, currentY, currentRadius, scrollPaint)
+            }
         } else {
             val clickPaint = Paint().apply {
                 color = Color.rgb(0, 165, 255)
@@ -327,10 +321,17 @@ class EventActivity : AppCompatActivity() {
                 color = Color.rgb(255, 165, 0)
                 alpha = 100
             }
+            val gestureOffsetSize = 50
+            val rectLeft = if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0F
+            val rectTop = if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0F
+            val rectRight = if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth
+            val rectBottom = if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight
+            // start drawing gestures
+            val rect = RectF(rectLeft, rectTop, rectRight, rectBottom)
             val radiusFactor = 0.25
             canvas.drawCircle(
-                rect.centerX().toFloat(),
-                rect.centerY().toFloat(),
+                rect.centerX(),
+                rect.centerY(),
                 (((rect.height() + rect.width()) * radiusFactor).toFloat()),
                 if (eventType == getString(R.string.type_view_click)) clickPaint else longClickPaint
             )
