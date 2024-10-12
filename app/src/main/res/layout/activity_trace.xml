@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto" >
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <include
         android:id="@+id/trace_app_header"
-        layout="@layout/odim_app_bar"
+        layout="@layout/app_bar_odim"
         android:layout_height="wrap_content"
         android:layout_width="match_parent" />
 
@@ -15,11 +15,9 @@
         android:id="@+id/trace_text_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
         android:paddingTop="10dp"
         android:layout_marginStart="10dp"
         android:paddingBottom="5dp"
-
         app:layout_constraintTop_toBottomOf="@+id/trace_app_header"
         app:layout_constraintBottom_toTopOf="@+id/trace_recycler_view"
     >
@@ -30,7 +28,7 @@
             android:layout_height="40dp"
             android:layout_gravity="center"
             android:contentDescription="@string/trace_content_desc"
-            android:src="@drawable/ic_baseline_chevron_right_24"
+            android:src="@drawable/ic_baseline_chevron"
             app:srcCompat="@android:drawable/sym_def_app_icon" />
 
         <TextView
@@ -61,6 +59,7 @@
         android:divider="#f00"
         android:listSelector="#0f0"
         android:dividerHeight="1dp"
+        tools:listitem="@layout/recycler_row_trace"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

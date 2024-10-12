@@ -1,0 +1,495 @@
+package edu.illinois.odim.activities
+
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
+import android.view.ActionMode
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import edu.illinois.odim.DELIM
+import edu.illinois.odim.dataclasses.Gesture
+import edu.illinois.odim.dataclasses.GestureCandidate
+import edu.illinois.odim.utils.LocalStorageOps.deleteEvent
+import edu.illinois.odim.utils.LocalStorageOps.listEvents
+import edu.illinois.odim.utils.LocalStorageOps.loadGesture
+import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.loadVH
+import edu.illinois.odim.utils.LocalStorageOps.saveGesture
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.splitTraceVH
+import edu.illinois.odim.R
+import edu.illinois.odim.adapters.EventAdapter
+import edu.illinois.odim.dataclasses.ScreenShotPreview
+import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+
+private var eventAdapter: EventAdapter? = null
+
+fun notifyEventAdapter() {
+    eventAdapter?.notifyDataSetChanged()
+}
+
+class EventActivity : AppCompatActivity() {
+    private var eventRecyclerView: RecyclerView? = null
+    private var chosenPackageName: String? = null
+    private var chosenTraceLabel: String? = null
+    private var uploadTraceButton: Button? = null
+    private val screenPreviews: ArrayList<ScreenShotPreview> = ArrayList()
+    private var isTraceComplete: Boolean = true
+    private var actionMode: ActionMode? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_event)
+        chosenPackageName = intent.extras!!.getString("package_name")
+        chosenTraceLabel = intent.extras!!.getString("trace_label")
+        title = "$chosenPackageName: $chosenTraceLabel"
+        // change the way we do this with recyclerview
+        eventRecyclerView = findViewById(R.id.event_recycler_view)
+        // use gridview instead of linear
+        val gridRowCount = 2
+        eventRecyclerView?.layoutManager = GridLayoutManager(
+            this,
+            gridRowCount,
+            RecyclerView.VERTICAL,
+            false
+        )
+        // want both screenshot and event information for trace
+        val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
+        populateScreensFromEvents(eventsInTrace)
+        eventAdapter = EventAdapter(screenPreviews)
+        eventAdapter!!.setOnItemLongClickListener(object: EventAdapter.OnItemLongClickListener {
+            override fun onItemLongClick(position: Int): Boolean {
+                if (actionMode == null) {
+                    actionMode = startActionMode(multiSelectActionModeCallback)
+                }
+                toggleSelection(position)
+                return true
+            }
+        })
+        eventAdapter!!.setOnItemClickListener(object : EventAdapter.OnItemClickListener {
+            override fun onItemClick(position: Int): Boolean {
+                if (actionMode != null) {
+                    toggleSelection(position)
+                } else {
+                    val isGestureIncomplete = !screenPreviews[position].isComplete
+                    navigateToNextActivity(screenPreviews[position], isGestureIncomplete, isEditGesture=false)
+                }
+                return true
+            }
+        })
+        eventRecyclerView?.adapter = eventAdapter
+        // instantiate upload button
+        uploadTraceButton = findViewById(R.id.upload_trace_button)
+        uploadTraceButton?.setOnClickListener { buttonView ->
+            createUploadTraceAlertDialog(buttonView)
+        }
+        uploadTraceButton?.isEnabled = isTraceComplete
+    }
+
+    private fun toggleSelection(position: Int) {
+        screenPreviews[position].isSelected = !screenPreviews[position].isSelected
+        eventAdapter!!.notifyItemChanged(position)
+        val total = screenPreviews.count { it.isSelected }
+        var setEditGestureVisible = false
+        if (total == 1 && screenPreviews.first{it.isSelected}.isComplete) {
+         setEditGestureVisible = true
+        }
+        actionMode?.menu?.findItem(R.id.menu_edit_gesture)?.setVisible(setEditGestureVisible)
+        actionMode?.title = getString(R.string.options_bar_text_num, total)
+    }
+
+    private val multiSelectActionModeCallback = object : ActionMode.Callback {
+        /** Called when the action mode is created. startActionMode() is called. */
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            // Inflate a menu resource providing context menu items.
+            val inflater: MenuInflater = mode.menuInflater
+            inflater.inflate(R.menu.multi_select_event_menu, menu)
+            findViewById<CoordinatorLayout>(R.id.event_app_header).visibility = View.GONE
+            return true
+        }
+        /** Called each time the action mode is shown. Always called after onCreateActionMode,
+        * and might be called multiple times if the mode is invalidated.
+        **/
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+            return false // Return false if nothing is done
+        }
+        /** Called when the user selects a contextual menu item. */
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            return when (item.itemId) {
+                R.id.menu_edit_gesture -> {
+                    val screen = screenPreviews.first { it.isSelected }
+                    navigateToNextActivity(screen, isCreateGesture=false, isEditGesture=true)
+                    mode.finish()
+                    true
+                }
+                R.id.menu_split_trace -> {
+                    createSplitTraceAlertDialog(mode)
+                    true
+                }
+                R.id.menu_delete_screens -> {
+                    createDeleteScreensAlertDialog(mode)
+                    true
+                }
+                else -> false
+            }
+        }
+        /** Called when the user exits the action mode. */
+        override fun onDestroyActionMode(mode: ActionMode) {
+            for (screen in screenPreviews) {
+                screen.isSelected = false
+            }
+            notifyEventAdapter()
+            findViewById<CoordinatorLayout>(R.id.event_app_header).visibility = View.VISIBLE
+            actionMode = null
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        for (screen in screenPreviews) {
+            screen.screenShot.recycle()
+        }
+        screenPreviews.clear()
+        notifyEventAdapter()
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        isTraceComplete = true
+        screenPreviews.clear()
+        val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
+        populateScreensFromEvents(eventsInTrace)
+        uploadTraceButton?.isEnabled = isTraceComplete
+        notifyEventAdapter()
+    }
+
+    private fun populateScreensFromEvents(eventsInTrace: List<String>) {
+        val mapper = ObjectMapper()
+        for (event in eventsInTrace) {
+            val screenshot = loadScreenshot(chosenPackageName!!, chosenTraceLabel!!, event)
+            val mutableScreenshot = screenshot.copy(Bitmap.Config.ARGB_8888, true)
+            screenshot.recycle()
+            val eventInfo = event.split(DELIM)
+            val eventTime = eventInfo[0]
+            val eventType = eventInfo[1]
+            try {  // check if source was null and gesture was not found
+                var eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
+                var isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
+                if (!isComplete) {
+                    isTraceComplete = false
+                } else {
+                    if (eventGesture.viewId != null && !eventGesture.verified) {
+                        val matches = verifyGestureCoords(event, mapper, eventGesture)
+                        if (matches.size > 1) { // use IncompleteScreenActivity to find correct gesture
+                            isComplete = false
+                        } else {
+                            if (matches.size == 1) {
+                                val gestureCandidate = matches[0]
+                                // check if gestures match, if not then overwrite
+                                val candidateRect = gestureCandidate.rect
+                                if (candidateRect.centerX().toFloat() != eventGesture.centerX ||
+                                    candidateRect.centerY().toFloat() != eventGesture.centerY) {
+                                    eventGesture = replaceGestureWithCandidate(event, gestureCandidate, eventGesture)
+                                }
+                            }
+                        }
+                    }
+                }
+                if (isComplete) {
+                    addDrawnGesture(eventType, eventGesture, mutableScreenshot)
+                }
+                val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, isComplete)
+                screenPreviews.add(screenshotPreview)
+            } catch (e: FileNotFoundException) {
+                val screenshotPreview = ScreenShotPreview(mutableScreenshot, eventType, eventTime, false)
+                screenPreviews.add(screenshotPreview)
+            }
+        }
+    }
+
+    private fun verifyGestureCoords(event:String, mapper: ObjectMapper, gesture: Gesture): List<GestureCandidate> {
+        val vhString = loadVH(chosenPackageName!!, chosenTraceLabel!!, event)
+        val vhRoot: JsonNode = mapper.readTree(vhString)
+        val elemMatches: MutableList<GestureCandidate> = mutableListOf()
+        findVHElemsById(gesture.viewId!!, vhRoot, elemMatches)
+        return elemMatches
+    }
+
+    private fun findVHElemsById(viewId: String, vhRoot: JsonNode, elemMatches: MutableList<GestureCandidate>) {
+        if (vhRoot.get("id").asText() == viewId) {
+            val vhBoxString = vhRoot.get("bounds_in_screen").asText()
+            val vhBoxRect = Rect.unflattenFromString(vhBoxString)
+            if (vhBoxRect != null){
+                elemMatches.add(GestureCandidate(vhBoxRect, viewId))
+            }
+        }
+        // Base Case
+        val children = vhRoot.get("children") ?: return
+        val childrenArr = children as ArrayNode
+        if (childrenArr.isEmpty) {
+            return
+        }
+        // Recursive Case
+        for (i in 0 until childrenArr.size()) {
+            val child = childrenArr[i]//.asJsonObject
+            findVHElemsById(viewId, child, elemMatches)
+        }
+    }
+
+    private fun replaceGestureWithCandidate(event: String, candidate: GestureCandidate, gesture: Gesture): Gesture {
+        var newGesture = gesture
+        // if coordinates are negative, ignore because we can't render that
+        if (candidate.rect.centerX() > 0 && candidate.rect.centerY() > 0) {
+            val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
+            val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
+            newGesture = Gesture(
+                candidate.rect.centerX().toFloat() / windowWidth,
+                candidate.rect.centerY().toFloat() / windowHeight,
+                gesture.scrollDX / windowWidth,
+                gesture.scrollDY / windowHeight,
+                gesture.viewId
+            )
+        }
+        newGesture.verified = true
+        saveGesture(chosenPackageName!!, chosenTraceLabel!!, event, newGesture)
+        return newGesture
+    }
+
+    private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
+        // calculate gesture dimensions
+        val gestureOffsetSize = 50
+        val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
+        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
+        val centerX = gesture.centerX * windowWidth
+        val centerY = gesture.centerY * windowHeight
+        val scrollDXPixel = gesture.scrollDX * windowWidth
+        val scrollDYPixel = gesture.scrollDY * windowHeight
+        var rectLeft = (if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0).toInt()
+        var rectTop = (if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0).toInt()
+        var rectRight = (if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth).toInt()
+        var rectBottom = (if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight).toInt()
+        if (scrollDXPixel > 0) {
+            rectLeft = (centerX - scrollDXPixel).toInt()
+            rectRight = (centerX + scrollDXPixel).toInt()
+        }
+        if (scrollDYPixel > 0) {
+            rectTop = (centerY - scrollDYPixel).toInt()
+            rectBottom = (centerY + scrollDYPixel).toInt()
+        }
+        // set up canvas and paint
+        val canvas = Canvas(bitmap)
+        // start drawing gestures
+        val rect = Rect(rectLeft, rectTop, rectRight, rectBottom)
+        if (eventType == getString(R.string.type_view_scroll)) {
+            val scrollPaint = Paint().apply {
+                color = Color.rgb(165, 0, 255)
+                alpha = 100
+            }
+            val scrollGestureOffsetSize = 40
+            canvas.drawOval(
+                (rect.centerX() - scrollDXPixel - scrollGestureOffsetSize),
+                (rect.centerY() - scrollDYPixel - scrollGestureOffsetSize),
+                (rect.centerX() + scrollDXPixel + scrollGestureOffsetSize),
+                (rect.centerY() + scrollDYPixel + scrollGestureOffsetSize),
+                scrollPaint
+            )
+        } else {
+            val clickPaint = Paint().apply {
+                color = Color.rgb(0, 165, 255)
+                alpha = 100
+            }
+            val longClickPaint = Paint().apply {
+                color = Color.rgb(255, 165, 0)
+                alpha = 100
+            }
+            val radiusFactor = 0.25
+            canvas.drawCircle(
+                rect.centerX().toFloat(),
+                rect.centerY().toFloat(),
+                (((rect.height() + rect.width()) * radiusFactor).toFloat()),
+                if (eventType == getString(R.string.type_view_click)) clickPaint else longClickPaint
+            )
+        }
+    }
+
+    private fun splitTraceEvent(newTraceName: String, chosenEventLabel: String): Boolean {
+        val result = splitTraceScreenshot(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel) &&
+                splitTraceVH(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel)
+        if (!result) {
+            return false
+        }
+        splitTraceGesture(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel)
+        splitTraceRedactions(chosenPackageName!!, chosenTraceLabel!!, newTraceName, chosenEventLabel)
+        return true
+    }
+
+    private fun splitSelectedScreensToTrace(newTraceName: String): Boolean {
+        val screenIterator = screenPreviews.iterator()
+        while (screenIterator.hasNext()) {
+            val screen = screenIterator.next()
+            if (screen.isSelected) {
+                val chosenEventLabel = "${screen.timestamp}$DELIM${screen.event}"
+                if (splitTraceEvent(newTraceName, chosenEventLabel) &&
+                    deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)) {
+                    screenIterator.remove()
+                } else {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
+        var result = true
+        val splitTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
+        val splitTraceTitle: TextView = splitTraceForm.findViewById(R.id.rename_trace_label)
+        splitTraceTitle.text = getString(R.string.split_trace_label)
+        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.rename_trace_input)
+        val firstSelectedScreen = screenPreviews.first { it.isSelected }
+        val initTraceName = firstSelectedScreen.timestamp
+        splitTraceInput.setText(initTraceName)
+        val builder = AlertDialog.Builder(this@EventActivity)
+            .setTitle(getString(R.string.dialog_split_trace_title))
+            .setView(splitTraceForm)
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
+                val traceName = splitTraceInput.text.toString()
+                result = splitSelectedScreensToTrace(traceName)
+                notifyEventAdapter()
+                mode.finish()
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
+                mode.finish()
+                dialog.dismiss()
+            }
+        val splitAlertDialog = builder.create()
+        splitAlertDialog.show()
+        val positiveButton = splitAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton.isEnabled = !((splitTraceInput.text).contentEquals(chosenTraceLabel))
+        splitTraceInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                positiveButton.isEnabled = !TextUtils.isEmpty(str) && !str.contentEquals(chosenTraceLabel)
+            }
+            override fun afterTextChanged(str: Editable?) {}
+        })
+        return result
+    }
+
+    private fun deleteSelectedScreens(): Boolean {
+        val screenIterator = screenPreviews.iterator()
+        while (screenIterator.hasNext()) {
+            val screen = screenIterator.next()
+            if (screen.isSelected) {
+                val chosenEventLabel = "${screen.timestamp}$DELIM${screen.event}"
+                val result = deleteEvent(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel)
+                if (!result) {
+                    return false
+                }
+                screenIterator.remove()
+            }
+        }
+        return true
+    }
+
+    private fun createDeleteScreensAlertDialog(mode: ActionMode): Boolean {
+        var result = true
+        val builder = AlertDialog.Builder(this@EventActivity)
+            .setTitle(getString(R.string.dialog_delete_screens_title))
+            .setMessage(getString(R.string.dialog_delete_screens_message))
+            .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
+                result = deleteSelectedScreens()
+                notifyEventAdapter()
+                mode.finish()
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.dialog_negative)) { dialog, _ ->
+                mode.finish()
+                dialog.dismiss()
+            }
+        val deleteAlertDialog = builder.create()
+        deleteAlertDialog.show()
+        return result
+    }
+
+    private fun createUploadTraceAlertDialog(uploadButtonView: View) {
+        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
+        val uploadDialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_upload_trace_title))
+            .setView(traceDescInput)
+            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
+                    val uploadSuccess = uploadFullTraceContent(
+                        chosenPackageName!!,
+                        chosenTraceLabel!!,
+                        traceDescription.text.toString())
+                    if (!uploadSuccess) {
+                        val errSnackbar = Snackbar.make(uploadButtonView,
+                            R.string.upload_fail, Snackbar.LENGTH_LONG)
+                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
+                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+                        errSnackbar.show()
+                    } else {
+                        val successSnackbar = Snackbar.make(uploadButtonView,
+                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
+                        successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+                        successSnackbar.show()
+                    }
+                }
+            }
+            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
+                dialogInterface.cancel()
+            }
+            .create()
+        uploadDialog.show()
+    }
+
+    private fun navigateToNextActivity(screen: ScreenShotPreview, isCreateGesture: Boolean, isEditGesture: Boolean) {
+        val nextClass = if (!isCreateGesture && !isEditGesture) {
+            ScreenShotActivity::class.java
+        } else {
+            IncompleteScreenActivity::class.java
+        }
+        val intent = Intent(applicationContext, nextClass)
+        intent.putExtra("package_name", chosenPackageName)
+        intent.putExtra("trace_label", chosenTraceLabel)
+        val chosenEventLabel = "${screen.timestamp}$DELIM${screen.event}"
+        intent.putExtra("event_label", chosenEventLabel)
+        intent.putExtra("edit_gesture", isEditGesture)
+        startActivity(intent)
+    }
+}

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,14 +11,16 @@
         android:layout_height="match_parent"
         android:contentDescription="@string/incomplete_screen_content_desc" />
 
-    <edu.illinois.odim.ScrubbingScreenshotOverlay
+    <edu.illinois.odim.fragments.ScrubbingScreenshotOverlay
         android:id="@+id/scrubbing_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/transparent" />
+        android:background="@android:color/transparent"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="-91dp" />
 
-    <edu.illinois.odim.MovableFloatingActionButton
-        android:id="@+id/delete_redact_fab"
+    <edu.illinois.odim.fragments.MovableFloatingActionButton
+        android:id="@+id/primary_redact_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
@@ -25,32 +28,67 @@
         android:minHeight="48dp"
         android:scaleType="center"
         app:maxImageSize="28dp"
-        app:backgroundTint="@color/material_dynamic_secondary80"
+        app:backgroundTint="#b5cad7"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.112"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.814"
-        app:srcCompat="@android:drawable/ic_menu_edit" />
+        app:srcCompat="@drawable/ic_menu_edit" />
 
-    <edu.illinois.odim.MovableFloatingActionButton
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/vh_list_redact_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:clickable="true"
+        android:contentDescription="@string/vh_list_redact_fab_desc"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:scaleType="center"
+        android:visibility="gone"
+        app:backgroundTint="@color/material_dynamic_neutral80"
+        app:layout_constraintBottom_toTopOf="@id/primary_redact_fab"
+        app:layout_constraintStart_toStartOf="@id/primary_redact_fab"
+        app:maxImageSize="28dp"
+        app:srcCompat="@drawable/ic_menu_open" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/secondary_redact_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:clickable="true"
+        android:contentDescription="@string/secondary_redact_fab_desc"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:scaleType="center"
+        android:visibility="gone"
+        app:backgroundTint="#ff6496"
+        app:layout_constraintBottom_toTopOf="@id/save_redact_fab"
+        app:layout_constraintStart_toEndOf="@id/vh_list_redact_fab"
+        app:maxImageSize="28dp"
+        app:srcCompat="@android:drawable/ic_delete" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/save_redact_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
         android:clickable="true"
-        app:backgroundTint="@color/material_dynamic_secondary80"
+        android:contentDescription="@string/save_redact_fab_desc"
         android:minWidth="48dp"
         android:minHeight="48dp"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="41dp"
         android:scaleType="center"
+        android:visibility="gone"
+        app:backgroundTint="@color/material_dynamic_primary90"
+        app:layout_constraintBottom_toBottomOf="@id/primary_redact_fab"
+        app:layout_constraintStart_toEndOf="@id/primary_redact_fab"
         app:maxImageSize="28dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.112"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.973"
         app:srcCompat="@android:drawable/ic_menu_save" />
 </androidx.constraintlayout.widget.ConstraintLayout>
