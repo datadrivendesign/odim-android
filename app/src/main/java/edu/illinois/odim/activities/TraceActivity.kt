@@ -2,7 +2,6 @@ package edu.illinois.odim.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
@@ -90,7 +89,6 @@ class TraceActivity : AppCompatActivity(){
         val traceItemList = mutableListOf<TraceItem>()
         for (traceLabel in traceLabels) {
             val numEvents = listEvents(chosenPackageName!!, traceLabel).size
-            Log.i("TRACE", "$numEvents")
             val traceItem = TraceItem(traceLabel, numEvents)
             traceItemList.add(traceItem)
         }

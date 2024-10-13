@@ -386,7 +386,7 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
                 return false
             }
         }
-        if (node.has("content-desc")) {
+        if (node.has("content-desc") && node.get("content-desc").asText() != "none") {
             isMatch = (node.get("content-desc").asText() == vhItem.contentDesc)
         }
         return isMatch
