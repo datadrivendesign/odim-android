@@ -62,7 +62,16 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor")
     implementation("ru.gildor.coroutines:kotlin-coroutines-okhttp:1.0")
     // JSON parsing library
-    implementation 'com.google.code.gson:gson:2.10'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.16.1'
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1"
+    // qr code scanning
+    def camerax_version = "1.2.2"
+    implementation "androidx.camera:camera-core:${camerax_version}"
+    implementation "androidx.camera:camera-camera2:${camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
+    implementation "androidx.camera:camera-video:${camerax_version}"
+    implementation "androidx.camera:camera-view:${camerax_version}"
+    implementation "androidx.camera:camera-extensions:${camerax_version}"
+    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+
 }
