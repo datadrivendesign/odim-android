@@ -13,26 +13,53 @@
         android:layout_height="wrap_content"
         android:layout_width="match_parent" />
 
-    <TextView
-        android:id="@+id/app_text_header"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/app_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/headerTextRed"
-        android:textStyle="bold"
-        android:textSize="20sp"
         android:layout_marginTop="10dp"
-        android:layout_marginStart="10dp"
         android:layout_marginBottom="5dp"
-        android:text="@string/MainTextHeader"
+        app:layout_constraintBottom_toTopOf="@+id/app_package_recycler_view"
         app:layout_constraintTop_toBottomOf="@+id/main_app_header"
-        app:layout_constraintBottom_toTopOf="@+id/app_package_recycler_view"/>
+        tools:layout_editor_absoluteX="10dp">
+
+        <TextView
+            android:id="@+id/text_app_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/MainTextHeader"
+            android:textColor="@color/headerTextRed"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginStart="10dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/button_navigate_qr"
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/button_navigate_qr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Scan QR"
+            android:textSize="11sp"
+            android:visibility="visible"
+            app:cornerRadius="12dp"
+            android:layout_marginEnd="20dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/text_app_header" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/app_package_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="10dp"
-        app:layout_constraintTop_toBottomOf="@+id/app_text_header"
+        app:layout_constraintTop_toBottomOf="@+id/app_header"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"

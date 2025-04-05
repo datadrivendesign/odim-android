@@ -3,11 +3,14 @@ package edu.illinois.odim.activities
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.NameNotFoundException
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.mlkit.vision.barcode.common.Barcode
+import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.databinding.ActivityCaptureBinding
 import edu.illinois.odim.dataclasses.CaptureTask
 import okhttp3.Call
@@ -28,9 +32,11 @@ import okio.IOException
 class CaptureActivity: AppCompatActivity() {
     private val cameraPermission = android.Manifest.permission.CAMERA
     private lateinit var binding: ActivityCaptureBinding
-    private lateinit var captureTask: CaptureTask
+    private var captureTask: CaptureTask? = null
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
         if (isGranted) {
             startScanner()
         }
@@ -41,22 +47,52 @@ class CaptureActivity: AppCompatActivity() {
         binding = ActivityCaptureBinding.inflate(layoutInflater)
         setContentView(binding.root)
         // set layout bindings based on whether capture task data exists
-        if (!::captureTask.isInitialized) {
+        if (captureTask == null) {
             binding.layoutCaptureInfo.visibility = View.GONE
-            binding.buttonOpenScanner.visibility = View.VISIBLE
-            binding.textErrorMessage.visibility = View.VISIBLE
+            binding.layoutScanQr.visibility = View.VISIBLE
         } else {
             populateCaptureLayout()
         }
+        // set button onClicks in rescan QR UI
         binding.buttonOpenScanner.setOnClickListener {
             requestCameraAndStartScanner()
         }
-        binding.buttonInstallApp.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("https://play.google.com/store/apps/details?id=${captureTask.capture.appId}")
-                setPackage("com.android.vending")
-            }
+        binding.buttonQrGoTrace.setOnClickListener {
+            val intent = Intent(applicationContext, AppActivity::class.java)
             startActivity(intent)
+        }
+
+        // set button onClicks in task instruction UI
+        binding.buttonInstallApp.setOnClickListener {
+           captureTask?.capture?.appId?.let { appId ->
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://play.google.com/store/apps/details?id=${appId}")
+                    setPackage("com.android.vending")
+                }
+                startActivity(intent)
+            }
+        }
+        binding.buttonNavigateSettings.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        binding.buttonOpenApp.setOnClickListener { btn ->
+            captureTask?.capture?.appId?.let { appId ->
+                val launchIntent = packageManager.getLaunchIntentForPackage(appId)
+                if (launchIntent != null) {
+                    startActivity(launchIntent)
+                } else {
+                    Toast.makeText(appContext, "App not installed", Toast.LENGTH_SHORT).show()
+                    btn.isEnabled = false
+                }
+            }
+        }
+        binding.buttonTaskGoTrace.setOnClickListener {
+            startActivity(Intent(applicationContext, AppActivity::class.java))
+        }
+        binding.buttonRescanQr.setOnClickListener {
+            binding.layoutScanQr.visibility = View.VISIBLE
+            binding.layoutCaptureInfo.visibility = View.GONE
+            captureTask = null
         }
     }
 
@@ -72,7 +108,7 @@ class CaptureActivity: AppCompatActivity() {
         }
     }
 
-    inline fun Context.cameraPermissionRequest(crossinline positive: () -> Unit) {
+    private inline fun Context.cameraPermissionRequest(crossinline positive: () -> Unit) {
         AlertDialog.Builder(this)
             .setTitle("Camera Permission Required")
             .setMessage("Without accessing the camera it is not possible to SCAN QR Codes...")
@@ -83,7 +119,7 @@ class CaptureActivity: AppCompatActivity() {
             }.show()
     }
 
-    fun Context.openPermissionSetting() {
+    private fun Context.openPermissionSetting() {
         Intent(ACTION_APPLICATION_DETAILS_SETTINGS).also {
             val uri: Uri = Uri.fromParts("package", packageName, null)
             it.data = uri
@@ -105,9 +141,22 @@ class CaptureActivity: AppCompatActivity() {
     }
 
     private fun populateCaptureLayout() {
+        binding.layoutScanQr.visibility = View.GONE
         binding.layoutCaptureInfo.visibility = View.VISIBLE
-        binding.textViewAppInstall.text = captureTask.capture.appId
-        binding.textViewTaskDescription.text = captureTask.task.description
+        val appPackageName = captureTask?.capture?.appId
+        val taskDescription = captureTask?.task?.description
+        try {
+            appPackageName?.let {
+                val appIcon = packageManager.getApplicationIcon(it)
+                binding.captureAppIcon.setImageDrawable(appIcon)
+                val appInfo = packageManager.getApplicationInfo(it, 0)
+                val appName = packageManager.getApplicationLabel(appInfo).toString()
+                binding.textAppName.text = appName
+            }
+        } catch (nameNotFound: NameNotFoundException) {
+            binding.textAppName.text = appPackageName.toString()
+        }
+        binding.textTaskDescription.text = taskDescription.toString()
     }
 
     private fun makeGetRequest(url: String) {
@@ -117,7 +166,7 @@ class CaptureActivity: AppCompatActivity() {
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("GET Request", "Failed: ${e.message}")
-                runOnUiThread { binding.textErrorMessage.text = "URL call failed" }
+                Toast.makeText(appContext, "URL call failed", Toast.LENGTH_SHORT).show()
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -127,14 +176,12 @@ class CaptureActivity: AppCompatActivity() {
                     Log.d("GET", responseBody)
                     captureTask = mapper.readValue(responseBody)
                     runOnUiThread {
-                        binding.textErrorMessage.text = ""
                         populateCaptureLayout()
                     }
                 } catch (ex: Exception) {
-                    runOnUiThread { binding.textErrorMessage.text = "Response Body is not JSON" }
                     Log.e("GET", ex.message.toString())
+                    Toast.makeText(appContext, "Response Body is not JSON", Toast.LENGTH_SHORT).show()
                 }
-
             }
         })
     }
@@ -147,7 +194,7 @@ class CaptureActivity: AppCompatActivity() {
                         makeGetRequest(barcode.url?.url.toString())
                     }
                     else -> {
-                        binding.textErrorMessage.text = "Incorrect QR Content: Not URL"
+                        Toast.makeText(appContext, "Incorrect QR Content: Not URL", Toast.LENGTH_SHORT).show()
                     }
                 }
             }

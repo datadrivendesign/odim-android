@@ -3,79 +3,519 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FFFFFFFF"
+    android:backgroundTint="#FFFFFFFF"
+    android:foregroundTint="#FFFFFFFF">
 
-    <Button
-        android:id="@+id/button_open_scanner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Open Scanner"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/text_error_message"
-        style="@style/TextAppearance.AppCompat.Title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_open_scanner" />
-
-    <LinearLayout
-        android:id="@+id/layout_capture_info"
+    <include
+        android:id="@+id/main_app_header"
+        layout="@layout/app_bar_odim"
         android:layout_width="match_parent"
-        android:layout_height="450dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_scan_qr"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:gravity="center_horizontal"
         android:orientation="vertical"
         android:padding="12dp"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.444"
-        android:visibility="gone" >
+        app:layout_constraintVertical_bias="0.444">
 
+        <androidx.cardview.widget.CardView
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            app:cardBackgroundColor="#3E3A3A"
+            app:cardCornerRadius="25dp"
+            app:layout_constraintBottom_toTopOf="@+id/qr_scan_instruction"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.4">
+
+            <ImageView
+                android:id="@+id/qr_app_icon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="Icon of camera to indicate user should use camera to scan QR code."
+                android:scaleType="center"
+                app:srcCompat="@android:drawable/ic_menu_camera" />
+        </androidx.cardview.widget.CardView>
 
         <TextView
-            style="@style/TextAppearance.AppCompat.Subhead"
-            android:layout_width="match_parent"
+            android:id="@+id/qr_scan_instruction"
+            style="@style/TextAppearance.AppCompat.Body2"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
             android:gravity="center"
-            android:text="Install App" />
-
-        <TextView
-            android:id="@+id/text_view_app_install"
-            style="@style/TextAppearance.AppCompat.Title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="App" />
+            android:text="Scan the QR code on the ODIM website to get your assigned task to record"
+            app:layout_constraintBottom_toTopOf="@+id/button_open_scanner"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.494"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <Button
-            android:id="@+id/button_install_app"
+            android:id="@+id/button_open_scanner"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Install" />
+            android:layout_marginBottom="68dp"
+            android:text="Open Scanner"
+            android:textSize="11sp"
+            app:cornerRadius="12dp"
+            app:layout_constraintBottom_toTopOf="@+id/button_qr_go_trace"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
-        <TextView
-            style="@style/TextAppearance.AppCompat.Subhead"
-            android:gravity="center"
+        <Button
+            android:id="@+id/button_qr_go_trace"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5sp"
+            android:backgroundTint="#357338"
+            android:text="Open Trace List"
+            android:textSize="11sp"
+            android:visibility="visible"
+            app:cornerRadius="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_capture_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginStart="20sp"
+        android:layout_marginEnd="20sp"
+        app:layout_constraintTop_toBottomOf="@+id/main_app_header"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_capture_step_one"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Task Description" />
+            android:layout_marginBottom="10dp"
+            android:orientation="vertical"
+            app:cardCornerRadius="15sp"
+            app:cardBackgroundColor="@color/lightGray"
+            app:layout_constraintTop_toTopOf="@+id/layout_capture_info"
+            app:layout_constraintBottom_toTopOf="@+id/card_capture_step_two"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
-            android:id="@+id/text_view_task_description"
-            style="@style/TextAppearance.AppCompat.Title"
-            android:gravity="center"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/step_one_card_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/layout_step_one_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5sp"
+                    android:orientation="horizontal"
+                    android:paddingTop="5sp"
+                    app:layout_constraintBottom_toTopOf="@+id/capture_app_icon_card"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent">
+
+                    <TextView
+                        android:id="@+id/step_one_badge"
+                        android:layout_width="25sp"
+                        android:layout_height="25sp"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/badge_circle"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="@color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/step_one_title_text"
+                        app:layout_constraintHorizontal_bias="0"
+                        app:layout_constraintHorizontal_chainStyle="packed"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/step_one_title_text"
+                        style="@style/TextAppearance.AppCompat.Subhead"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Install App if You Have Not"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/step_one_badge"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/capture_app_icon_card"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="#00FFFFFF"
+                    app:cardBackgroundColor="#00FFFFFF"
+                    app:cardCornerRadius="15sp"
+                    app:layout_constraintBottom_toTopOf="@+id/text_app_name"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent">
+
+                    <ImageView
+                        android:id="@+id/capture_app_icon"
+                        android:layout_width="50sp"
+                        android:layout_height="50sp"
+                        android:contentDescription="icon of app user is tasked with capturing"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:id="@+id/text_app_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="App Name"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="10dp"
+                    app:layout_constraintBottom_toTopOf="@+id/button_install_app"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"/>
+
+                <Button
+                    android:id="@+id/button_install_app"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5sp"
+                    android:backgroundTint="#0A74CE"
+                    android:text="Install App"
+                    android:textSize="11sp"
+                    android:visibility="visible"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_capture_step_two"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="API Content" />
+            app:cardCornerRadius="15sp"
+            android:layout_marginBottom="10dp"
+            android:orientation="vertical"
+            app:cardBackgroundColor="@color/lightGray"
+            app:layout_constraintBottom_toTopOf="@+id/card_capture_step_three"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-    </LinearLayout>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/layout_step_two_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5sp"
+                    android:orientation="horizontal"
+                    android:paddingTop="5sp"
+                    app:layout_constraintBottom_toTopOf="@+id/layout_task_description"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="0.0">
+
+                    <TextView
+                        android:id="@+id/step_two_badge"
+                        android:layout_width="25sp"
+                        android:layout_height="25sp"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/badge_circle"
+                        android:gravity="center"
+                        android:text="2"
+                        android:textColor="@color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/step_two_title_text"
+                        app:layout_constraintHorizontal_bias="0"
+                        app:layout_constraintHorizontal_chainStyle="packed"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/step_two_title_text"
+                        style="@style/TextAppearance.AppCompat.Subhead"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:text="Record Task"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/step_two_badge"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/layout_task_description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="5sp"
+                    app:layout_constraintBottom_toTopOf="@+id/text_settings_instruction"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent">
+                    <TextView
+                        android:id="@+id/text_task_prefix"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="20dp"
+                        android:gravity="start"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:text="Task:"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
+
+                    <TextView
+                        android:id="@+id/text_task_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:gravity="start"
+                        android:text="Task Description"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.0"
+                        app:layout_constraintStart_toEndOf="@+id/text_task_prefix"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintVertical_bias="0.0" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/text_settings_instruction"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginBottom="0dp"
+                    android:textColor="@color/black"
+                    android:text="Toggle ODIM Accessibility on/off in Settings to start/stop recording"
+                    app:layout_constraintBottom_toTopOf="@+id/button_navigate_settings"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <Button
+                    android:id="@+id/button_navigate_settings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:backgroundTint="#646262"
+                    android:text="Open Settings"
+                    android:textSize="11sp"
+                    android:visibility="visible"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintBottom_toTopOf="@+id/text_app_instruction"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/text_app_instruction"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginBottom="0dp"
+                    android:gravity="start"
+                    android:textColor="@color/black"
+                    android:text="Open the app and do the task"
+                    app:layout_constraintBottom_toTopOf="@+id/button_open_app"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <Button
+                    android:id="@+id/button_open_app"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:backgroundTint="#3F51B5"
+                    android:text="Open App"
+                    android:textSize="11sp"
+                    android:visibility="visible"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_capture_step_three"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="15sp"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="@color/lightGray"
+            app:layout_constraintBottom_toTopOf="@+id/button_rescan_qr"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/layout_step_three_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5sp"
+                    android:orientation="horizontal"
+                    android:paddingTop="5sp"
+                    app:layout_constraintBottom_toTopOf="@+id/text_navigate_question"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="0.0">
+
+                    <TextView
+                        android:id="@+id/step_three_badge"
+                        android:layout_width="25sp"
+                        android:layout_height="25sp"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/badge_circle"
+                        android:gravity="center"
+                        android:text="3"
+                        android:textColor="@color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/step_three_title_text"
+                        app:layout_constraintHorizontal_bias="0"
+                        app:layout_constraintHorizontal_chainStyle="packed"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/step_three_title_text"
+                        style="@style/TextAppearance.AppCompat.Subhead"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:text="Review and upload recorded task"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/step_three_badge"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/text_navigate_question"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:gravity="start"
+                    android:textColor="@color/black"
+                    android:text="How do I navigate to my trace?"
+                    app:layout_constraintBottom_toTopOf="@+id/text_navigate_answer"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/text_navigate_answer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginBottom="5sp"
+                    android:gravity="start"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:text="Open App List > Select App > Select Trace/Task"
+                    app:layout_constraintBottom_toTopOf="@+id/text_upload_question"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/text_upload_question"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:gravity="start"
+                    android:textColor="@color/black"
+                    android:text="How do I upload my trace?"
+                    app:layout_constraintBottom_toTopOf="@+id/text_upload_answer"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/text_upload_answer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginBottom="10dp"
+                    android:gravity="start"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:text="In Trace View, Click the Upload Button"
+                    app:layout_constraintBottom_toTopOf="@+id/button_task_go_trace"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <Button
+                    android:id="@+id/button_task_go_trace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5sp"
+                    android:backgroundTint="#357338"
+                    android:text="Open Trace List"
+                    android:textSize="11sp"
+                    android:visibility="visible"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+        <Button
+            android:id="@+id/button_rescan_qr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rescan QR"
+            android:textSize="11sp"
+            android:visibility="visible"
+            app:cornerRadius="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

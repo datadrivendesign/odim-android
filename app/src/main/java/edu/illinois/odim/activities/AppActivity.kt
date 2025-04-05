@@ -11,6 +11,7 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -43,6 +44,12 @@ class AppActivity : AppCompatActivity() {
         setContentView(R.layout.activity_app)
         setSupportActionBar(findViewById(R.id.odim_app_header))
         createWorkerInputForm()
+        // set up scan qr button
+        val scanQRBtn = findViewById<Button>(R.id.button_navigate_qr)
+        scanQRBtn.setOnClickListener {
+            startActivity(Intent(applicationContext, CaptureActivity::class.java))
+
+        }
         // set up recycler view
         mainRecyclerView = findViewById(R.id.app_package_recycler_view)
         mainRecyclerView?.layoutManager = LinearLayoutManager(
@@ -126,7 +133,6 @@ class AppActivity : AppCompatActivity() {
     private fun populateAppList(appPackageList: List<String>): MutableList<AppItem> {
         val mainList = mutableListOf<AppItem>()
         for (appPackage in appPackageList) {
-            val packageManager = applicationContext.packageManager
             val appInfo = packageManager.getApplicationInfo(appPackage, 0)
             val appName = packageManager.getApplicationLabel(appInfo).toString()
             val appIcon = packageManager.getApplicationIcon(appPackage)
