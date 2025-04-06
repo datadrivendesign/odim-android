@@ -34,12 +34,25 @@
             android:autofillHints="Give the trace a name!" />
 
         <TextView
+            android:id="@+id/trace_task"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/black"
+            app:layout_constraintTop_toBottomOf="@+id/trace_label"
+            app:layout_constraintBottom_toTopOf="@+id/num_trace_screens"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:clickable="false"
+            android:text="@string/placeholder_trace_task"
+            android:hint="@string/trace_name_hint" />
+
+        <TextView
             android:id="@+id/num_trace_screens"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:textColor="@color/design_default_color_primary_dark"
-            app:layout_constraintTop_toBottomOf="@+id/trace_label"
+            app:layout_constraintTop_toBottomOf="@+id/trace_task"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             android:text="@string/traceNumScreens"

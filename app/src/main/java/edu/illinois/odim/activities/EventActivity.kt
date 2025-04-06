@@ -8,12 +8,16 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -38,6 +42,7 @@ import edu.illinois.odim.utils.LocalStorageOps.loadGesture
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.utils.LocalStorageOps.saveGesture
+import edu.illinois.odim.utils.LocalStorageOps.saveTraceTask
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
@@ -349,7 +354,8 @@ class EventActivity : AppCompatActivity() {
         return true
     }
 
-    private fun splitSelectedScreensToTrace(newTraceName: String): Boolean {
+    private fun splitSelectedScreensToTrace(newTraceName: String, newTask: String): Boolean {
+        // split screens into new trace directory
         val screenIterator = screenPreviews.iterator()
         while (screenIterator.hasNext()) {
             val screen = screenIterator.next()
@@ -363,22 +369,26 @@ class EventActivity : AppCompatActivity() {
                 }
             }
         }
-        return true
+        // add new task to new trace directory
+        return saveTraceTask(chosenPackageName!!, newTraceName, newTask)
     }
 
     private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
+        // set up view layout
         var result = true
         val splitTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
-        val splitTraceInput: TextView = splitTraceForm.findViewById(R.id.rename_trace_input)
+        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.rename_trace_task_input)
+        // retrieve new trace label
         val firstSelectedScreen = screenPreviews.first { it.isSelected }
-        val initTraceName = firstSelectedScreen.timestamp
-        splitTraceInput.text = initTraceName
+        val newTraceName = firstSelectedScreen.timestamp
+        splitTraceInput.setText(getString(R.string.placeholder_trace_no_task))
+        // build alert dialogue
         val builder = AlertDialog.Builder(this@EventActivity)
             .setTitle(getString(R.string.dialog_split_trace_title))
             .setView(splitTraceForm)
             .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
-                val traceName = splitTraceInput.text.toString()
-                result = splitSelectedScreensToTrace(traceName)
+                val traceTask = splitTraceInput.text.toString()
+                result = splitSelectedScreensToTrace(newTraceName, traceTask)
                 notifyEventAdapter()
                 mode.finish()
                 dialog.dismiss()
@@ -389,6 +399,14 @@ class EventActivity : AppCompatActivity() {
             }
         val splitAlertDialog = builder.create()
         splitAlertDialog.show()
+        // disable alert dialogue button if EditText is empty
+        splitTraceInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun afterTextChanged(str: Editable?) {
+                splitAlertDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
+            }
+        })
         return result
     }
 

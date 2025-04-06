@@ -20,6 +20,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.mlkit.vision.barcode.common.Barcode
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
+import edu.illinois.odim.MyAccessibilityService.Companion.captureTask
 import edu.illinois.odim.databinding.ActivityCaptureBinding
 import edu.illinois.odim.dataclasses.CaptureTask
 import okhttp3.Call
@@ -32,7 +33,6 @@ import okio.IOException
 class CaptureActivity: AppCompatActivity() {
     private val cameraPermission = android.Manifest.permission.CAMERA
     private lateinit var binding: ActivityCaptureBinding
-    private var captureTask: CaptureTask? = null
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -66,14 +66,17 @@ class CaptureActivity: AppCompatActivity() {
         binding.buttonInstallApp.setOnClickListener {
            captureTask?.capture?.appId?.let { appId ->
                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse("https://play.google.com/store/apps/details?id=${appId}")
-                    setPackage("com.android.vending")
+                    data = Uri.parse("market://details?id=${appId}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 startActivity(intent)
             }
         }
         binding.buttonNavigateSettings.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(intent)
         }
         binding.buttonOpenApp.setOnClickListener { btn ->
             captureTask?.capture?.appId?.let { appId ->

@@ -125,6 +125,32 @@ object LocalStorageOps {
         }
     }
 
+    fun loadTraceTask(packageName: String, trace: String): String {
+        val textFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/task.txt")
+        if (textFile.exists()) {
+            return textFile.readText(Charsets.UTF_8)
+        } else {
+            return "No task found for trace"
+        }
+    }
+
+    fun saveTraceTask(packageName: String, trace: String, task: String): Boolean {
+        return try {
+            val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
+            if (!eventDir.exists()) {
+                eventDir.mkdirs()
+            }
+            val fileVH = File(eventDir, "task.txt")
+            FileOutputStream(fileVH, false).use { stream ->
+                stream.write(task.toByteArray())
+            }
+            true
+        } catch (e: IOException) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     fun loadScreenshot(packageName: String, trace: String, event: String): Bitmap {
         val screenFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$event.png")
         if (screenFile.exists()) {
@@ -231,7 +257,7 @@ object LocalStorageOps {
         }
     }
 
-    fun saveVH(packageName: String, trace: String, event: String, vhJsonString: String) : Boolean {
+    fun saveVH(packageName: String, trace: String, event: String, vhJsonString: String): Boolean {
         return try {
             val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
             if (!eventDir.exists()) {
