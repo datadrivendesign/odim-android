@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputEditText
 import edu.illinois.odim.DELIM
 import edu.illinois.odim.R
 import edu.illinois.odim.adapters.EventAdapter
@@ -42,7 +41,7 @@ import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceVH
-import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
+import edu.illinois.odim.utils.UploadDataOps.uploadFullCapture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,7 +108,7 @@ class EventActivity : AppCompatActivity() {
         uploadTraceButton?.setOnClickListener { buttonView ->
             createUploadTraceAlertDialog(buttonView)
         }
-        uploadTraceButton?.isEnabled = isTraceComplete
+//        uploadTraceButton?.isEnabled = isTraceComplete
     }
 
     private fun toggleSelection(position: Int) {
@@ -185,7 +184,7 @@ class EventActivity : AppCompatActivity() {
         screenPreviews.clear()
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
-        uploadTraceButton?.isEnabled = isTraceComplete
+//        uploadTraceButton?.isEnabled = isTraceComplete
         notifyEventAdapter()
     }
 
@@ -429,17 +428,18 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun createUploadTraceAlertDialog(uploadButtonView: View) {
-        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
+//        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
         val uploadDialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.dialog_upload_trace_title))
-            .setView(traceDescInput)
+//            .setView(traceDescInput)
             .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
-                    val uploadSuccess = uploadFullTraceContent(
-                        chosenPackageName!!,
-                        chosenTraceLabel!!,
-                        traceDescription.text.toString())
+//                    val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
+//                    val uploadSuccess = uploadFullTraceContent(
+//                        chosenPackageName!!,
+//                        chosenTraceLabel!!,
+//                        traceDescription.text.toString())
+                    val uploadSuccess = uploadFullCapture(chosenPackageName!!, chosenTraceLabel!!)
                     if (!uploadSuccess) {
                         val errSnackbar = Snackbar.make(uploadButtonView,
                             R.string.upload_fail, Snackbar.LENGTH_LONG)
