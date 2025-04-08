@@ -20,6 +20,7 @@ import android.widget.FrameLayout
 import com.fasterxml.jackson.core.JsonEncoding
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
+import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.CaptureTask
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.utils.LocalStorageOps.GESTURE_PREFIX
@@ -31,7 +32,7 @@ import edu.illinois.odim.utils.LocalStorageOps.renameScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.renameVH
 import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
-import edu.illinois.odim.utils.LocalStorageOps.saveTraceTask
+import edu.illinois.odim.utils.LocalStorageOps.saveCapture
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -180,7 +181,8 @@ class MyAccessibilityService : AccessibilityService() {
                 if (isNewTrace) {  // add capture task description for new trace
                     captureTask?.let { capture ->
                         if (capture.capture.appId == rootPackageName) {
-                            saveTraceTask(rootPackageName, traceLabel, capture.task.description)
+                            val captureStore = CaptureStore(capture.capture.id, capture.task.description)
+                            saveCapture(rootPackageName, traceLabel, captureStore)
                         }
                     }
                 }

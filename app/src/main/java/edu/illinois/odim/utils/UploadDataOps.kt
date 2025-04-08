@@ -14,14 +14,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import edu.illinois.odim.DELIM
+import edu.illinois.odim.MyAccessibilityService.Companion.appContext
+import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.Gesture
+import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
 import edu.illinois.odim.utils.LocalStorageOps.loadGesture
 import edu.illinois.odim.utils.LocalStorageOps.loadRedactions
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
-import edu.illinois.odim.MyAccessibilityService.Companion.appContext
-import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.workerId
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -100,6 +101,7 @@ object UploadDataOps {
                                             mapper: ObjectMapper,
                                             packageName: String,
                                             traceLabel: String,
+                                            captureId: String,
                                             eventLabel: String): Response {
         val jsonMediaType = "application/json; charset=utf-8".toMediaType()
         // get bitmap as bit64 string
@@ -138,7 +140,7 @@ object UploadDataOps {
             val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
             // run the POST request
             val screenPostRequest = Request.Builder()
-                .url("$API_URL_PREFIX/screens")
+                .url("$API_URL_PREFIX/api/capture/${captureId}/upload")
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .header("Connection", "close")
                 .post(reqBody.toRequestBody(jsonMediaType))
@@ -187,7 +189,7 @@ object UploadDataOps {
             Log.e("error upload", "no Wi-Fi connection")
             return false
         }
-        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) //?: return false
+        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities)
         if (activeNetwork == null) {
             Log.e("error upload", "no Wi-Fi connection")
             return false
@@ -234,7 +236,11 @@ object UploadDataOps {
         return true
     }
 
-    suspend fun uploadFullCapture(packageName: String, traceLabel: String): Boolean {
+    suspend fun uploadFullCapture(
+        packageName: String,
+        traceLabel: String,
+        capture: CaptureStore
+    ): Boolean {
         if (!checkWifiConnected()) {
             return false
         }
@@ -247,10 +253,10 @@ object UploadDataOps {
             val traceEvents: List<String> = listEvents(packageName, traceLabel)
             for (event in traceEvents) {
                 // add POST request for screens
-                uploadScreenCapture(client, mapper, packageName, traceLabel, event).use {
+                uploadScreenCapture(client, mapper, packageName, traceLabel, capture.id, event).use {
                     isSuccessUpload = it.isSuccessful
                 }
-                if (!isSuccessUpload) { //&& screenId.isNotEmpty()) {
+                if (!isSuccessUpload) {
                     Log.e("api", "fail upload screenshot")
                     return false
                 }

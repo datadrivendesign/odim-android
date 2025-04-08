@@ -24,7 +24,7 @@ import edu.illinois.odim.R
 import edu.illinois.odim.adapters.AppAdapter
 import edu.illinois.odim.dataclasses.AppItem
 import edu.illinois.odim.utils.LocalStorageOps.deleteApp
-import edu.illinois.odim.utils.LocalStorageOps.listPackages
+import edu.illinois.odim.utils.LocalStorageOps.listApps
 import edu.illinois.odim.workerId
 
 private var appAdapter : AppAdapter? = null
@@ -57,7 +57,7 @@ class AppActivity : AppCompatActivity() {
             RecyclerView.VERTICAL,
             false
         )
-        val appPackageList = listPackages()
+        val appPackageList = listApps()
         appList = populateAppList(appPackageList)
         appAdapter = AppAdapter(appList)
         mainRecyclerView?.adapter = appAdapter
@@ -201,7 +201,7 @@ class AppActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         appList.clear()
-        val appPackages = listPackages()
+        val appPackages = listApps()
         appList.addAll(populateAppList(appPackages))
         notifyAppAdapter()
     }
