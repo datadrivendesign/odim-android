@@ -20,6 +20,7 @@ import android.widget.FrameLayout
 import com.fasterxml.jackson.core.JsonEncoding
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
+import edu.illinois.odim.dataclasses.CaptureTask
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.utils.LocalStorageOps.GESTURE_PREFIX
 import edu.illinois.odim.utils.LocalStorageOps.listEventData
@@ -30,6 +31,7 @@ import edu.illinois.odim.utils.LocalStorageOps.renameScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.renameVH
 import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
+import edu.illinois.odim.utils.LocalStorageOps.saveTraceTask
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +64,7 @@ class MyAccessibilityService : AccessibilityService() {
     // static variables
     companion object {
         lateinit var appContext: Context
+        var captureTask: CaptureTask? = null
         fun isAppContextInitialized(): Boolean { return ::appContext.isInitialized }
         lateinit var APP_LAUNCHER_PACKAGE: String
         private const val TIME_DIFF = 100
@@ -166,7 +169,7 @@ class MyAccessibilityService : AccessibilityService() {
                 }
                 currTouchTime = getInteractionTime()
                 if (rootPackageName != lastTouchPackageName) {
-                    // continue trace even if back and home button pressed
+                    // create new trace for another app when new app detected in touch
                     Log.i("TOUCH_PACKAGE", "root: $rootPackageName, last package: $lastTouchPackageName")
                     isNewTrace = true
                 }
@@ -174,6 +177,13 @@ class MyAccessibilityService : AccessibilityService() {
                 val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel) ?: return@launch
                 saveScreenshot(rootPackageName, traceLabel, tempEventLabel, currentBitmap!!)
                 saveVH(rootPackageName, traceLabel, tempEventLabel, currVHString!!)
+                if (isNewTrace) {  // add capture task description for new trace
+                    captureTask?.let { capture ->
+                        if (capture.capture.appId == rootPackageName) {
+                            saveTraceTask(rootPackageName, traceLabel, capture.task.description)
+                        }
+                    }
+                }
                 isNewTrace = false
                 lastTouchPackageName = rootPackageName
             }

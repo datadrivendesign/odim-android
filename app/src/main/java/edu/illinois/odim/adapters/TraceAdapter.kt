@@ -21,6 +21,7 @@ class TraceAdapter(private var traceList: MutableList<TraceItem>):
                 R.string.traceNumScreens,
                 traceItem.numEvents
             )
+            traceItemView.traceTask.text = traceItem.traceTask
             traceItemView.traceLabel.text = traceItem.traceLabel
             traceItemView.root.setBackgroundColor(if (traceItem.isSelected) Color.LTGRAY else Color.TRANSPARENT)
         }
