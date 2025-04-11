@@ -193,15 +193,6 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 val screenWidth = incompleteImageView.drawable.intrinsicWidth
                 val screenHeight = incompleteImageView.drawable.intrinsicHeight
                 val vhCandidateRect = incompleteOverlayView.currVHCandidate!!.rect
-                val newGesture = Gesture(
-                    vhCandidateRect.exactCenterX() / screenWidth,
-                    vhCandidateRect.exactCenterY() / screenHeight,
-                    updateGesture.scrollDx / screenWidth,
-                    updateGesture.scrollDy / screenHeight,
-                    incompleteOverlayView.currVHCandidate!!.viewId
-                )
-                newGesture.verified = true
-                saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
                 var eventNameDest: String = chosenEventLabel!!
                 if (chosenEventLabel!!.contains(getString(R.string.type_unknown)) || isEditGesture) {
                     // get gesture to replace
@@ -213,6 +204,15 @@ class IncompleteScreenActivity: AppCompatActivity() {
                             R.string.type_view_click
                         }
                     }
+                    val newGesture = Gesture(
+                        centerX=vhCandidateRect.exactCenterX() / screenWidth,
+                        centerY=vhCandidateRect.exactCenterY() / screenHeight,
+                        scrollDX=updateGesture.scrollDx / screenWidth,
+                        scrollDY=updateGesture.scrollDy / screenHeight,
+                        viewId=incompleteOverlayView.currVHCandidate!!.viewId
+                    )
+                    newGesture.verified = true
+                    saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
                     // replace the gesture name from unknown to click or scroll
                     val oldEventType = chosenEventLabel!!.substringAfter(DELIM)
                     eventNameDest = chosenEventLabel!!.replace(

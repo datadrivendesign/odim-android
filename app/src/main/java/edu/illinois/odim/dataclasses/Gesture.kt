@@ -10,7 +10,13 @@ data class Gesture(
     var className: String? = null
     var verified: Boolean = false
 
-    constructor(eventClassName: String) : this(centerX=-1F, centerY=-1F, scrollDX=-1F,scrollDY= -1F,viewId= null) {
+    constructor(eventClassName: String) : this(
+        centerX=-1F,
+        centerY=-1F,
+        scrollDX=-1F,
+        scrollDY= -1F,
+        viewId=null
+    ) {
         className = eventClassName
     }
 

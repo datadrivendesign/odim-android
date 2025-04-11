@@ -279,11 +279,11 @@ class EventActivity : AppCompatActivity() {
             val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
             val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
             newGesture = Gesture(
-                candidate.rect.centerX().toFloat() / windowWidth,
-                candidate.rect.centerY().toFloat() / windowHeight,
-                gesture.scrollDX / windowWidth,
-                gesture.scrollDY / windowHeight,
-                gesture.viewId
+                centerX=candidate.rect.centerX().toFloat() / windowWidth,
+                centerY=candidate.rect.centerY().toFloat() / windowHeight,
+                scrollDX=gesture.scrollDX / windowWidth,
+                scrollDY=gesture.scrollDY / windowHeight,
+                viewId=gesture.viewId,
             )
         }
         newGesture.verified = true

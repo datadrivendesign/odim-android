@@ -69,8 +69,9 @@ object UploadDataOps {
             val bitmapBase64 = Base64.encodeToString(it.toByteArray(), Base64.DEFAULT)
             // retrieve vh
             val vhString = loadVH(packageName, traceLabel, eventLabel)
-            // retrieve screen timestamp
+            // retrieve screen timestamp and gesture type
             val screenCreatedAt = eventLabel.substringBefore(DELIM)
+            val screenGesture = eventLabel.substringAfter(DELIM)
             // retrieve gesture for screen
             val gesture: Gesture = loadGesture(packageName, traceLabel, eventLabel)
             // construct request body
@@ -84,6 +85,7 @@ object UploadDataOps {
             gestureJSON.put("y", gesture.centerY)
             gestureJSON.put("scrollDeltaX", gesture.scrollDX)
             gestureJSON.put("scrollDeltaY", gesture.scrollDY)
+            gestureJSON.put("type", screenGesture)
             reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
             val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
             // run the POST request
@@ -113,6 +115,7 @@ object UploadDataOps {
             val vhString = loadVH(packageName, traceLabel, eventLabel)
             // retrieve screen timestamp
             val screenCreatedAt = eventLabel.substringBefore(DELIM)
+            val screenGesture = eventLabel.substringAfter(DELIM)
             // construct request body
             val reqBodyJSONObj = mapper.createObjectNode()
             reqBodyJSONObj.put("vh", vhString)
@@ -127,6 +130,7 @@ object UploadDataOps {
                 gestureJSON.put("y", gesture.centerY)
                 gestureJSON.put("scrollDeltaX", gesture.scrollDX)
                 gestureJSON.put("scrollDeltaY", gesture.scrollDY)
+                gestureJSON.put("type", screenGesture)
                 reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
             } catch (e: FileNotFoundException) {
                 // construct gesture body, need to exclude className
