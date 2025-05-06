@@ -22,7 +22,6 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.captureTask
 import edu.illinois.odim.databinding.ActivityCaptureBinding
-import edu.illinois.odim.dataclasses.CaptureTask
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -164,6 +163,7 @@ class CaptureActivity: AppCompatActivity() {
 
     private fun makeGetRequest(url: String) {
         val client = OkHttpClient()
+        Log.d("GET Request", url)
         val request = Request.Builder().url(url).build()
 
         client.newCall(request).enqueue(object : Callback {

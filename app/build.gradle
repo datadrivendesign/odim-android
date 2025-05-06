@@ -23,8 +23,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://pre-alpha.odim.app"}\"")
+        }
         release {
             minifyEnabled false
+            buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://pre-alpha.odim.app"}\"")
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

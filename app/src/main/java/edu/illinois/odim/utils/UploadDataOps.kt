@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import edu.illinois.odim.BuildConfig
 import edu.illinois.odim.DELIM
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
@@ -21,6 +22,7 @@ import edu.illinois.odim.utils.LocalStorageOps.loadRedactions
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
+import edu.illinois.odim.MyAccessibilityService.Companion.captureTask
 import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.workerId
 import okhttp3.MediaType.Companion.toMediaType
@@ -36,7 +38,7 @@ import java.util.logging.Logger
 
 object UploadDataOps {
     private const val OLD_API_URL_PREFIX = "https://api.denizarsan.com"
-    private const val API_URL_PREFIX = "https://overhaul-backend.d1z04mdf4ss7va.amplifyapp.com/"
+    private const val API_URL_PREFIX = BuildConfig.API_URL_PREFIX
 
     private suspend fun uploadRedaction(client: OkHttpClient,
                                         mapper: ObjectMapper,
@@ -83,6 +85,7 @@ object UploadDataOps {
             gestureJSON.put("y", gesture.centerY)
             gestureJSON.put("scrollDeltaX", gesture.scrollDX)
             gestureJSON.put("scrollDeltaY", gesture.scrollDY)
+            gestureJSON.put("type", gesture.type)
             reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
             val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
             // run the POST request
@@ -125,6 +128,7 @@ object UploadDataOps {
                 gestureJSON.put("y", gesture.centerY)
                 gestureJSON.put("scrollDeltaX", gesture.scrollDX)
                 gestureJSON.put("scrollDeltaY", gesture.scrollDY)
+                gestureJSON.put("type", gesture.type)
                 reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
             } catch (e: FileNotFoundException) {
                 // construct gesture body, need to exclude className
@@ -133,12 +137,13 @@ object UploadDataOps {
                 gestureJSON.put("y", 0)
                 gestureJSON.put("scrollDeltaX", 0)
                 gestureJSON.put("scrollDeltaY", 0)
+                gestureJSON.put("type", "")
                 reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
             }
             val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
             // run the POST request
             val screenPostRequest = Request.Builder()
-                .url("$API_URL_PREFIX/screens")
+                .url("$API_URL_PREFIX/api/capture/${captureTask!!.capture.id}/upload")
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .header("Connection", "close")
                 .post(reqBody.toRequestBody(jsonMediaType))
@@ -249,6 +254,7 @@ object UploadDataOps {
                 // add POST request for screens
                 uploadScreenCapture(client, mapper, packageName, traceLabel, event).use {
                     isSuccessUpload = it.isSuccessful
+                    Log.d("api", "status: ${it.isSuccessful}, message: ${it.message}, body: ${it.body?.string()}")
                 }
                 if (!isSuccessUpload) { //&& screenId.isNotEmpty()) {
                     Log.e("api", "fail upload screenshot")

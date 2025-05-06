@@ -325,9 +325,9 @@ class MyAccessibilityService : AccessibilityService() {
             scrollCoords = Pair(event.scrollDeltaX, event.scrollDeltaY)
         }
         // add the event as gesture
-        val gesture = createGestureFromNode(isSystemUIBtnPressed, className, outbounds, viewId, scrollCoords)
         // Parse event description and rename event with proper interaction name
         val eventLabel = createEventLabel(event.eventType)
+        val gesture = createGestureFromNode(isSystemUIBtnPressed, className, outbounds, viewId, eventLabel, scrollCoords)
         // rename all items in the event dir and event dir as well
         renameScreenshot(currEventPackageName, latestTrace, latestEvent, eventLabel)
         renameVH(currEventPackageName, latestTrace, latestEvent, eventLabel)
@@ -372,6 +372,7 @@ class MyAccessibilityService : AccessibilityService() {
         isSystemUIBtnPressed: Boolean,
         className: String,
         outbounds: Rect?,
+        type: String?,
         viewId: String?,
         scrollCoords: Pair<Int, Int>?
     ) : Gesture {
@@ -398,7 +399,7 @@ class MyAccessibilityService : AccessibilityService() {
             scrollDX = scrollCoords.first/screenWidth
             scrollDY = scrollCoords.second/screenHeight
         }
-        return Gesture(centerX, centerY, scrollDX, scrollDY, viewId)
+        return Gesture(centerX, centerY, scrollDX, scrollDY, type, viewId)
     }
 
     override fun onInterrupt() {}
