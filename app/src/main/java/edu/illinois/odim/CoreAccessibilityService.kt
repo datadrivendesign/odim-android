@@ -20,6 +20,7 @@ import android.widget.FrameLayout
 import com.fasterxml.jackson.core.JsonEncoding
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
+import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.CaptureTask
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.utils.LocalStorageOps.GESTURE_PREFIX
@@ -31,7 +32,7 @@ import edu.illinois.odim.utils.LocalStorageOps.renameScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.renameVH
 import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
-import edu.illinois.odim.utils.LocalStorageOps.saveTraceTask
+import edu.illinois.odim.utils.LocalStorageOps.saveCapture
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -133,7 +134,7 @@ class MyAccessibilityService : AccessibilityService() {
                 }
                 // coroutine to take screenshot
                 val screenshotJob = async(Dispatchers.Main.immediate) {
-                    suspendCancellableCoroutine<Long> { continuation ->
+                    suspendCancellableCoroutine { continuation ->
                         val startTime = System.currentTimeMillis()
                         measureTimeMillis {
                             takeScreenshot(
@@ -180,7 +181,8 @@ class MyAccessibilityService : AccessibilityService() {
                 if (isNewTrace) {  // add capture task description for new trace
                     captureTask?.let { capture ->
                         if (capture.capture.appId == rootPackageName) {
-                            saveTraceTask(rootPackageName, traceLabel, capture.task.description)
+                            val captureStore = CaptureStore(capture.capture.id, capture.task.description)
+                            saveCapture(rootPackageName, traceLabel, captureStore)
                         }
                     }
                 }
@@ -326,8 +328,14 @@ class MyAccessibilityService : AccessibilityService() {
         }
         // add the event as gesture
         // Parse event description and rename event with proper interaction name
+        val gesture = createGestureFromNode(
+            isSystemUIBtnPressed,
+            className,
+            outbounds,
+            viewId,
+            scrollCoords
+        )
         val eventLabel = createEventLabel(event.eventType)
-        val gesture = createGestureFromNode(isSystemUIBtnPressed, className, outbounds, viewId, eventLabel, scrollCoords)
         // rename all items in the event dir and event dir as well
         renameScreenshot(currEventPackageName, latestTrace, latestEvent, eventLabel)
         renameVH(currEventPackageName, latestTrace, latestEvent, eventLabel)
@@ -352,14 +360,18 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun getLatestEvent(eventPackageName: String, trace: String): String? {
         val eventList = listEvents(eventPackageName, trace)
-        try {
-            return eventList.last() // trace is sorted in ascending order
+        return try {
+            eventList.last() // trace is sorted in ascending order
         } catch (e: NoSuchElementException) {
-            return null
+            null
         }
     }
 
-    private fun getCurrentTraceLabel(isNewTrace: Boolean, eventPackageName: String, eventLabel: String): String? {
+    private fun getCurrentTraceLabel(
+        isNewTrace: Boolean,
+        eventPackageName: String,
+        eventLabel: String
+    ): String? {
         val traceLabel = if (isNewTrace) {
             eventLabel.substringBefore(DELIM)
         } else {
@@ -372,7 +384,6 @@ class MyAccessibilityService : AccessibilityService() {
         isSystemUIBtnPressed: Boolean,
         className: String,
         outbounds: Rect?,
-        type: String?,
         viewId: String?,
         scrollCoords: Pair<Int, Int>?
     ) : Gesture {
@@ -399,7 +410,7 @@ class MyAccessibilityService : AccessibilityService() {
             scrollDX = scrollCoords.first/screenWidth
             scrollDY = scrollCoords.second/screenHeight
         }
-        return Gesture(centerX, centerY, scrollDX, scrollDY, type, viewId)
+        return Gesture(centerX, centerY, scrollDX, scrollDY, viewId)
     }
 
     override fun onInterrupt() {}

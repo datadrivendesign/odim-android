@@ -2,7 +2,6 @@ package edu.illinois.odim.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
@@ -23,7 +22,7 @@ import edu.illinois.odim.dataclasses.TraceItem
 import edu.illinois.odim.utils.LocalStorageOps.deleteTrace
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
 import edu.illinois.odim.utils.LocalStorageOps.listTraces
-import edu.illinois.odim.utils.LocalStorageOps.loadTraceTask
+import edu.illinois.odim.utils.LocalStorageOps.loadCapture
 
 private var traceAdapter: TraceAdapter? = null
 
@@ -90,10 +89,9 @@ class TraceActivity : AppCompatActivity(){
     private fun populateTraceList(traceLabels: List<String>): MutableList<TraceItem> {
         val traceItemList = mutableListOf<TraceItem>()
         for (traceLabel in traceLabels) {
-            val traceTask = loadTraceTask(chosenPackageName!!, traceLabel)
+            val traceCapture = loadCapture(chosenPackageName!!, traceLabel)
             val numEvents = listEvents(chosenPackageName!!, traceLabel).size
-            Log.i("TRACE", "$numEvents")
-            val traceItem = TraceItem(traceLabel, traceTask, numEvents)
+            val traceItem = TraceItem(traceLabel, traceCapture.description, numEvents)
             traceItemList.add(traceItem)
         }
         return traceItemList

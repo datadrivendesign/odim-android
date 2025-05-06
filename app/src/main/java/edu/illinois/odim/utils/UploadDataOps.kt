@@ -15,15 +15,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import edu.illinois.odim.BuildConfig
 import edu.illinois.odim.DELIM
+import edu.illinois.odim.MyAccessibilityService.Companion.appContext
+import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.Gesture
+import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
 import edu.illinois.odim.utils.LocalStorageOps.loadGesture
 import edu.illinois.odim.utils.LocalStorageOps.loadRedactions
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
-import edu.illinois.odim.MyAccessibilityService.Companion.appContext
-import edu.illinois.odim.MyAccessibilityService.Companion.captureTask
-import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.workerId
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -40,22 +40,22 @@ object UploadDataOps {
     private const val OLD_API_URL_PREFIX = "https://api.denizarsan.com"
     private const val API_URL_PREFIX = BuildConfig.API_URL_PREFIX
 
-    private suspend fun uploadRedaction(client: OkHttpClient,
-                                        mapper: ObjectMapper,
-                                        redaction: Redaction,
-                                        screenId: String): Response {
-        val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-        val reqBodyJSONObj = mapper.valueToTree<ObjectNode>(redaction)
-        reqBodyJSONObj.put("screen", screenId)
-        val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
-        val vhPostRequest = Request.Builder()
-            .url("$OLD_API_URL_PREFIX/redactions")
-            .addHeader("Content-Type", "application/json; charset=utf-8")
-            .header("Connection", "close")
-            .post(reqBody.toRequestBody(jsonMediaType))
-            .build()
-        return client.newCall(vhPostRequest).await()
-    }
+//    private suspend fun uploadRedaction(client: OkHttpClient,
+//                                        mapper: ObjectMapper,
+//                                        redaction: Redaction,
+//                                        screenId: String): Response {
+//        val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+//        val reqBodyJSONObj = mapper.valueToTree<ObjectNode>(redaction)
+//        reqBodyJSONObj.put("screen", screenId)
+//        val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
+//        val vhPostRequest = Request.Builder()
+//            .url("$OLD_API_URL_PREFIX/redactions")
+//            .addHeader("Content-Type", "application/json; charset=utf-8")
+//            .header("Connection", "close")
+//            .post(reqBody.toRequestBody(jsonMediaType))
+//            .build()
+//        return client.newCall(vhPostRequest).await()
+//    }
 
     private suspend fun uploadScreen(client: OkHttpClient,
                                      mapper: ObjectMapper,
@@ -70,8 +70,9 @@ object UploadDataOps {
             val bitmapBase64 = Base64.encodeToString(it.toByteArray(), Base64.DEFAULT)
             // retrieve vh
             val vhString = loadVH(packageName, traceLabel, eventLabel)
-            // retrieve screen timestamp
+            // retrieve screen timestamp and gesture type
             val screenCreatedAt = eventLabel.substringBefore(DELIM)
+            val screenGestureType = eventLabel.substringAfter(DELIM)
             // retrieve gesture for screen
             val gesture: Gesture = loadGesture(packageName, traceLabel, eventLabel)
             // construct request body
@@ -85,8 +86,16 @@ object UploadDataOps {
             gestureJSON.put("y", gesture.centerY)
             gestureJSON.put("scrollDeltaX", gesture.scrollDX)
             gestureJSON.put("scrollDeltaY", gesture.scrollDY)
-            gestureJSON.put("type", gesture.type)
+            gestureJSON.put("type", screenGestureType)
             reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
+            // construct redactions
+            val redactions = loadRedactions(packageName, traceLabel, eventLabel)
+            val redactionsJson = ObjectMapper().createArrayNode()
+            for (redaction: Redaction in redactions) {
+                val redactJson = mapper.valueToTree<ObjectNode>(redaction)
+                redactionsJson.add(redactJson)
+            }
+            reqBodyJSONObj.set<ArrayNode>("redactions", redactionsJson)
             val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
             // run the POST request
             val screenPostRequest = Request.Builder()
@@ -103,6 +112,7 @@ object UploadDataOps {
                                             mapper: ObjectMapper,
                                             packageName: String,
                                             traceLabel: String,
+                                            captureId: String,
                                             eventLabel: String): Response {
         val jsonMediaType = "application/json; charset=utf-8".toMediaType()
         // get bitmap as bit64 string
@@ -114,7 +124,7 @@ object UploadDataOps {
             val vhString = loadVH(packageName, traceLabel, eventLabel)
             // retrieve screen timestamp
             val screenCreatedAt = eventLabel.substringBefore(DELIM)
-            // construct request body
+            val screenGestureType = eventLabel.substringAfter(DELIM)
             val reqBodyJSONObj = mapper.createObjectNode()
             reqBodyJSONObj.put("vh", vhString)
             reqBodyJSONObj.put("img", bitmapBase64)
@@ -128,7 +138,7 @@ object UploadDataOps {
                 gestureJSON.put("y", gesture.centerY)
                 gestureJSON.put("scrollDeltaX", gesture.scrollDX)
                 gestureJSON.put("scrollDeltaY", gesture.scrollDY)
-                gestureJSON.put("type", gesture.type)
+                gestureJSON.put("type", screenGestureType)
                 reqBodyJSONObj.set<JsonNode>("gesture", gestureJSON)
             } catch (e: FileNotFoundException) {
                 // construct gesture body, need to exclude className
@@ -143,7 +153,7 @@ object UploadDataOps {
             val reqBody = mapper.writeValueAsString(reqBodyJSONObj)
             // run the POST request
             val screenPostRequest = Request.Builder()
-                .url("$API_URL_PREFIX/api/capture/${captureTask!!.capture.id}/upload")
+                .url("$API_URL_PREFIX/api/capture/${captureId}/upload")
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .header("Connection", "close")
                 .post(reqBody.toRequestBody(jsonMediaType))
@@ -192,7 +202,7 @@ object UploadDataOps {
             Log.e("error upload", "no Wi-Fi connection")
             return false
         }
-        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities) //?: return false
+        val activeNetwork = connMgr.getNetworkCapabilities(networkCapabilities)
         if (activeNetwork == null) {
             Log.e("error upload", "no Wi-Fi connection")
             return false
@@ -239,7 +249,11 @@ object UploadDataOps {
         return true
     }
 
-    suspend fun uploadFullCapture(packageName: String, traceLabel: String): Boolean {
+    suspend fun uploadFullCapture(
+        packageName: String,
+        traceLabel: String,
+        capture: CaptureStore
+    ): Boolean {
         if (!checkWifiConnected()) {
             return false
         }
@@ -252,11 +266,11 @@ object UploadDataOps {
             val traceEvents: List<String> = listEvents(packageName, traceLabel)
             for (event in traceEvents) {
                 // add POST request for screens
-                uploadScreenCapture(client, mapper, packageName, traceLabel, event).use {
+                uploadScreenCapture(client, mapper, packageName, traceLabel, capture.id, event).use {
                     isSuccessUpload = it.isSuccessful
                     Log.d("api", "status: ${it.isSuccessful}, message: ${it.message}, body: ${it.body?.string()}")
                 }
-                if (!isSuccessUpload) { //&& screenId.isNotEmpty()) {
+                if (!isSuccessUpload) {
                     Log.e("api", "fail upload screenshot")
                     return false
                 }
@@ -281,7 +295,6 @@ object UploadDataOps {
         val client = OkHttpClient()
         var isSuccessUpload: Boolean
         try {
-            // Upload VH file
             val mapper = ObjectMapper()
             val screenBodyData = ArrayList<ObjectNode>()
             val traceEvents: List<String> = listEvents(packageName, traceLabel)
@@ -300,19 +313,6 @@ object UploadDataOps {
                 } else {
                     Log.e("api", "fail upload screenshot")
                     return false
-                }
-                // add POST request for redactions
-                val redactions = loadRedactions(packageName, traceLabel, event)
-                for (redaction: Redaction in redactions) {
-                    uploadRedaction(client, mapper, redaction, screenId).use {
-                        isSuccessUpload = it.isSuccessful
-                    }
-                    if (isSuccessUpload) {
-                        Log.d("api", "success upload redaction")
-                    } else {
-                        Log.e("api", "fail upload redaction")
-                        return false
-                    }
                 }
             }
             // add POST request for traces
