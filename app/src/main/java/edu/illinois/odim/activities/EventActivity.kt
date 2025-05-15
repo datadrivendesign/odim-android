@@ -8,12 +8,16 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -29,19 +33,23 @@ import com.google.android.material.textfield.TextInputEditText
 import edu.illinois.odim.DELIM
 import edu.illinois.odim.R
 import edu.illinois.odim.adapters.EventAdapter
+import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.dataclasses.GestureCandidate
 import edu.illinois.odim.dataclasses.ScreenShotPreview
 import edu.illinois.odim.utils.LocalStorageOps.deleteEvent
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
+import edu.illinois.odim.utils.LocalStorageOps.loadCapture
 import edu.illinois.odim.utils.LocalStorageOps.loadGesture
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.utils.LocalStorageOps.saveGesture
+import edu.illinois.odim.utils.LocalStorageOps.saveCapture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceVH
+import edu.illinois.odim.utils.UploadDataOps.uploadFullCapture
 import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +67,7 @@ class EventActivity : AppCompatActivity() {
     private var chosenPackageName: String? = null
     private var chosenTraceLabel: String? = null
     private var uploadTraceButton: Button? = null
+    private var captureStore: CaptureStore? = null
     private val screenPreviews: ArrayList<ScreenShotPreview> = ArrayList()
     private var isTraceComplete: Boolean = true
     private var actionMode: ActionMode? = null
@@ -80,6 +89,7 @@ class EventActivity : AppCompatActivity() {
             false
         )
         // want both screenshot and event information for trace
+        captureStore = loadCapture(chosenPackageName!!, chosenTraceLabel!!)
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
         eventAdapter = EventAdapter(screenPreviews)
@@ -107,9 +117,9 @@ class EventActivity : AppCompatActivity() {
         // instantiate upload button
         uploadTraceButton = findViewById(R.id.upload_trace_button)
         uploadTraceButton?.setOnClickListener { buttonView ->
-            createUploadTraceAlertDialog(buttonView)
+            createUploadCaptureAlertDialog(buttonView)
         }
-        uploadTraceButton?.isEnabled = isTraceComplete
+        uploadTraceButton?.isEnabled = captureStore?.id?.isNotEmpty() ?: false
     }
 
     private fun toggleSelection(position: Int) {
@@ -185,7 +195,7 @@ class EventActivity : AppCompatActivity() {
         screenPreviews.clear()
         val eventsInTrace : List<String> = listEvents(chosenPackageName!!, chosenTraceLabel!!)
         populateScreensFromEvents(eventsInTrace)
-        uploadTraceButton?.isEnabled = isTraceComplete
+//        uploadTraceButton?.isEnabled = isTraceComplete
         notifyEventAdapter()
     }
 
@@ -269,11 +279,11 @@ class EventActivity : AppCompatActivity() {
             val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
             val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
             newGesture = Gesture(
-                candidate.rect.centerX().toFloat() / windowWidth,
-                candidate.rect.centerY().toFloat() / windowHeight,
-                gesture.scrollDX / windowWidth,
-                gesture.scrollDY / windowHeight,
-                gesture.viewId
+                centerX=candidate.rect.centerX().toFloat() / windowWidth,
+                centerY=candidate.rect.centerY().toFloat() / windowHeight,
+                scrollDX=gesture.scrollDX / windowWidth,
+                scrollDY=gesture.scrollDY / windowHeight,
+                viewId=gesture.viewId,
             )
         }
         newGesture.verified = true
@@ -349,7 +359,8 @@ class EventActivity : AppCompatActivity() {
         return true
     }
 
-    private fun splitSelectedScreensToTrace(newTraceName: String): Boolean {
+    private fun splitSelectedScreensToTrace(newTraceName: String, newTask: String): Boolean {
+        // split screens into new trace directory
         val screenIterator = screenPreviews.iterator()
         while (screenIterator.hasNext()) {
             val screen = screenIterator.next()
@@ -363,22 +374,27 @@ class EventActivity : AppCompatActivity() {
                 }
             }
         }
-        return true
+        // add new task to new trace directory
+        val newCaptureStore = CaptureStore(captureStore!!.id, newTask)
+        return saveCapture(chosenPackageName!!, newTraceName, newCaptureStore)
     }
 
     private fun createSplitTraceAlertDialog(mode: ActionMode): Boolean {
+        // set up view layout
         var result = true
         val splitTraceForm = View.inflate(this, R.layout.dialog_rename_trace, null)
-        val splitTraceInput: TextView = splitTraceForm.findViewById(R.id.rename_trace_input)
+        val splitTraceInput: EditText = splitTraceForm.findViewById(R.id.rename_trace_task_input)
+        // retrieve new trace label
         val firstSelectedScreen = screenPreviews.first { it.isSelected }
-        val initTraceName = firstSelectedScreen.timestamp
-        splitTraceInput.text = initTraceName
+        val newTraceName = firstSelectedScreen.timestamp
+        splitTraceInput.setText(getString(R.string.placeholder_trace_no_task))
+        // build alert dialogue
         val builder = AlertDialog.Builder(this@EventActivity)
             .setTitle(getString(R.string.dialog_split_trace_title))
             .setView(splitTraceForm)
             .setPositiveButton(getString(R.string.dialog_positive)) { dialog, _ ->
-                val traceName = splitTraceInput.text.toString()
-                result = splitSelectedScreensToTrace(traceName)
+                val traceTask = splitTraceInput.text.toString()
+                result = splitSelectedScreensToTrace(newTraceName, traceTask)
                 notifyEventAdapter()
                 mode.finish()
                 dialog.dismiss()
@@ -389,6 +405,14 @@ class EventActivity : AppCompatActivity() {
             }
         val splitAlertDialog = builder.create()
         splitAlertDialog.show()
+        // disable alert dialogue button if EditText is empty
+        splitTraceInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun afterTextChanged(str: Editable?) {
+                splitAlertDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
+            }
+        })
         return result
     }
 
@@ -453,6 +477,40 @@ class EventActivity : AppCompatActivity() {
                         successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
                         successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
                             .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+                        successSnackbar.show()
+                    }
+                }
+            }
+            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
+                dialogInterface.cancel()
+            }
+            .create()
+        uploadDialog.show()
+    }
+
+    private fun createUploadCaptureAlertDialog(uploadButtonView: View) {
+        val uploadDialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_upload_trace_title))
+            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    val uploadSuccess = uploadFullCapture(chosenPackageName!!, chosenTraceLabel!!, captureStore!!)
+                    if (!uploadSuccess) {
+                        val errSnackbar = Snackbar.make(uploadButtonView,
+                            R.string.upload_fail, Snackbar.LENGTH_LONG)
+                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
+                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+                        errSnackbar.show()
+                    } else {
+                        val successSnackbar = Snackbar.make(uploadButtonView,
+                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(
+                            applicationContext,
+                            android.R.color.holo_green_light)
+                        )
+                        successSnackbar.view.findViewById<TextView>(
+                            com.google.android.material.R.id.snackbar_text
+                        ).setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
                         successSnackbar.show()
                     }
                 }

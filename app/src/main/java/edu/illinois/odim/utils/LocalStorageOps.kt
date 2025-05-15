@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.isAppContextInitialized
+import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.Redaction
 import java.io.File
 import java.io.FileNotFoundException
@@ -22,7 +23,7 @@ object LocalStorageOps {
     private const val REDACT_PREFIX = "redact-"
     private val kotlinMapper = ObjectMapper().registerKotlinModule()
 
-    fun listPackages(): MutableList<String> {
+    fun listApps(): MutableList<String> {
         if (!isAppContextInitialized()) {
             return arrayListOf()
         }
@@ -39,6 +40,17 @@ object LocalStorageOps {
         }
     }
 
+    fun deleteApp(packageName: String): Boolean {
+        val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/")
+        val result = traceFile.deleteRecursively()
+        return if (result) {
+            true
+        } else {
+            Log.e("FILE", "cannot delete $packageName directory")
+            false
+        }
+    }
+
     fun listTraces(packageName: String): MutableList<String> {
         val traceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName")
         return if (traceDir.exists()) {
@@ -49,6 +61,17 @@ object LocalStorageOps {
         } else {
             traceDir.mkdirs()
             arrayListOf()
+        }
+    }
+
+    fun deleteTrace(packageName: String, trace: String): Boolean {
+        val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
+        val result = traceFile.deleteRecursively()
+        return if (result) {
+            true
+        } else {
+            Log.e("FILE", "cannot delete $trace directory")
+            false
         }
     }
 
@@ -88,28 +111,6 @@ object LocalStorageOps {
             true
         } else {
             Log.e("FILE", "cannot rename directory $event to $newEvent")
-            false
-        }
-    }
-
-    fun deleteApp(packageName: String): Boolean {
-        val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/")
-        val result = traceFile.deleteRecursively()
-        return if (result) {
-            true
-        } else {
-            Log.e("FILE", "cannot delete $packageName directory")
-            false
-        }
-    }
-
-    fun deleteTrace(packageName: String, trace: String): Boolean {
-        val traceFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
-        val result = traceFile.deleteRecursively()
-        return if (result) {
-            true
-        } else {
-            Log.e("FILE", "cannot delete $trace directory")
             false
         }
     }
@@ -231,7 +232,7 @@ object LocalStorageOps {
         }
     }
 
-    fun saveVH(packageName: String, trace: String, event: String, vhJsonString: String) : Boolean {
+    fun saveVH(packageName: String, trace: String, event: String, vhJsonString: String): Boolean {
         return try {
             val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
             if (!eventDir.exists()) {
@@ -240,6 +241,35 @@ object LocalStorageOps {
             val fileVH = File(eventDir, "$VH_PREFIX$event.json")
             FileOutputStream(fileVH, false).use { stream ->
                 stream.write(vhJsonString.toByteArray())
+            }
+            true
+        } catch (e: IOException) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun loadCapture(packageName: String, trace: String): CaptureStore {
+        val jsonFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/task.json")
+        if (jsonFile.exists()) {
+            val taskJsonString = jsonFile.readText(Charsets.UTF_8)
+            return kotlinMapper.readValue<CaptureStore>(taskJsonString)
+        } else {
+            Log.e("FILE", "No task found for trace")
+            return CaptureStore("", "No task found for trace")
+        }
+    }
+
+    fun saveCapture(packageName: String, trace: String, capture: CaptureStore): Boolean {
+        return try {
+            val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
+            if (!eventDir.exists()) {
+                eventDir.mkdirs()
+            }
+            val fileVH = File(eventDir, "task.json")
+            FileOutputStream(fileVH, false).use { stream ->
+                val captureJson = kotlinMapper.writeValueAsBytes(capture)
+                stream.write(captureJson)
             }
             true
         } catch (e: IOException) {

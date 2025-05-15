@@ -17,18 +17,20 @@
         android:layout_marginEnd="10dp"
         android:layout_gravity="center" />
 
-    <TextView
-        android:id="@+id/rename_trace_input"
+    <EditText
+        android:id="@+id/rename_trace_task_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
         android:layout_marginBottom="20sp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
+        android:autofillHints="@string/rename_trace_text_hint"
+        android:hint="@string/rename_trace_text_hint"
+        android:inputType="textShortMessage"
         android:textColor="?attr/editTextColor"
         android:background="?attr/editTextBackground"
         android:textAppearance="@style/TextAppearance.AppCompat.Button"
-        android:hint="@string/rename_trace_text_hint"
         android:gravity="center"
         android:minHeight="48dp" />
 

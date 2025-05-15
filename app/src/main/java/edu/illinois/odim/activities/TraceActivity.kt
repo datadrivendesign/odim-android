@@ -22,6 +22,7 @@ import edu.illinois.odim.dataclasses.TraceItem
 import edu.illinois.odim.utils.LocalStorageOps.deleteTrace
 import edu.illinois.odim.utils.LocalStorageOps.listEvents
 import edu.illinois.odim.utils.LocalStorageOps.listTraces
+import edu.illinois.odim.utils.LocalStorageOps.loadCapture
 
 private var traceAdapter: TraceAdapter? = null
 
@@ -88,8 +89,9 @@ class TraceActivity : AppCompatActivity(){
     private fun populateTraceList(traceLabels: List<String>): MutableList<TraceItem> {
         val traceItemList = mutableListOf<TraceItem>()
         for (traceLabel in traceLabels) {
+            val traceCapture = loadCapture(chosenPackageName!!, traceLabel)
             val numEvents = listEvents(chosenPackageName!!, traceLabel).size
-            val traceItem = TraceItem(traceLabel, numEvents)
+            val traceItem = TraceItem(traceLabel, traceCapture.description, numEvents)
             traceItemList.add(traceItem)
         }
         return traceItemList

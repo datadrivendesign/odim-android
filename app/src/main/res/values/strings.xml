@@ -48,7 +48,7 @@
     <string name="delete_screens_icon_title">Delete</string>
     <string name="edit_gesture_icon_title">Edit Gesture</string>
     <string name="split_trace_icon_title">Split to New Trace</string>
-    <string name="rename_trace_text_hint">Add a name for the trace</string>
+    <string name="rename_trace_text_hint">Name the task for the trace</string>
     <string name="vh_dialog_title">View Hierarchy Items</string>
     <string name="vh_item_text_label">Text: </string>
     <string name="vh_item_content_desc_label">Content Desc: </string>
@@ -85,4 +85,6 @@
     <string name="vh_list_redact_fab_desc">Floating Action Button to redact view hierarchy text metadata</string>
     <string name="secondary_redact_fab_desc">Floating Action Button that toggles redact draw/erase mode</string>
     <string name="save_redact_fab_desc">Floating Action button to save visual redactions</string>
+    <string name="placeholder_trace_task">Trace task description</string>
+    <string name="placeholder_trace_no_task">No task found for trace</string>
 </resources>
