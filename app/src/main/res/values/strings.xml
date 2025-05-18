@@ -33,7 +33,7 @@
     <string name="worker_id_input_hint">Give worker id for your traces</string>
     <string name="question_mark_icon">The gesture for this screen is unknown</string>
     <string name="incomplete_screen_content_desc">Incomplete screen lacking gesture</string>
-    <string name="gesture_confirm_message">Do you confirm this is the correct element? This choice is irreversible.</string>
+    <string name="gesture_confirm_message">Do you confirm this is the correct element?</string>
     <string name="define_gesture_message">What type of interaction was done on this screen?</string>
     <string name="define_click_message">Click</string>
     <string name="define_long_click_message">Long Press</string>

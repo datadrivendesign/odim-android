@@ -194,6 +194,17 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 val screenHeight = incompleteImageView.drawable.intrinsicHeight
                 val vhCandidateRect = incompleteOverlayView.currVHCandidate!!.rect
                 var eventNameDest: String = chosenEventLabel!!
+                // save the gesture first
+                val newGesture = Gesture(
+                    centerX=vhCandidateRect.exactCenterX() / screenWidth,
+                    centerY=vhCandidateRect.exactCenterY() / screenHeight,
+                    scrollDX=updateGesture.scrollDx / screenWidth,
+                    scrollDY=updateGesture.scrollDy / screenHeight,
+                    viewId=incompleteOverlayView.currVHCandidate!!.viewId
+                )
+                newGesture.verified = true
+                saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
+                // then check if gesture needs to be renamed
                 if (chosenEventLabel!!.contains(getString(R.string.type_unknown)) || isEditGesture) {
                     // get gesture to replace
                     var replaceGesture = R.string.type_view_scroll
@@ -204,15 +215,6 @@ class IncompleteScreenActivity: AppCompatActivity() {
                             R.string.type_view_click
                         }
                     }
-                    val newGesture = Gesture(
-                        centerX=vhCandidateRect.exactCenterX() / screenWidth,
-                        centerY=vhCandidateRect.exactCenterY() / screenHeight,
-                        scrollDX=updateGesture.scrollDx / screenWidth,
-                        scrollDY=updateGesture.scrollDy / screenHeight,
-                        viewId=incompleteOverlayView.currVHCandidate!!.viewId
-                    )
-                    newGesture.verified = true
-                    saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)
                     // replace the gesture name from unknown to click or scroll
                     val oldEventType = chosenEventLabel!!.substringAfter(DELIM)
                     eventNameDest = chosenEventLabel!!.replace(
