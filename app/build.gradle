@@ -25,10 +25,12 @@ android {
 
     buildTypes {
         debug {
+            manifestPlaceholders = [usesCleartextTraffic: "true"]
             buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://pre-alpha.odim.app"}\"")
         }
         release {
             minifyEnabled false
+            manifestPlaceholders = [usesCleartextTraffic: "false"]
             buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://pre-alpha.odim.app"}\"")
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
