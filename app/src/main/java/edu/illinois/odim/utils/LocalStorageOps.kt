@@ -344,7 +344,6 @@ object LocalStorageOps {
         val redactFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
         return if (redactFile.exists()) {
             val redactJsonString = redactFile.readText(Charsets.UTF_8)
-            Log.d("redact string", redactJsonString)
             kotlinMapper.readValue<MutableSet<Redaction>>(redactJsonString)
         } else {
             mutableSetOf()
