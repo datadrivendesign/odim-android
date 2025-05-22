@@ -50,7 +50,7 @@ import java.util.TimeZone
 import kotlin.coroutines.resume
 import kotlin.system.measureTimeMillis
 
-internal var workerId = "test_user"
+internal var workerId = "default"
 var DELIM = "; "
 
 class MyAccessibilityService : AccessibilityService() {
