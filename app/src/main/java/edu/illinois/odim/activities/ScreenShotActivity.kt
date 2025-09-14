@@ -31,6 +31,7 @@ import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.utils.LocalStorageOps.saveRedaction
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
+import androidx.core.view.isVisible
 
 
 class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPositionChangeListener {
@@ -118,17 +119,17 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
         val vhItemFabY = newY - offsetFABSpacing
         val saveFabX = newX + offsetFABSpacing
         // Update positions of the secondary FABs relative to the primary FAB
-        if (secondaryRedactFAB.visibility == View.VISIBLE) {
+        if (secondaryRedactFAB.isVisible) {
             secondaryRedactFAB.animate().x(secondaryFabX) // Adjust X based on your layout requirements
                 .y(secondaryFabY) // Adjust Y based on your layout requirements
                 .setDuration(0).start()
         }
-        if (vhItemFAB.visibility == View.VISIBLE) {
+        if (vhItemFAB.isVisible) {
             vhItemFAB.animate().x(newX)
                 .y(vhItemFabY)
                 .setDuration(0).start()
         }
-        if (saveFAB.visibility == View.VISIBLE) {
+        if (saveFAB.isVisible) {
             saveFAB.animate().x(saveFabX)
                 .y(newY)
                 .setDuration(0).start()
@@ -146,7 +147,7 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
             vhAdapter.setOnItemClickListener(object: VHAdapter.OnItemClickListener {
                 override fun onItemClick(position: Int, vhItem: VHItem): Boolean {
                     val redactDialog = AlertDialog.Builder(this@ScreenShotActivity)
-                        .setMessage(getString(R.string.dialog_text_redact_message, vhItem.text, vhItem.contentDesc))
+                        .setMessage(getString(R.string.dialog_text_redact_message, vhItem.text))//, vhItem.contentDesc))
                         .setPositiveButton(getString(R.string.dialog_text_redact_positive)) { _, _  ->
                             redactVHMetadataByText(screenVHRoot, vhItem)
                             saveVH(  // update VH metadata only
@@ -327,11 +328,11 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
 
     private fun extractVHText(root: JsonNode, vhTextList: ArrayList<VHItem>) {
         val textField = if (root.has("text_field")) root.get("text_field").asText() else ""
-        val contentDesc = if (root.has("content-desc")) root.get("content-desc").asText() else ""
+//        val contentDesc = if (root.has("content-desc")) root.get("content-desc").asText() else ""
         // do not add elements where both text and contentDesc are empty or redacted
-        if ((textField.isNotEmpty() && textField != getString(R.string.redact_text_val)) ||
-            (contentDesc != "none" && contentDesc.isNotEmpty() && contentDesc != getString(R.string.redact_desc_val))) {
-            vhTextList.add(VHItem(textField, contentDesc))
+        if (textField.isNotEmpty() && textField != getString(R.string.redact_text_val)) { //||
+//            (contentDesc != "none" && contentDesc.isNotEmpty() && contentDesc != getString(R.string.redact_desc_val))) {
+            vhTextList.add(VHItem(textField))//, contentDesc))
         }
         // Base Case
         val children = root.get("children") ?: return
@@ -386,9 +387,9 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
                 return false
             }
         }
-        if (node.has("content-desc") && node.get("content-desc").asText() != "none") {
-            isMatch = (node.get("content-desc").asText() == vhItem.contentDesc)
-        }
+//        if (node.has("content-desc") && node.get("content-desc").asText() != "none") {
+//            isMatch = (node.get("content-desc").asText() == vhItem.contentDesc)
+//        }
         return isMatch
     }
 
@@ -409,10 +410,10 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
                     child.remove("text_field")
                     child.put("text_field", getString(R.string.redact_text_val))
                 }
-                if (child["content-desc"].asText() != getString(R.string.redact_desc_val)) {
-                    child.remove("content-desc")
-                    child.put("content-desc", getString(R.string.redact_desc_val))
-                }
+//                if (child["content-desc"].asText() != getString(R.string.redact_desc_val)) {
+//                    child.remove("content-desc")
+//                    child.put("content-desc", getString(R.string.redact_desc_val))
+//                }
                 canvas.drawRect(newRect, confirmPaint)
                 scrubbingImageView.invalidate()
                 return Triple(true, true, root)

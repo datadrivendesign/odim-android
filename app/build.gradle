@@ -26,12 +26,12 @@ android {
     buildTypes {
         debug {
             manifestPlaceholders = [usesCleartextTraffic: "true"]
-            buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://pre-alpha.odim.app"}\"")
+            buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://dev.interactionmining.org"}\"")
         }
         release {
             minifyEnabled false
             manifestPlaceholders = [usesCleartextTraffic: "false"]
-            buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://pre-alpha.odim.app"}\"")
+            buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://interactionmining.org"}\"")
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

@@ -6,7 +6,7 @@
     <string name="time_stamp">Time Stamp</string>
     <string name="event_function">Event Function</string>
     <string name="event_index">Index</string>
-    <string name="upload_trace_button_text">Upload Trace to AWS</string>
+    <string name="upload_trace_button_text">Upload Trace</string>
     <string name="upload_all_toast_success">All event data uploaded</string>
     <string name="upload_fail">Upload Interaction Failed</string>
     <string name="appNameStringSize">20sp</string>
@@ -72,7 +72,7 @@
     <string name="dialog_upload_trace_title">Upload Trace</string>
     <string name="activity_screenshot_title">ScreenShot (Click Image for VH)</string>
     <string name="dialog_text_redact_message">
-        Are you sure you want to redact the text? This will only redact metadata, not the visual screen.\ntext: %1$s\ncontent description: %2$s
+        Are you sure you want to redact the text? This will only redact metadata, not the visual screen.\ntext: %1$s
     </string>
     <string name="dialog_text_redact_positive">Redact</string>
     <string name="redact_text_val">text redacted.</string>

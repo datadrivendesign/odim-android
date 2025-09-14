@@ -50,7 +50,6 @@ import java.util.TimeZone
 import kotlin.coroutines.resume
 import kotlin.system.measureTimeMillis
 
-internal var workerId = "default"
 var DELIM = "; "
 
 class MyAccessibilityService : AccessibilityService() {
@@ -238,7 +237,7 @@ class MyAccessibilityService : AccessibilityService() {
             jsonWriter.writeBooleanField("visibility", node.isVisibleToUser)
             jsonWriter.writeBooleanField("selected", node.isSelected)
             // write text and content description to json
-            jsonWriter.writeStringField("content-desc", node.contentDescription?.toString() ?: "none")
+//            jsonWriter.writeStringField("content-desc", node.contentDescription?.toString() ?: "none")
             val text = node.text
             if (text != null) {
                 jsonWriter.writeStringField("text_field", text.toString())

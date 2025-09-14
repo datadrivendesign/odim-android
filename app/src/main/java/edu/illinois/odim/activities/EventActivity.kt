@@ -1,5 +1,6 @@
 package edu.illinois.odim.activities
 
+//import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -29,7 +30,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputEditText
 import edu.illinois.odim.DELIM
 import edu.illinois.odim.R
 import edu.illinois.odim.adapters.EventAdapter
@@ -43,14 +43,13 @@ import edu.illinois.odim.utils.LocalStorageOps.loadCapture
 import edu.illinois.odim.utils.LocalStorageOps.loadGesture
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
-import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.saveCapture
+import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceGesture
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceRedactions
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.splitTraceVH
 import edu.illinois.odim.utils.UploadDataOps.uploadFullCapture
-import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -452,41 +451,41 @@ class EventActivity : AppCompatActivity() {
         return result
     }
 
-    private fun createUploadTraceAlertDialog(uploadButtonView: View) {
-        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
-        val uploadDialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_upload_trace_title))
-            .setView(traceDescInput)
-            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
-                    val uploadSuccess = uploadFullTraceContent(
-                        chosenPackageName!!,
-                        chosenTraceLabel!!,
-                        traceDescription.text.toString())
-                    if (!uploadSuccess) {
-                        val errSnackbar = Snackbar.make(uploadButtonView,
-                            R.string.upload_fail, Snackbar.LENGTH_LONG)
-                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
-                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-                        errSnackbar.show()
-                    } else {
-                        val successSnackbar = Snackbar.make(uploadButtonView,
-                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
-                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
-                        successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-                        successSnackbar.show()
-                    }
-                }
-            }
-            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
-                dialogInterface.cancel()
-            }
-            .create()
-        uploadDialog.show()
-    }
+//    private fun createUploadTraceAlertDialog(uploadButtonView: View) {
+//        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
+//        val uploadDialog = AlertDialog.Builder(this)
+//            .setTitle(getString(R.string.dialog_upload_trace_title))
+//            .setView(traceDescInput)
+//            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
+//                CoroutineScope(Dispatchers.IO).launch {
+//                    val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
+//                    val uploadSuccess = uploadFullTraceContent(
+//                        chosenPackageName!!,
+//                        chosenTraceLabel!!,
+//                        traceDescription.text.toString())
+//                    if (!uploadSuccess) {
+//                        val errSnackbar = Snackbar.make(uploadButtonView,
+//                            R.string.upload_fail, Snackbar.LENGTH_LONG)
+//                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
+//                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+//                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+//                        errSnackbar.show()
+//                    } else {
+//                        val successSnackbar = Snackbar.make(uploadButtonView,
+//                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
+//                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
+//                        successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+//                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+//                        successSnackbar.show()
+//                    }
+//                }
+//            }
+//            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
+//                dialogInterface.cancel()
+//            }
+//            .create()
+//        uploadDialog.show()
+//    }
 
     private fun createUploadCaptureAlertDialog(uploadButtonView: View) {
         val uploadDialog = AlertDialog.Builder(this)

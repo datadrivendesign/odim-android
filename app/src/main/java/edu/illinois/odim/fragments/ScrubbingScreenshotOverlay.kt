@@ -160,7 +160,8 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         // base case
         val nodeRect = Rect.unflattenFromString(root.get("bounds_in_screen")?.asText())
         if (nodeRect == redactRect) {
-            return if (root.has("text_field")) root["text_field"].asText() else root["content-desc"].asText()
+            return if (root.has("text_field")) root["text_field"].asText() else ""
+            //return if (root.has("text_field")) root["text_field"].asText() else root["content-desc"].asText()
         }
         // recursive case
         if (root.has("children")) {
@@ -197,11 +198,11 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
             Log.d("keyword", root["text_field"].asText())
             Rect.unflattenFromString(root["bounds_in_screen"].asText())?.let { matchedRects.add(it) }
         }
-        if (root.has("content-desc") && root["content-desc"].asText().contains(keyword)) {
-            Log.d("keyword", root["content-desc"].asText())
-            Rect.unflattenFromString(root["bounds_in_screen"].asText())
-                ?.let { matchedRects.add(it) }
-        }
+//        if (root.has("content-desc") && root["content-desc"].asText().contains(keyword)) {
+//            Log.d("keyword", root["content-desc"].asText())
+//            Rect.unflattenFromString(root["bounds_in_screen"].asText())
+//                ?.let { matchedRects.add(it) }
+//        }
         if (root.has("children")) {
             val children = root["children"] as ArrayNode
             for (i in 0 until children.size()) {

@@ -13,7 +13,7 @@ class VHAdapter(vhItems: List<VHItem>): RecyclerView.Adapter<VHAdapter.VHViewHol
         RecyclerView.ViewHolder(vhItemBinding.vhItemCardView.rootView) {
         fun bindVHItem(vhItem: VHItem) {
             vhItemBinding.vhText.text = vhItem.text
-            vhItemBinding.vhContentDesc.text = vhItem.contentDesc
+//            vhItemBinding.vhContentDesc.text = vhItem.contentDesc
         }
     }
 

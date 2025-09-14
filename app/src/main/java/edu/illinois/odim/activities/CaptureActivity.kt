@@ -169,7 +169,9 @@ class CaptureActivity: AppCompatActivity() {
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("GET Request", "Failed: ${e.message}")
-                Toast.makeText(applicationContext, "URL call failed", Toast.LENGTH_SHORT).show()
+                runOnUiThread {
+                    Toast.makeText(applicationContext, "URL call failed", Toast.LENGTH_SHORT).show()
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -183,7 +185,9 @@ class CaptureActivity: AppCompatActivity() {
                     }
                 } catch (ex: Exception) {
                     Log.e("GET", ex.message.toString())
-                    Toast.makeText(applicationContext, "Response Body is not JSON", Toast.LENGTH_SHORT).show()
+                    runOnUiThread {
+                        Toast.makeText(applicationContext, "Response Body is not JSON", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         })
@@ -198,7 +202,9 @@ class CaptureActivity: AppCompatActivity() {
                     }
                     else -> {
                         Log.i("barcode", barcode.rawValue.toString())
-                        Toast.makeText(applicationContext, "Incorrect QR Content: Not URL", Toast.LENGTH_SHORT).show()
+                        runOnUiThread {
+                            Toast.makeText(applicationContext, "Incorrect QR Content: Not URL", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
