@@ -1,6 +1,5 @@
 package edu.illinois.odim.activities
 
-//import edu.illinois.odim.utils.UploadDataOps.uploadFullTraceContent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -13,6 +12,7 @@ import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.ActionMode
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -53,6 +53,7 @@ import edu.illinois.odim.utils.UploadDataOps.uploadFullCapture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 
 private var eventAdapter: EventAdapter? = null
@@ -451,74 +452,54 @@ class EventActivity : AppCompatActivity() {
         return result
     }
 
-//    private fun createUploadTraceAlertDialog(uploadButtonView: View) {
-//        val traceDescInput = View.inflate(this, R.layout.dialog_upload_trace, null)
-//        val uploadDialog = AlertDialog.Builder(this)
-//            .setTitle(getString(R.string.dialog_upload_trace_title))
-//            .setView(traceDescInput)
-//            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    val traceDescription = traceDescInput.findViewById<TextInputEditText>(R.id.upload_trace_input)
-//                    val uploadSuccess = uploadFullTraceContent(
-//                        chosenPackageName!!,
-//                        chosenTraceLabel!!,
-//                        traceDescription.text.toString())
-//                    if (!uploadSuccess) {
-//                        val errSnackbar = Snackbar.make(uploadButtonView,
-//                            R.string.upload_fail, Snackbar.LENGTH_LONG)
-//                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
-//                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-//                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-//                        errSnackbar.show()
-//                    } else {
-//                        val successSnackbar = Snackbar.make(uploadButtonView,
-//                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
-//                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
-//                        successSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-//                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-//                        successSnackbar.show()
-//                    }
-//                }
-//            }
-//            .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
-//                dialogInterface.cancel()
-//            }
-//            .create()
-//        uploadDialog.show()
-//    }
-
     private fun createUploadCaptureAlertDialog(uploadButtonView: View) {
+        val progressText = TextView(this).apply {
+            text = context.getString(R.string.init_upload_progress_text)
+            textSize = 16f
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            textAlignment = View.TEXT_ALIGNMENT_CENTER // center text horizontally
+            gravity = Gravity.CENTER // proper centering in parent
+        }
+        // build alert dialog
         val uploadDialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.dialog_upload_trace_title))
-            .setPositiveButton(getString(R.string.dialog_upload_trace_positive)) { _, _ ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    val uploadSuccess = uploadFullCapture(chosenPackageName!!, chosenTraceLabel!!, captureStore!!)
-                    if (!uploadSuccess) {
-                        val errSnackbar = Snackbar.make(uploadButtonView,
-                            R.string.upload_fail, Snackbar.LENGTH_LONG)
-                        errSnackbar.view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_red_light))
-                        errSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-                        errSnackbar.show()
-                    } else {
-                        val successSnackbar = Snackbar.make(uploadButtonView,
-                            R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT)
-                        successSnackbar.view.setBackgroundColor(ContextCompat.getColor(
-                            applicationContext,
-                            android.R.color.holo_green_light)
-                        )
-                        successSnackbar.view.findViewById<TextView>(
-                            com.google.android.material.R.id.snackbar_text
-                        ).setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
-                        successSnackbar.show()
-                    }
-                }
-            }
+            .setView(progressText)
+            .setPositiveButton(getString(R.string.dialog_upload_trace_positive), null)
             .setNegativeButton(getString(R.string.dialog_close)) { dialogInterface, _ ->
                 dialogInterface.cancel()
             }
             .create()
         uploadDialog.show()
+        uploadDialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
+            text = getString(R.string.dialog_upload_trace_positive)
+            setOnClickListener {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val uploadSuccess = uploadFullCapture(chosenPackageName!!, chosenTraceLabel!!, captureStore!!) { uploaded, total ->
+                        runOnUiThread {
+                            progressText.text =
+                                context.getString(R.string.upload_progress_text, uploaded, total)
+                        }
+                    }
+                    withContext(Dispatchers.Main) {
+                        val snackBar = if (uploadSuccess) {
+                            Snackbar.make(uploadButtonView, R.string.upload_all_toast_success, Snackbar.LENGTH_SHORT).apply {
+                                view.setBackgroundColor(ContextCompat.getColor(applicationContext, android.R.color.holo_green_light))
+                            }
+                        } else {
+                            Snackbar.make(uploadButtonView, R.string.upload_fail, Snackbar.LENGTH_LONG).apply {
+                                view.setBackgroundColor(ContextCompat.getColor(context, android.R.color.holo_red_light))
+                            }
+                        }
+                        snackBar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                            .setTextColor(ContextCompat.getColor(applicationContext, R.color.white))
+                        snackBar.show()
+                        // dismiss dialog after upload finishes
+                        uploadDialog.dismiss()
+                    }
+
+                }
+            }
+        }
     }
 
     private fun navigateToNextActivity(screen: ScreenShotPreview, isCreateGesture: Boolean, isEditGesture: Boolean) {

@@ -3,16 +3,12 @@ package edu.illinois.odim.activities
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextUtils
-import android.text.TextWatcher
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -25,7 +21,6 @@ import edu.illinois.odim.adapters.AppAdapter
 import edu.illinois.odim.dataclasses.AppItem
 import edu.illinois.odim.utils.LocalStorageOps.deleteApp
 import edu.illinois.odim.utils.LocalStorageOps.listApps
-import edu.illinois.odim.workerId
 
 private var appAdapter : AppAdapter? = null
 
@@ -43,7 +38,6 @@ class AppActivity : AppCompatActivity() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         setContentView(R.layout.activity_app)
         setSupportActionBar(findViewById(R.id.odim_app_header))
-//        createWorkerInputForm()
         // set up scan qr button
         val scanQRBtn = findViewById<Button>(R.id.button_navigate_qr)
         scanQRBtn.setOnClickListener {
@@ -140,29 +134,6 @@ class AppActivity : AppCompatActivity() {
         }
         return mainList
     }
-
-//    private fun createWorkerInputForm() {
-//        // found code from: https://handyopinion.com/show-alert-dialog-with-an-input-field-edittext-in-android-kotlin/
-//        val workerForm = View.inflate(this, R.layout.dialog_worker_input, null)
-//        val workerIdInput: EditText = workerForm.findViewById(R.id.dialog_worker_id_input)
-//        workerIdInput.setText(workerId)
-//        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-//            .setTitle("Worker Credentials")
-//            .setCancelable(false)
-//            .setView(workerForm)
-//            .setPositiveButton("DONE") { _, _ ->
-//                workerId = workerIdInput.text.toString()
-//            }
-//        val alertDialog = builder.create()
-//        alertDialog.show()
-//        workerIdInput.addTextChangedListener(object : TextWatcher {
-//            override fun beforeTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-//            override fun onTextChanged(str: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-//            override fun afterTextChanged(str: Editable?) {
-//                alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = !TextUtils.isEmpty(str)
-//            }
-//        })
-//    }
 
     private fun deleteSelectedApps(): Boolean {
         val appIterator = appList.iterator()

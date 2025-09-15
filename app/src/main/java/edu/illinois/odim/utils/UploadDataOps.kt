@@ -146,7 +146,8 @@ object UploadDataOps {
     suspend fun uploadFullCapture(
         packageName: String,
         traceLabel: String,
-        capture: CaptureStore
+        capture: CaptureStore,
+        onProgress: ((numUploaded: Int, total: Int) -> Unit)? = null
     ): Boolean {
         if (!checkWifiConnected()) {
             return false
@@ -158,21 +159,23 @@ object UploadDataOps {
             // Upload VH file
             val mapper = ObjectMapper()
             val traceEvents: List<String> = listEvents(packageName, traceLabel)
-            for (event in traceEvents) {
+            val total = traceEvents.size
+            for ((i, event) in traceEvents.withIndex()) {
                 // add POST request for screens
                 uploadScreenCapture(client, mapper, packageName, traceLabel, capture.id, event).use {
                     isSuccessUpload = it.isSuccessful
-                    Log.d("api", "status: ${it.isSuccessful}, message: ${it.message}, body: ${it.body?.string()}")
+                    Log.d("api", "status: ${it.code} message: ${it.message}, body: ${it.body?.string()}")
                 }
                 if (!isSuccessUpload) {
                     Log.e("api", "fail upload screenshot")
                     return false
                 }
+                onProgress?.invoke(i + 1, total)
             }
             // add POST request for metadata
             uploadCaptureMetadata(client, mapper, packageName, traceLabel, capture.id, traceEvents).use {
                 isSuccessUpload = it.isSuccessful
-                Log.d("api", "status: ${it.isSuccessful}, message: ${it.message}, body: ${it.body?.string()}")
+                Log.d("api", "status: ${it.code}, message: ${it.message}, body: ${it.body?.string()}")
             }
             if (!isSuccessUpload) {
                 Log.e("api", "fail upload trace metadata")

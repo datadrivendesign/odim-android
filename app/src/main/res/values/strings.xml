@@ -87,4 +87,6 @@
     <string name="save_redact_fab_desc">Floating Action button to save visual redactions</string>
     <string name="placeholder_trace_task">Trace task description</string>
     <string name="placeholder_trace_no_task">No task found for trace</string>
+    <string name="init_upload_progress_text">0 / 0 uploaded</string>
+    <string name="upload_progress_text">%1$d / %2$d uploaded</string>
 </resources>
