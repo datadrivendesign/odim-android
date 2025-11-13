@@ -131,6 +131,7 @@ Steps:
 5) Turn on the ODIM accessibility service in system settings (Settings → Accessibility → ODIM → On).
 6) Use your device normally; ODIM will capture screens for non-ODIM apps you interact with.
 
+**To get a visual step by step example, see [our website's instructions](https://www.interactionmining.org/contribute)**
 
 ## Configuration
 
