@@ -37,7 +37,7 @@
 </div>
 
 <p align="center">
-  <img src="odim.jpeg" alt="ODIM teaser" width="720" />
+  <img src="assets/odim.jpeg" alt="ODIM teaser" width="720" />
 </p>
 
 ## About
@@ -56,15 +56,16 @@ Captured data is organized locally on-device and can be reviewed, curated (redac
 - Capture cross-app interaction traces with screenshots, view hierarchy, and gestures
 - Curate traces: redact sensitive UI text/regions and fix incomplete interactions
 - Associate traces with capture tasks via QR codes
-- Split/merge flows and upload full traces to a server
+- Split traces into new flows and upload full traces to a server
 
 
 ## Tech stack
 
-- Android, Kotlin, Coroutines
-- AndroidX, RecyclerView, ViewBinding
-- CameraX and ML Kit (barcode-scanning) for QR
-- OkHttp (+ logging), Jackson (Kotlin module) for networking/JSON
+- **Language**: Kotlin 1.7.x
+- **Concurrency**: Kotlinx Coroutines
+- **UI**: AndroidX, Material Design, RecyclerView, ViewBinding, ConstraintLayout
+- **Camera**: CameraX and ML Kit (barcode-scanning) for QR code scanning
+- **Networking**: OkHttp (+ logging interceptor), Jackson (Kotlin module), Kotlinx Serialization
 
 
 ## Project layout
@@ -101,8 +102,9 @@ Android resources live in `app/src/main/res/` (layouts, drawables, strings, menu
 - `TraceActivity` shows traces for a selected app (label is the timestamp of first screen; task metadata is shown if present)
 - `EventActivity` shows the sequence of captured screens (events) in a grid; from here you can:
   - open a screen to redact sensitive text or UI regions
-  - fix incomplete gestures (when the service couldn’t infer a unique target)
+  - fix incomplete gestures (when the service couldn't infer a unique target)
   - split selected screens into a new trace
+  - delete selected screens
   - upload the full trace to the server
 
 3) Redact or edit details:
@@ -172,6 +174,7 @@ Key helpers in `utils/LocalStorageOps.kt` provide file I/O for listing apps/trac
 ## Activities
 
 - [`CaptureActivity`](app/src/main/java/edu/illinois/odim/activities/CaptureActivity.kt) – starting point for ingesting a capture task by scanning a QR code; shows task instructions and shortcuts to enable accessibility and launch the target app
+- [`ScannerActivity`](app/src/main/java/edu/illinois/odim/activities/ScannerActivity.kt) – camera-based QR code scanner using CameraX and ML Kit; launched by `CaptureActivity` to scan capture task QR codes
 - [`AppActivity`](app/src/main/java/edu/illinois/odim/activities/AppActivity.kt) – lists apps that have captured traces; navigate into traces or multi-select to delete app data
 - [`TraceActivity`](app/src/main/java/edu/illinois/odim/activities/TraceActivity.kt) – lists traces for the chosen app; shows task description and number of screens; supports multi-select delete
 - [`EventActivity`](app/src/main/java/edu/illinois/odim/activities/EventActivity.kt) – grid of events (screens) for a trace; supports edit gesture, split trace, delete screens, and upload trace
@@ -186,6 +189,8 @@ Key helpers in `utils/LocalStorageOps.kt` provide file I/O for listing apps/trac
   - screenshots and VH on touch
   - gestures from `AccessibilityEvent` to label interactions
   - writes to on-device storage via `LocalStorageOps`
+- Monitors accessibility events: `typeViewClicked`, `typeViewLongClicked`, `typeViewSelected`, `typeViewFocused`, `typeViewScrolled`
+- Service configuration defined in `res/xml/accessibility_service_config.xml`
 
 
 ## Privacy & permissions
@@ -197,10 +202,10 @@ Key helpers in `utils/LocalStorageOps.kt` provide file I/O for listing apps/trac
 
 ## Key packages and components
 
-- `activities/` – `CaptureActivity`, `AppActivity`, `TraceActivity`, `EventActivity`, `ScreenShotActivity`, `IncompleteScreenActivity`
+- `activities/` – `CaptureActivity`, `ScannerActivity`, `AppActivity`, `TraceActivity`, `EventActivity`, `ScreenShotActivity`, `IncompleteScreenActivity`
 - `adapters/` – `AppAdapter`, `TraceAdapter`, `EventAdapter`, `VHAdapter`
-- `dataclasses/` – `Gesture`, `Redaction`, `ScreenShotPreview`, `CaptureStore`, `CaptureTask`, etc.
-- `fragments/` – overlays and floating widgets (e.g., `ScrubbingScreenshotOverlay`, `MovableFloatingActionButton`)
+- `dataclasses/` – `Gesture`, `GestureCandidate`, `Redaction`, `ScreenShotPreview`, `CaptureStore`, `CaptureTask`, `CaptureData`, `TaskData`, `AppItem`, `TraceItem`, `VHItem`
+- `fragments/` – overlays and floating widgets (e.g., `ScrubbingScreenshotOverlay`, `MovableFloatingActionButton`, `IncompleteScreenCanvasOverlay`)
 - `utils/` – `LocalStorageOps`, `UploadDataOps`, `ScreenDimensionsOps`
 
 
@@ -214,10 +219,14 @@ Key helpers in `utils/LocalStorageOps.kt` provide file I/O for listing apps/trac
 
 ## Dependencies
 
-- CameraX (`androidx.camera:*`)
-- Google ML Kit (Barcode Scanning)
-- OkHttp (+ logging interceptor)
-- Jackson (Kotlin module)
+- **AndroidX Core Libraries**: `core-ktx`, `appcompat`, `material`, `constraintlayout`
+- **CameraX** (`androidx.camera:*`) – camera preview and image analysis
+- **Google ML Kit** (Barcode Scanning) – QR code detection
+- **OkHttp** (+ logging interceptor) – HTTP client for uploads
+- **Jackson** (Kotlin module) – JSON serialization/deserialization
+- **Kotlinx Serialization** – JSON serialization for Kotlin data classes
+- **Kotlinx Coroutines** – asynchronous programming
+- **Coroutines OkHttp** – OkHttp integration with coroutines
 
 ## Contact
 
