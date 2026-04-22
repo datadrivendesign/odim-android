@@ -5,13 +5,23 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.20'
 }
 
+// Load local.properties into project properties
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+    localProperties.each { prop ->
+        project.ext.set(prop.key, prop.value)
+    }
+}
+
 android {
     compileSdk 34
 
     defaultConfig {
         applicationId "edu.illinois.odim"
         minSdk 30
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -27,11 +37,19 @@ android {
         debug {
             manifestPlaceholders = [usesCleartextTraffic: "true"]
             buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://dev.interactionmining.org"}\"")
+            buildConfigField("String", "CLAUDE_API_KEY", "\"${project.findProperty("CLAUDE_API_KEY") ?: ""}\"")
+            buildConfigField("String", "CLAUDE_API_URL", "\"${project.findProperty("CLAUDE_API_URL") ?: "https://api.anthropic.com/v1/messages"}\"")
+            buildConfigField("String", "OLLAMA_API_KEY", "\"${project.findProperty("OLLAMA_API_KEY") ?: ""}\"")
+            buildConfigField("String", "OLLAMA_API_URL", "\"${project.findProperty("OLLAMA_API_URL") ?: ""}\"")
         }
         release {
             minifyEnabled false
             manifestPlaceholders = [usesCleartextTraffic: "false"]
             buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://interactionmining.org"}\"")
+            buildConfigField("String", "CLAUDE_API_KEY", "\"${project.findProperty("CLAUDE_API_KEY") ?: ""}\"")
+            buildConfigField("String", "CLAUDE_API_URL", "\"${project.findProperty("CLAUDE_API_URL") ?: "https://api.anthropic.com/v1/messages"}\"")
+            buildConfigField("String", "OLLAMA_API_KEY", "\"${project.findProperty("OLLAMA_API_KEY") ?: ""}\"")
+            buildConfigField("String", "OLLAMA_API_URL", "\"${project.findProperty("OLLAMA_API_URL") ?: ""}\"")
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

@@ -49,5 +49,8 @@
         <activity android:name=".activities.EventActivity" />
         <activity android:name=".activities.ScreenShotActivity" />
         <activity android:name=".activities.IncompleteScreenActivity" />
+        <activity android:name=".activities.AgentActivity"
+            android:label="ODIM Agent"
+            android:exported="true" />
     </application>
 </manifest>

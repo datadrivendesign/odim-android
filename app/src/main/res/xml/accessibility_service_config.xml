@@ -7,6 +7,7 @@
     android:settingsActivity="com.example.android.accessibility.ServiceSettingsActivity"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canTakeScreenshot="true"
+    android:canPerformGestures="true"
     android:interactiveUiTimeout="5000"
     android:nonInteractiveUiTimeout="5000"
     />

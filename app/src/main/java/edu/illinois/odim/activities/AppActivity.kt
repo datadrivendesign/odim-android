@@ -42,8 +42,8 @@ class AppActivity : AppCompatActivity() {
         val scanQRBtn = findViewById<Button>(R.id.button_navigate_qr)
         scanQRBtn.setOnClickListener {
             startActivity(Intent(applicationContext, CaptureActivity::class.java))
-
         }
+
         // set up recycler view
         mainRecyclerView = findViewById(R.id.app_package_recycler_view)
         mainRecyclerView?.layoutManager = LinearLayoutManager(

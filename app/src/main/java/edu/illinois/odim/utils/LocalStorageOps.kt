@@ -340,6 +340,46 @@ object LocalStorageOps {
         }
     }
 
+    /**
+     * Saves the agent's reasoning for a specific step.
+     */
+    fun saveAgentReasoning(packageName: String, trace: String, event: String, reason: String): Boolean {
+        return try {
+            val eventDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event")
+            if (!eventDir.exists()) {
+                eventDir.mkdirs()
+            }
+            val reasonFile = File(eventDir, "reasoning.json")
+            FileOutputStream(reasonFile, false).use { stream ->
+                val node = kotlinMapper.createObjectNode()
+                node.put("reason", reason)
+                stream.write(kotlinMapper.writeValueAsBytes(node))
+            }
+            true
+        } catch (e: IOException) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * Appends a step log to a consolidated JSON-lines file for the trace.
+     */
+    fun appendAgentLog(packageName: String, trace: String, logEntry: String): Boolean {
+        return try {
+            val traceDir = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace")
+            if (!traceDir.exists()) traceDir.mkdirs()
+            val logFile = File(traceDir, "agent_log.jsonl")
+            FileOutputStream(logFile, true).use { stream ->
+                stream.write((logEntry + "\n").toByteArray())
+            }
+            true
+        } catch (e: IOException) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     fun loadRedactions(packageName: String, trace: String, event: String): MutableSet<Redaction> {
         val redactFile = File(appContext.filesDir, "$TRACES_DIR/$packageName/$trace/$event/$REDACT_PREFIX$event.json")
         return if (redactFile.exists()) {

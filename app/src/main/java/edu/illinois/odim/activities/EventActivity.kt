@@ -206,8 +206,8 @@ class EventActivity : AppCompatActivity() {
             val mutableScreenshot = screenshot.copy(Bitmap.Config.ARGB_8888, true)
             screenshot.recycle()
             val eventInfo = event.split(DELIM)
-            val eventTime = eventInfo[0]
-            val eventType = eventInfo[1]
+            val eventTime = eventInfo.getOrElse(0) { "" }
+            val eventType = eventInfo.getOrElse(1) { "event" }
             try {  // check if source was null and gesture was not found
                 var eventGesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, event)
                 var isComplete = (eventGesture.className == null) // we do not capture classname if source isn't null
@@ -299,52 +299,124 @@ class EventActivity : AppCompatActivity() {
         val centerY = gesture.centerY * windowHeight
         val scrollDXPixel = gesture.scrollDX * windowWidth
         val scrollDYPixel = gesture.scrollDY * windowHeight
+
+        // Determine the display type: prioritizing filename-based type for manual traces,
+        // but using actionType for agent-specific actions (type, status, etc)
+        var displayType = gesture.actionType.lowercase()
+
+        // For clicks, check if it's actually a long click from the filename
+        if (displayType == "click" && eventType == getString(R.string.type_view_long_click)) {
+            displayType = "long_click"
+        }
+
+        // For manual traces where source was null, actionType might be "unknown"
+        if (displayType == "unknown") {
+            displayType = when {
+                eventType == getString(R.string.type_view_scroll) -> "scroll"
+                eventType == getString(R.string.type_view_click) -> "click"
+                eventType == getString(R.string.type_view_long_click) -> "long_click"
+                else -> "unknown"
+            }
+        }
+
         // set up canvas and paint
         val canvas = Canvas(bitmap)
-        if (eventType == getString(R.string.type_view_scroll)) {
-            val scrollPaint = Paint().apply {
-                color = Color.rgb(165, 0, 255)
-                alpha = 100
+
+        when (displayType) {
+            "scroll" -> {
+                val scrollPaint = Paint().apply {
+                    color = Color.rgb(165, 0, 255) // Purple
+                    alpha = 100
+                }
+                // define circle draw settings
+                val numCircles = 5
+                val maxRadius = 60F
+                val minRadius = 10F
+                val endX = centerX + scrollDXPixel
+                val endY = centerY + scrollDYPixel
+                // draw circles
+                for (i in 0 until numCircles) {
+                    // Linear interpolation between start and end for center of circles
+                    val fraction = i / (numCircles - 1).toFloat()
+                    val currentX = centerX + fraction * (endX - centerX)
+                    val currentY = centerY + fraction * (endY - centerY)
+                    val currentRadius = maxRadius - fraction * (maxRadius - minRadius)
+                    // Draw the circle with decreasing radius
+                    canvas.drawCircle(currentX, currentY, currentRadius, scrollPaint)
+                }
             }
-            // define circle draw settings
-            val numCircles = 5
-            val maxRadius = 60F
-            val minRadius = 10F
-            val endX = centerX + scrollDXPixel
-            val endY = centerY + scrollDYPixel
-            // draw circles
-            for (i in 0 until numCircles) {
-                // Linear interpolation between start and end for center of circles
-                val fraction = i / (numCircles - 1).toFloat()
-                val currentX = centerX + fraction * (endX - centerX)
-                val currentY = centerY + fraction * (endY - centerY)
-                val currentRadius = maxRadius - fraction * (maxRadius - minRadius)
-                // Draw the circle with decreasing radius
-                canvas.drawCircle(currentX, currentY, currentRadius, scrollPaint)
+            "type" -> {
+                val typePaint = Paint().apply {
+                    color = Color.rgb(0, 150, 136) // Teal
+                    alpha = 120
+                }
+                val textPaint = Paint().apply {
+                    color = Color.WHITE
+                    textSize = 40f
+                    textAlign = Paint.Align.CENTER
+                    isFakeBoldText = true
+                }
+                val rectWidth = 600f
+                val rectHeight = 100f
+                val rect = RectF(centerX - rectWidth/2, centerY - rectHeight/2, centerX + rectWidth/2, centerY + rectHeight/2)
+                canvas.drawRoundRect(rect, 20f, 20f, typePaint)
+                val displayT = gesture.text ?: "Typing..."
+                canvas.drawText("TYPE: $displayT", centerX, centerY + 15f, textPaint)
             }
-        } else {
-            val clickPaint = Paint().apply {
-                color = Color.rgb(0, 165, 255)
-                alpha = 100
+            "navigate_back", "navigate_home" -> {
+                val navPaint = Paint().apply {
+                    color = Color.rgb(255, 193, 7) // Amber
+                    alpha = 150
+                }
+                val textPaint = Paint().apply {
+                    color = Color.BLACK
+                    textSize = 40f
+                    textAlign = Paint.Align.CENTER
+                }
+                canvas.drawCircle(centerX, centerY, 80f, navPaint)
+                val label = if (displayType == "navigate_back") "BACK" else "HOME"
+                canvas.drawText(label, centerX, centerY + 15f, textPaint)
             }
-            val longClickPaint = Paint().apply {
-                color = Color.rgb(255, 165, 0)
-                alpha = 100
+            "status" -> {
+                val isSuccess = gesture.text?.lowercase()?.contains("success") == true
+                val statusPaint = Paint().apply {
+                    color = if (isSuccess) Color.rgb(76, 175, 80) else Color.rgb(244, 67, 54) // Green or Red
+                    alpha = 180
+                }
+                val textPaint = Paint().apply {
+                    color = Color.WHITE
+                    textSize = 50f
+                    textAlign = Paint.Align.CENTER
+                    isFakeBoldText = true
+                }
+                canvas.drawRect(0f, 0f, windowWidth, 120f, statusPaint)
+                canvas.drawText("STATUS: ${gesture.text}", windowWidth/2, 80f, textPaint)
             }
-            val gestureOffsetSize = 50
-            val rectLeft = if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0F
-            val rectTop = if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0F
-            val rectRight = if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth
-            val rectBottom = if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight
-            // start drawing gestures
-            val rect = RectF(rectLeft, rectTop, rectRight, rectBottom)
-            val radiusFactor = 0.25
-            canvas.drawCircle(
-                rect.centerX(),
-                rect.centerY(),
-                (((rect.height() + rect.width()) * radiusFactor).toFloat()),
-                if (eventType == getString(R.string.type_view_click)) clickPaint else longClickPaint
-            )
+            else -> {
+                // Default to Click/Long-Click style
+                val clickPaint = Paint().apply {
+                    color = Color.rgb(0, 165, 255) // Blue
+                    alpha = 100
+                }
+                val longClickPaint = Paint().apply {
+                    color = Color.rgb(255, 165, 0) // Orange
+                    alpha = 100
+                }
+                val gestureOffsetSize = 50
+                val rectLeft = if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0F
+                val rectTop = if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0F
+                val rectRight = if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth
+                val rectBottom = if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight
+                // start drawing gestures
+                val rect = RectF(rectLeft, rectTop, rectRight, rectBottom)
+                val radiusFactor = 0.25
+                canvas.drawCircle(
+                    rect.centerX(),
+                    rect.centerY(),
+                    (((rect.height() + rect.width()) * radiusFactor).toFloat()),
+                    if (displayType == "long_click") longClickPaint else clickPaint
+                )
+            }
         }
     }
 

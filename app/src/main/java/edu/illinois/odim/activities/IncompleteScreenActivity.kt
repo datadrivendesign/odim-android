@@ -194,13 +194,21 @@ class IncompleteScreenActivity: AppCompatActivity() {
                 val screenHeight = incompleteImageView.drawable.intrinsicHeight
                 val vhCandidateRect = incompleteOverlayView.currVHCandidate!!.rect
                 var eventNameDest: String = chosenEventLabel!!
+                var actionType = "click"
+                if (updateGesture.scrollDx != 0f || updateGesture.scrollDy != 0f) {
+                    actionType = "scroll"
+                } else if (updateGesture.isLongClick) {
+                    actionType = "long_click"
+                }
+
                 // save the gesture first
                 val newGesture = Gesture(
                     centerX=vhCandidateRect.exactCenterX() / screenWidth,
                     centerY=vhCandidateRect.exactCenterY() / screenHeight,
                     scrollDX=updateGesture.scrollDx / screenWidth,
                     scrollDY=updateGesture.scrollDy / screenHeight,
-                    viewId=incompleteOverlayView.currVHCandidate!!.viewId
+                    viewId=incompleteOverlayView.currVHCandidate!!.viewId,
+                    actionType=actionType
                 )
                 newGesture.verified = true
                 saveGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!, newGesture)

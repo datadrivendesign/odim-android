@@ -10,6 +10,7 @@ import android.provider.Settings
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.mlkit.vision.barcode.common.Barcode
 import edu.illinois.odim.MyAccessibilityService.Companion.appContext
 import edu.illinois.odim.MyAccessibilityService.Companion.captureTask
+import edu.illinois.odim.R
 import edu.illinois.odim.databinding.ActivityCaptureBinding
 import okhttp3.Call
 import okhttp3.Callback
@@ -60,7 +62,6 @@ class CaptureActivity: AppCompatActivity() {
             val intent = Intent(applicationContext, AppActivity::class.java)
             startActivity(intent)
         }
-
         // set button onClicks in task instruction UI
         binding.buttonInstallApp.setOnClickListener {
            captureTask?.capture?.appId?.let { appId ->
@@ -88,6 +89,11 @@ class CaptureActivity: AppCompatActivity() {
                 }
             }
         }
+        // set up agent button
+        findViewById<Button>(R.id.button_launch_agent).setOnClickListener {
+            startActivity(Intent(applicationContext, AgentActivity::class.java))
+        }
+        // set up go to trace button
         binding.buttonTaskGoTrace.setOnClickListener {
             startActivity(Intent(applicationContext, AppActivity::class.java))
         }
