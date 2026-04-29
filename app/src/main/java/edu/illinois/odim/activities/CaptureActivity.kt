@@ -89,10 +89,6 @@ class CaptureActivity: AppCompatActivity() {
                 }
             }
         }
-        // set up agent button
-        findViewById<Button>(R.id.button_launch_agent).setOnClickListener {
-            startActivity(Intent(applicationContext, AgentActivity::class.java))
-        }
         // set up go to trace button
         binding.buttonTaskGoTrace.setOnClickListener {
             startActivity(Intent(applicationContext, AppActivity::class.java))

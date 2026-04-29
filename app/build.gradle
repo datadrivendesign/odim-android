@@ -37,19 +37,11 @@ android {
         debug {
             manifestPlaceholders = [usesCleartextTraffic: "true"]
             buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://dev.interactionmining.org"}\"")
-            buildConfigField("String", "CLAUDE_API_KEY", "\"${project.findProperty("CLAUDE_API_KEY") ?: ""}\"")
-            buildConfigField("String", "CLAUDE_API_URL", "\"${project.findProperty("CLAUDE_API_URL") ?: "https://api.anthropic.com/v1/messages"}\"")
-            buildConfigField("String", "OLLAMA_API_KEY", "\"${project.findProperty("OLLAMA_API_KEY") ?: ""}\"")
-            buildConfigField("String", "OLLAMA_API_URL", "\"${project.findProperty("OLLAMA_API_URL") ?: ""}\"")
         }
         release {
             minifyEnabled false
             manifestPlaceholders = [usesCleartextTraffic: "false"]
             buildConfigField("String", "API_URL_PREFIX", "\"${project.findProperty("API_URL_PREFIX") ?: "https://interactionmining.org"}\"")
-            buildConfigField("String", "CLAUDE_API_KEY", "\"${project.findProperty("CLAUDE_API_KEY") ?: ""}\"")
-            buildConfigField("String", "CLAUDE_API_URL", "\"${project.findProperty("CLAUDE_API_URL") ?: "https://api.anthropic.com/v1/messages"}\"")
-            buildConfigField("String", "OLLAMA_API_KEY", "\"${project.findProperty("OLLAMA_API_KEY") ?: ""}\"")
-            buildConfigField("String", "OLLAMA_API_URL", "\"${project.findProperty("OLLAMA_API_URL") ?: ""}\"")
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -98,5 +90,6 @@ dependencies {
     implementation "androidx.camera:camera-view:${camerax_version}"
     implementation "androidx.camera:camera-extensions:${camerax_version}"
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
 
 }

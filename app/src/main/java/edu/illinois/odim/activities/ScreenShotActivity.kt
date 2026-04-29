@@ -307,11 +307,11 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
 
     private fun extractVHBoxes(root: JsonNode, vhBoxes: MutableList<Rect>) {
         if (root.get("visibility").asBoolean()) {
-            val vhBoxString = root.get("bounds_in_screen").asText()
-            val vhBoxRect = Rect.unflattenFromString(vhBoxString)
-            if (vhBoxRect != null){
-                vhBoxes.add(vhBoxRect)
-            }
+          val vhBoxString = root.get("bounds_in_screen").asText()
+          val vhBoxRect = Rect.unflattenFromString(vhBoxString)
+          if (vhBoxRect != null){
+              vhBoxes.add(vhBoxRect)
+          }
         }
         // Base Case
         val children = root.get("children") ?: return

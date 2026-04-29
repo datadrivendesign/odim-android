@@ -19,13 +19,14 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import android.view.accessibility.AccessibilityNodeInfo.FOCUS_INPUT
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.widget.FrameLayout
 import com.fasterxml.jackson.core.JsonEncoding
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import edu.illinois.odim.dataclasses.AgentState
-import edu.illinois.odim.utils.AgentUtils
 import com.fasterxml.jackson.databind.ObjectMapper
 import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.CaptureTask
@@ -41,6 +42,8 @@ import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.saveCapture
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
+import edu.illinois.odim.bridge.BridgeServer
+import edu.illinois.odim.bridge.SettleSignal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,7 +76,7 @@ class MyAccessibilityService : AccessibilityService() {
     var serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val objectMapper = ObjectMapper()
     private var glowAnimator: ValueAnimator? = null
-    val agentController = AgentController(this)
+    private var bridgeServer: BridgeServer? = null
     // static variables
     companion object {
         lateinit var instance: MyAccessibilityService
@@ -87,56 +90,7 @@ class MyAccessibilityService : AccessibilityService() {
         private const val SETTINGS_PACKAGE = "com.android.settings"
     }
 
-    fun executeAction(action: edu.illinois.odim.dataclasses.AgentAction, elements: List<edu.illinois.odim.dataclasses.ActionableElement>) {
-        Log.i("Agent", "Executing action: ${action.actionType} (index: ${action.index}, direction: ${action.direction}, text: ${action.text})")
-        when (action.actionType.lowercase()) {
-            "click" -> action.index?.let { performClick(it, elements) }
-            "type" -> action.text?.let { performType(it) }
-            "scroll", "swipe" -> action.direction?.let { performScroll(it) }
-            "navigate_back" -> performGlobalAction(GLOBAL_ACTION_BACK)
-            "navigate_home" -> performGlobalAction(GLOBAL_ACTION_HOME)
-            "status" -> Log.i("Agent", "Goal Status: ${action.goalStatus}")
-            else -> Log.w("Agent", "Unknown action type: ${action.actionType}")
-        }
-    }
-
-    private fun performClick(index: Int, elements: List<edu.illinois.odim.dataclasses.ActionableElement>) {
-        val element = elements.find { it.index == index }
-        if (element == null) {
-            Log.e("Agent", "Click failed: Element with index $index not found in ${elements.size} elements")
-            return
-        }
-
-        val x = element.center.x.toFloat()
-        val y = element.center.y.toFloat()
-        val displayMetrics = appContext.resources.displayMetrics
-        Log.d("Agent", "Performing click at ($x, $y) for element index $index: ${element.text.ifEmpty { element.contentDescription.ifEmpty { "no text" } }}")
-        Log.d("Agent", "Screen metrics: ${displayMetrics.widthPixels}x${displayMetrics.heightPixels}, Element bounds: ${element.bounds}")
-        
-        val clickPath = Path().apply {
-            moveTo(x, y)
-            lineTo(x, y) // Ensure the path has a point for the duration
-        }
-        
-        val gestureBuilder = GestureDescription.Builder()
-        gestureBuilder.addStroke(GestureDescription.StrokeDescription(clickPath, 0, 100))
-        
-        val gesture = gestureBuilder.build()
-        val dispatched = dispatchGesture(gesture, object : GestureResultCallback() {
-            override fun onCompleted(gestureDescription: GestureDescription?) {
-                super.onCompleted(gestureDescription)
-                Log.i("Agent", "Click gesture COMPLETED at ($x, $y)")
-            }
-            override fun onCancelled(gestureDescription: GestureDescription?) {
-                super.onCancelled(gestureDescription)
-                val strokes = gestureDescription?.strokeCount ?: 0
-                Log.e("Agent", "Click gesture CANCELLED at ($x, $y). Strokes: $strokes")
-            }
-        }, null)
-        Log.d("Agent", "dispatchGesture returned: $dispatched")
-    }
-
-    private fun performType(text: String) {
+    internal fun performType(text: String) {
         val root = rootInActiveWindow ?: return
         val focusedNode = root.findFocus(FOCUS_INPUT)
         if (focusedNode == null) {
@@ -150,83 +104,34 @@ class MyAccessibilityService : AccessibilityService() {
         Log.i("Agent", "Type completed: $text")
     }
 
-    private fun performScroll(direction: String) {
-        val windowMetrics = windowManager?.currentWindowMetrics ?: return
-        val width = windowMetrics.bounds.width()
-        val height = windowMetrics.bounds.height()
-        
-        val centerX = width / 2f
-        val centerY = height / 2f
-        
-        var endX = centerX
-        var endY = centerY
-        
-        val scrollAmount = height / 4f // Smaller scroll amount might be more reliable
-        
-        when (direction.lowercase()) {
-            "up" -> endY = centerY - scrollAmount
-            "down" -> endY = centerY + scrollAmount
-            "left" -> endX = centerX - width / 4f
-            "right" -> endX = centerX + width / 4f
-            else -> {
-                Log.e("Agent", "Scroll failed: Unknown direction $direction")
-                return
-            }
-        }
-
-        Log.d("Agent", "Performing scroll $direction: from ($centerX, $centerY) to ($endX, $endY) on screen ${width}x${height}")
-        
-        val scrollPath = Path().apply {
-            moveTo(centerX, centerY)
-            lineTo(endX, endY)
-        }
-
-        val gestureBuilder = GestureDescription.Builder()
-        gestureBuilder.addStroke(GestureDescription.StrokeDescription(scrollPath, 0, 800)) // Slower scroll
-        
-        val gesture = gestureBuilder.build()
-        val dispatched = dispatchGesture(gesture, object : GestureResultCallback() {
-            override fun onCompleted(gestureDescription: GestureDescription?) {
-                super.onCompleted(gestureDescription)
-                Log.i("Agent", "Scroll $direction gesture COMPLETED")
-            }
-            override fun onCancelled(gestureDescription: GestureDescription?) {
-                super.onCancelled(gestureDescription)
-                val strokes = gestureDescription?.strokeCount ?: 0
-                Log.e("Agent", "Scroll $direction gesture CANCELLED. Strokes: $strokes")
-            }
-        }, null)
-        Log.d("Agent", "dispatchGesture returned: $dispatched")
-    }
-
-    suspend fun captureAndSaveState(traceLabel: String, eventLabel: String, overridePackageName: String? = null): AgentState? {
+    internal suspend fun captureAndSaveState(traceLabel: String, eventLabel: String, overridePackageName: String? = null): AgentState? {
         val state = captureCurrentState() ?: return null
-        
+
         val pkgToSave = overridePackageName ?: state.packageName
         saveScreenshot(pkgToSave, traceLabel, eventLabel, state.screenshot)
         saveVH(pkgToSave, traceLabel, eventLabel, objectMapper.writeValueAsString(state.vh))
-        
+
         return state
     }
 
-    suspend fun captureCurrentState(): AgentState? = coroutineScope {
+    internal suspend fun captureCurrentState(): AgentState? = coroutineScope {
         val root = rootInActiveWindow ?: return@coroutineScope null
         val rootPackageName = root.packageName.toString()
-        
+
         // Start screenshot immediately - this is an async system call
         val screenshotDeferred = async { captureScreenshot() }
-        
-        // Start VH capture immediately on current thread (Main) 
+
+        // Start VH capture immediately on current thread (Main)
         // while system works on the screenshot
         val vhString = captureVH(rootPackageName)
-        
+
         val bitmap = screenshotDeferred.await()
-        
+
         if (vhString == null || bitmap == null) {
             Log.e("Agent", "Failed to capture state: vh=${vhString != null}, bitmap=${bitmap != null}")
             return@coroutineScope null
         }
-        
+
         AgentState(
             screenshot = bitmap,
             vh = objectMapper.readTree(vhString),
@@ -234,7 +139,7 @@ class MyAccessibilityService : AccessibilityService() {
         )
     }
 
-    private suspend fun captureScreenshot(): Bitmap? = suspendCancellableCoroutine { continuation ->
+    internal suspend fun captureScreenshot(): Bitmap? = suspendCancellableCoroutine { continuation ->
         takeScreenshot(
             DEFAULT_DISPLAY,
             appContext.mainExecutor,
@@ -252,15 +157,20 @@ class MyAccessibilityService : AccessibilityService() {
         )
     }
 
-    private suspend fun captureVH(rootPackageName: String): String? = suspendCancellableCoroutine { continuation ->
+    internal suspend fun captureVH(rootPackageName: String): String? = suspendCancellableCoroutine { continuation ->
         val allWindows = windows
-        val appWindows = allWindows.filter { 
-            val root = try { it.root } catch (e: Exception) { null }
-            root?.packageName?.toString() == rootPackageName 
+        val activeRoot = rootInActiveWindow
+
+        val relevantWindows = allWindows.filter { window ->
+            val root = try { window.root } catch (e: Exception) { null }
+            val pkg = root?.packageName?.toString()
+            val type = window.type
+
+            pkg == rootPackageName ||
+            type == AccessibilityWindowInfo.TYPE_APPLICATION ||
+            type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
         }
-        
-        Log.d("Agent", "captureVH: total windows=${allWindows.size}, app windows=${appWindows.size} for $rootPackageName")
-        
+
         ByteArrayOutputStream().use { baos ->
             JsonFactory().createGenerator(baos, JsonEncoding.UTF8).use { writer ->
                 writer.writeStartObject()
@@ -268,29 +178,30 @@ class MyAccessibilityService : AccessibilityService() {
                 writer.writeStringField("package_name", rootPackageName)
                 writer.writeBooleanField("visibility", true)
                 writer.writeStringField("id", "virtual_root")
-                
+
                 val displayMetrics = appContext.resources.displayMetrics
                 val screenBounds = Rect(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels)
                 writer.writeStringField("bounds_in_screen", screenBounds.flattenToString())
-                
+
                 writer.writeFieldName("children")
                 writer.writeStartArray()
 
-                if (appWindows.isNotEmpty()) {
-                    for (window in appWindows) {
+                if (relevantWindows.isNotEmpty()) {
+                    val sortedWindows = relevantWindows.sortedBy { it.layer }
+                    for (window in sortedWindows) {
                         val root = try { window.root } catch (e: Exception) { null }
                         if (root != null) {
                             parseVHToJson(root, writer, "android.view.View")
                         }
                     }
-                } else {
-                    rootInActiveWindow?.let { parseVHToJson(it, writer, "android.view.View") }
+                } else if (activeRoot != null) {
+                    parseVHToJson(activeRoot, writer, "android.view.View")
                 }
 
                 writer.writeEndArray()
                 writer.writeEndObject()
                 writer.flush()
-                
+
                 val vh = baos.toString("UTF-8")
                 continuation.resume(if (vh.isNotEmpty()) vh else null)
             }
@@ -327,6 +238,23 @@ class MyAccessibilityService : AccessibilityService() {
         instance = this
         Log.i("onServiceConnected", "Accessibility Service Connected")
         appContext = applicationContext
+
+        // Programmatically enforce flags to ensure they are active
+        val info = serviceInfo
+        info.flags = info.flags or
+                AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+        serviceInfo = info
+
+        // Start bridge server
+        bridgeServer = BridgeServer(this, "127.0.0.1", 8765)
+        try {
+            bridgeServer?.start()
+        } catch (e: Exception) {
+            Log.e("BridgeServer", "Failed to start bridge server", e)
+        }
+
         // filter out unwanted packages from recording
         val intent = Intent("android.intent.action.MAIN")
         intent.addCategory("android.intent.category.HOME")
@@ -351,9 +279,6 @@ class MyAccessibilityService : AccessibilityService() {
         windowManager!!.addView(overlayLayout, params)
         // record screenshot and view hierarchy when screen touch is detected with separate coroutines
         overlayLayout!!.setOnTouchListener { _, _ ->
-            // Skip passive recording if agent is running
-            if (agentController.isRunning.value) return@setOnTouchListener false
-
             currRootWindow = rootInActiveWindow
             currVHString = null
             if (currRootWindow?.packageName.toString() == "null" ||
@@ -366,7 +291,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
             val rootPackageName = currRootWindow!!.packageName.toString()
             Log.i("TOUCH_PACKAGE", rootPackageName)
-            
+
             // Phase 2: Capture all windows belonging to the target application
             serviceScope.launch(Dispatchers.Main) {
                 val tempEventLabel = "${getInteractionTime()}$DELIM${getString(R.string.type_unknown)}"
@@ -374,13 +299,13 @@ class MyAccessibilityService : AccessibilityService() {
                     isNewTrace = true
                 }
                 val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel) ?: return@launch
-                
+
                 val state = captureAndSaveState(traceLabel, tempEventLabel)
                 if (state == null) {
                     Log.e("edu.illinois.odim", "Failed to capture state on touch")
                     return@launch
                 }
-                
+
                 // Update touch time for event pairing (Passive Recording)
                 currTouchTime = tempEventLabel.substringBefore(DELIM)
 
@@ -455,10 +380,10 @@ class MyAccessibilityService : AccessibilityService() {
             }
             // serialize extras bundle — Compose semantic properties appear here
             writeBundleAsJson(node.extras, jsonWriter)
-            
+
             val childCount = node.childCount
             jsonWriter.writeNumberField("children_count", childCount)
-            
+
             // add children to json
             if (childCount > 0) {
                 jsonWriter.writeFieldName("children")
@@ -467,7 +392,6 @@ class MyAccessibilityService : AccessibilityService() {
                     val currentNode = try { node.getChild(i) } catch (e: Exception) { null }
                     if (currentNode != null) {
                         parseVHToJson(currentNode, jsonWriter, thisClassName)
-                        // No recycle() call here - deprecated in API 33+
                     }
                 }
                 jsonWriter.writeEndArray()
@@ -498,13 +422,14 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Skip passive event processing if agent is running
-        if (agentController.isRunning.value) return
-
         // skip if event is null
         if (event == null || event.packageName == null) {
             return
         }
+
+        // Notify SettleSignal for quiet-window detection
+        SettleSignal.notifyEvent(event.eventType)
+
         // skip if there has not been a touch yet
         if (currTouchTime == null) {
             return
@@ -658,6 +583,8 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        bridgeServer?.stop()
+        bridgeServer = null
         serviceScope.cancel()
     }
 }
