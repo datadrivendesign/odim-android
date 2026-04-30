@@ -74,10 +74,17 @@ class BridgeRouter(private val service: MyAccessibilityService) {
         val json = objectMapper.readTree(body)
         val kind = json.get("kind")?.asText() ?: return jsonResponse(Response.Status.BAD_REQUEST, mapOf("error" to "Missing kind"))
 
+        // For programmatic actions, we manually trigger a state capture to link the action to a screen
+        val interactionTime = service.getInteractionTime()
+
         val success = when (kind) {
             "tap" -> {
                 val x = json.get("x").asInt().toFloat()
                 val y = json.get("y").asInt().toFloat()
+
+                // Record the intent of this action before dispatching
+                service.recordBridgeAction(interactionTime, "click", x, y)
+
                 val path = Path().apply { moveTo(x, y) }
                 val gesture = GestureDescription.Builder()
                     .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
@@ -92,6 +99,9 @@ class BridgeRouter(private val service: MyAccessibilityService) {
 
                 val startX = json.get("fromX")?.asInt()?.toFloat() ?: (width / 2f)
                 val startY = json.get("fromY")?.asInt()?.toFloat() ?: (height / 2f)
+
+                // Record the intent
+                service.recordBridgeAction(interactionTime, "scroll", startX, startY)
 
                 var endX = startX
                 var endY = startY
@@ -115,11 +125,18 @@ class BridgeRouter(private val service: MyAccessibilityService) {
             }
             "type" -> {
                 val text = json.get("text").asText()
+                service.recordBridgeAction(interactionTime, "type")
                 service.performType(text)
                 true
             }
-            "back" -> service.performGlobalAction(GLOBAL_ACTION_BACK)
-            "home" -> service.performGlobalAction(GLOBAL_ACTION_HOME)
+            "back" -> {
+                service.recordBridgeAction(interactionTime, "back")
+                service.performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+            "home" -> {
+                service.recordBridgeAction(interactionTime, "home")
+                service.performGlobalAction(GLOBAL_ACTION_HOME)
+            }
             else -> false
         }
 

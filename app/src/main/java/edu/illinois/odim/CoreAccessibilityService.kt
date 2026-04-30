@@ -139,7 +139,11 @@ class MyAccessibilityService : AccessibilityService() {
         )
     }
 
+    private val screenshotCounter = java.util.concurrent.atomic.AtomicInteger(0)
+
     internal suspend fun captureScreenshot(): Bitmap? = suspendCancellableCoroutine { continuation ->
+        val count = screenshotCounter.incrementAndGet()
+        Log.d("edu.illinois.odim.Debug", "captureScreenshot called (total: $count)")
         takeScreenshot(
             DEFAULT_DISPLAY,
             appContext.mainExecutor,
@@ -324,11 +328,45 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun getInteractionTime(): String {
+    internal fun getInteractionTime(): String {
         val date = Date(System.currentTimeMillis())
         val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
         formatter.timeZone = TimeZone.getTimeZone("UTC")
         return formatter.format(date)
+    }
+
+    suspend fun recordBridgeAction(
+        interactionTime: String,
+        actionType: String,
+        x: Float? = null,
+        y: Float? = null
+    ) {
+        val root = rootInActiveWindow ?: return
+        val rootPackageName = root.packageName.toString()
+        val tempEventLabel = "$interactionTime$DELIM$actionType"
+
+        if (rootPackageName != lastTouchPackageName) {
+            isNewTrace = true
+        }
+        val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel) ?: return
+
+        serviceScope.launch(Dispatchers.Main) {
+            val state = captureAndSaveState(traceLabel, tempEventLabel)
+            if (state != null) {
+                val gesture = Gesture(
+                    x ?: -1f,
+                    y ?: -1f,
+                    0f, 0f,
+                    null,
+                    actionType
+                )
+                saveGesture(rootPackageName, traceLabel, tempEventLabel, gesture)
+                Log.d("BridgeDebug", "Recorded bridge action: $actionType at $interactionTime")
+            }
+
+            isNewTrace = false
+            lastTouchPackageName = rootPackageName
+        }
     }
 
     private fun convertInteractionDateToMillis(time: String): Long {
