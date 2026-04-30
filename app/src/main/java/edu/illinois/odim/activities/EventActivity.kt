@@ -292,17 +292,20 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun addDrawnGesture(eventType: String, gesture: Gesture, bitmap: Bitmap) {
-        // calculate gesture dimensions
-        val windowWidth =  windowManager.currentWindowMetrics.bounds.width().toFloat()
-        val windowHeight = windowManager.currentWindowMetrics.bounds.height().toFloat()
-        val centerX = gesture.centerX * windowWidth
-        val centerY = gesture.centerY * windowHeight
-        val scrollDXPixel = gesture.scrollDX * windowWidth
-        val scrollDYPixel = gesture.scrollDY * windowHeight
+        // calculate gesture dimensions using bitmap dimensions
+        val imgWidth = bitmap.width.toFloat()
+        val imgHeight = bitmap.height.toFloat()
+        val centerX = gesture.centerX * imgWidth
+        val centerY = gesture.centerY * imgHeight
+        val scrollDXPixel = gesture.scrollDX * imgWidth
+        val scrollDYPixel = gesture.scrollDY * imgHeight
 
         // Determine the display type: prioritizing filename-based type for manual traces,
         // but using actionType for agent-specific actions (type, status, etc)
         var displayType = gesture.actionType.lowercase()
+
+        // Normalize bridge action types to match existing visualization styles
+        if (displayType == "tap") displayType = "click"
 
         // For clicks, check if it's actually a long click from the filename
         if (displayType == "click" && eventType == getString(R.string.type_view_long_click)) {
@@ -345,7 +348,7 @@ class EventActivity : AppCompatActivity() {
                     canvas.drawCircle(currentX, currentY, currentRadius, scrollPaint)
                 }
             }
-            "type" -> {
+            "type", "key" -> {
                 val typePaint = Paint().apply {
                     color = Color.rgb(0, 150, 136) // Teal
                     alpha = 120
@@ -360,8 +363,8 @@ class EventActivity : AppCompatActivity() {
                 val rectHeight = 100f
                 val rect = RectF(centerX - rectWidth/2, centerY - rectHeight/2, centerX + rectWidth/2, centerY + rectHeight/2)
                 canvas.drawRoundRect(rect, 20f, 20f, typePaint)
-                val displayT = gesture.text ?: "Typing..."
-                canvas.drawText("TYPE: $displayT", centerX, centerY + 15f, textPaint)
+                val displayT = gesture.text ?: (if (displayType == "key") "Key Press" else "Typing...")
+                canvas.drawText("${displayType.uppercase()}: $displayT", centerX, centerY + 15f, textPaint)
             }
             "navigate_back", "navigate_home" -> {
                 val navPaint = Paint().apply {
@@ -377,8 +380,8 @@ class EventActivity : AppCompatActivity() {
                 val label = if (displayType == "navigate_back") "BACK" else "HOME"
                 canvas.drawText(label, centerX, centerY + 15f, textPaint)
             }
-            "status" -> {
-                val isSuccess = gesture.text?.lowercase()?.contains("success") == true
+            "status", "finding", "done" -> {
+                val isSuccess = displayType == "done" || gesture.text?.lowercase()?.contains("success") == true
                 val statusPaint = Paint().apply {
                     color = if (isSuccess) Color.rgb(76, 175, 80) else Color.rgb(244, 67, 54) // Green or Red
                     alpha = 180
@@ -389,8 +392,9 @@ class EventActivity : AppCompatActivity() {
                     textAlign = Paint.Align.CENTER
                     isFakeBoldText = true
                 }
-                canvas.drawRect(0f, 0f, windowWidth, 120f, statusPaint)
-                canvas.drawText("STATUS: ${gesture.text}", windowWidth/2, 80f, textPaint)
+                canvas.drawRect(0f, 0f, imgWidth, 120f, statusPaint)
+                val label = if (displayType == "finding") "FINDING: ${gesture.text}" else if (displayType == "done") "DONE: ${gesture.text}" else "STATUS: ${gesture.text}"
+                canvas.drawText(label, imgWidth/2, 80f, textPaint)
             }
             else -> {
                 // Default to Click/Long-Click style
@@ -405,8 +409,8 @@ class EventActivity : AppCompatActivity() {
                 val gestureOffsetSize = 50
                 val rectLeft = if(centerX-gestureOffsetSize > 0) centerX-gestureOffsetSize else 0F
                 val rectTop = if(centerY-gestureOffsetSize > 0) centerY-gestureOffsetSize else 0F
-                val rectRight = if(centerX+gestureOffsetSize < windowWidth) centerX+gestureOffsetSize else windowWidth
-                val rectBottom = if(centerY+gestureOffsetSize < windowHeight) centerY+gestureOffsetSize else windowHeight
+                val rectRight = if(centerX+gestureOffsetSize < imgWidth) centerX+gestureOffsetSize else imgWidth
+                val rectBottom = if(centerY+gestureOffsetSize < imgHeight) centerY+gestureOffsetSize else imgHeight
                 // start drawing gestures
                 val rect = RectF(rectLeft, rectTop, rectRight, rectBottom)
                 val radiusFactor = 0.25

@@ -79,11 +79,14 @@ class BridgeRouter(private val service: MyAccessibilityService) {
 
         val success = when (kind) {
             "tap" -> {
-                val x = json.get("x").asInt().toFloat()
-                val y = json.get("y").asInt().toFloat()
+                val displayMetrics = service.resources.displayMetrics
+                val screenWidth = displayMetrics.widthPixels.toFloat()
+                val screenHeight = displayMetrics.heightPixels.toFloat()
+                val x = json.get("x").asInt().toFloat().coerceIn(0f, screenWidth - 1f)
+                val y = json.get("y").asInt().toFloat().coerceIn(0f, screenHeight - 1f)
 
                 // Record the intent of this action before dispatching
-                service.recordBridgeAction(interactionTime, "click", x, y)
+                service.recordBridgeAction(interactionTime, "tap", x, y)
 
                 val path = Path().apply { moveTo(x, y) }
                 val gesture = GestureDescription.Builder()
@@ -94,14 +97,11 @@ class BridgeRouter(private val service: MyAccessibilityService) {
             "scroll" -> {
                 val direction = json.get("direction").asText()
                 val displayMetrics = service.resources.displayMetrics
-                val width = displayMetrics.widthPixels
-                val height = displayMetrics.heightPixels
+                val width = displayMetrics.widthPixels.toFloat()
+                val height = displayMetrics.heightPixels.toFloat()
 
-                val startX = json.get("fromX")?.asInt()?.toFloat() ?: (width / 2f)
-                val startY = json.get("fromY")?.asInt()?.toFloat() ?: (height / 2f)
-
-                // Record the intent
-                service.recordBridgeAction(interactionTime, "scroll", startX, startY)
+                val startX = (json.get("fromX")?.asInt()?.toFloat() ?: (width / 2f)).coerceIn(0f, width - 1f)
+                val startY = (json.get("fromY")?.asInt()?.toFloat() ?: (height / 2f)).coerceIn(0f, height - 1f)
 
                 var endX = startX
                 var endY = startY
@@ -114,6 +114,19 @@ class BridgeRouter(private val service: MyAccessibilityService) {
                     "right" -> endX += width / 4f
                 }
 
+                endX = endX.coerceIn(0f, width - 1f)
+                endY = endY.coerceIn(0f, height - 1f)
+
+                // Record the intent with displacement
+                service.recordBridgeAction(
+                    interactionTime,
+                    "scroll",
+                    startX,
+                    startY,
+                    scrollDX = endX - startX,
+                    scrollDY = endY - startY
+                )
+
                 val path = Path().apply {
                     moveTo(startX, startY)
                     lineTo(endX, endY)
@@ -125,17 +138,35 @@ class BridgeRouter(private val service: MyAccessibilityService) {
             }
             "type" -> {
                 val text = json.get("text").asText()
-                service.recordBridgeAction(interactionTime, "type")
+                service.recordBridgeAction(interactionTime, "type", text = text)
                 service.performType(text)
                 true
             }
             "back" -> {
-                service.recordBridgeAction(interactionTime, "back")
+                service.recordBridgeAction(interactionTime, "navigate_back")
                 service.performGlobalAction(GLOBAL_ACTION_BACK)
             }
             "home" -> {
-                service.recordBridgeAction(interactionTime, "home")
+                service.recordBridgeAction(interactionTime, "navigate_home")
                 service.performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+            "key" -> {
+                val keyCode = json.get("keyCode")?.asInt() ?: -1
+                val text = json.get("text")?.asText() ?: "KeyCode: $keyCode"
+                service.recordBridgeAction(interactionTime, "key", text = text)
+                // Actually performing key event usually requires shell or specific service methods
+                // For now we just record it if the bridge requested it
+                true
+            }
+            "finding" -> {
+                val text = json.get("text")?.asText() ?: ""
+                service.recordBridgeAction(interactionTime, "finding", text = text)
+                true
+            }
+            "done" -> {
+                val text = json.get("text")?.asText() ?: ""
+                service.recordBridgeAction(interactionTime, "done", text = text)
+                true
             }
             else -> false
         }

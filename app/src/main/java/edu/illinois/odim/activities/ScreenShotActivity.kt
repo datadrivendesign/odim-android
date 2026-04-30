@@ -13,6 +13,7 @@ import android.view.ViewTreeObserver
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.fasterxml.jackson.databind.JsonNode
@@ -26,12 +27,12 @@ import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.dataclasses.VHItem
 import edu.illinois.odim.fragments.MovableFloatingActionButton
 import edu.illinois.odim.fragments.ScrubbingScreenshotOverlay
+import edu.illinois.odim.utils.LocalStorageOps.loadGesture
 import edu.illinois.odim.utils.LocalStorageOps.loadScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.loadVH
 import edu.illinois.odim.utils.LocalStorageOps.saveRedaction
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
-import androidx.core.view.isVisible
 
 
 class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPositionChangeListener {
@@ -88,6 +89,15 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
         scrubbingOverlayView.setScreenVHRoot(screenVHRoot)
         extractVHBoxes(screenVHRoot, vhBoxes)
         scrubbingOverlayView.setVHRects(vhBoxes)
+
+        // Load and display gesture if it exists
+        try {
+            val gesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+            scrubbingOverlayView.setGesture(gesture)
+        } catch (e: Exception) {
+            scrubbingOverlayView.setGesture(null)
+        }
+
         canvas = Canvas(canvasBitmap)
         // VH Item listener
         setUpVHTextRedactFloatingActionButton()
@@ -290,6 +300,15 @@ class ScreenShotActivity: AppCompatActivity(), MovableFloatingActionButton.OnPos
         screenVHRoot = mapper.readTree(vhJsonString.trim())
         extractVHBoxes(screenVHRoot, vhBoxes)
         scrubbingOverlayView.setVHRects(vhBoxes)
+
+        // Load and display gesture if it exists
+        try {
+            val gesture = loadGesture(chosenPackageName!!, chosenTraceLabel!!, chosenEventLabel!!)
+            scrubbingOverlayView.setGesture(gesture)
+        } catch (e: Exception) {
+            scrubbingOverlayView.setGesture(null)
+        }
+
         // re-set up canvas
         canvas = Canvas(canvasBitmap)
     }

@@ -19,6 +19,7 @@ import android.widget.EditText
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import edu.illinois.odim.R
+import edu.illinois.odim.dataclasses.Gesture
 import edu.illinois.odim.dataclasses.Redaction
 import edu.illinois.odim.utils.ScreenDimensionsOps.convertRectFromScaleScreenToBitmap
 import edu.illinois.odim.utils.ScreenDimensionsOps.convertScaleBitmapXToScreenX
@@ -35,18 +36,40 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         strokeWidth = 2F
         color = Color.rgb(255, 0, 0)
     }
+    private val gesturePaint = Paint().apply {
+        style = Paint.Style.FILL
+        color = Color.argb(150, 0, 255, 0)
+    }
+    private val gestureStrokePaint = Paint().apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 5F
+        color = Color.GREEN
+    }
+    private val textPaint = Paint().apply {
+        color = Color.WHITE
+        textSize = 40f
+        style = Paint.Style.FILL
+        isFakeBoldText = true
+        setShadowLayer(5f, 0f, 0f, Color.BLACK)
+    }
+    private val systemActionBackgroundPaint = Paint().apply {
+        color = Color.argb(200, 0, 0, 0)
+        style = Paint.Style.FILL
+    }
     private var imageIntrinsicHeight = 0
     private var imageIntrinsicWidth = 0
     private var imageMeasuredHeight = 0
     var currentRedacts = mutableSetOf<Redaction>()
     var drawMode: Boolean = true
     private var vhRects: MutableList<Rect> = mutableListOf()
+    private var currentGesture: Gesture? = null
     private lateinit var screenVHRoot: JsonNode
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         drawVHBoundingBoxes(canvas)
         drawCurrentRedacts(canvas)
+        drawGesture(canvas)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -257,6 +280,43 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
         }
     }
 
+    private fun drawGesture(canvas: Canvas) {
+        val gesture = currentGesture ?: return
+        val actionType = gesture.actionType.lowercase()
+
+        // Handle System Actions (non-coordinate based)
+        val systemActions = listOf("type", "key", "navigate_back", "navigate_home", "finding", "done", "back", "home")
+        if (systemActions.contains(actionType) || gesture.centerX < 0 || gesture.centerY < 0) {
+            drawSystemActionOverlay(canvas, gesture)
+            return
+        }
+
+        val screenX = gesture.centerX * imageIntrinsicWidth
+        val screenY = gesture.centerY * imageIntrinsicHeight
+
+        val bitmapX = (screenX * imageMeasuredHeight / imageIntrinsicHeight).roundToInt()
+        val bitmapY = (screenY * imageMeasuredHeight / imageIntrinsicHeight).roundToInt()
+
+        // Adjustment for centered drawing in the view
+        val xOffset = (width - (imageIntrinsicWidth * imageMeasuredHeight / imageIntrinsicHeight)) / 2f
+        val finalX = bitmapX + xOffset
+        val finalY = bitmapY.toFloat()
+
+        when (gesture.actionType.lowercase()) {
+            "click", "tap" -> {
+                canvas.drawCircle(finalX, finalY, 30f, gesturePaint)
+                canvas.drawCircle(finalX, finalY, 30f, gestureStrokePaint)
+            }
+            "scroll" -> {
+                canvas.drawCircle(finalX, finalY, 20f, gesturePaint)
+                val endX = finalX + (gesture.scrollDX * imageIntrinsicWidth * imageMeasuredHeight / imageIntrinsicHeight)
+                val endY = finalY + (gesture.scrollDY * imageMeasuredHeight)
+                canvas.drawLine(finalX, finalY, endX, endY, gestureStrokePaint)
+                canvas.drawCircle(endX, endY, 10f, gestureStrokePaint)
+            }
+        }
+    }
+
     private fun getMatchingVHFromTap(tapX: Int, tapY: Int): Rect {
         var currCandidateArea = Int.MAX_VALUE
         var newCandidate = Rect()
@@ -289,5 +349,34 @@ class ScrubbingScreenshotOverlay(context: Context, attrs: AttributeSet): View(co
 
     fun setScreenVHRoot(vHRoot: JsonNode) {
         screenVHRoot = vHRoot
+    }
+
+    fun setGesture(gesture: Gesture?) {
+        currentGesture = gesture
+        invalidate()
+    }
+
+    private fun drawSystemActionOverlay(canvas: Canvas, gesture: Gesture) {
+        val actionText = when (gesture.actionType.lowercase()) {
+            "type" -> "Type: ${gesture.text}"
+            "key" -> "Key: ${gesture.text}"
+            "navigate_back", "back" -> "System: Back"
+            "navigate_home", "home" -> "System: Home"
+            "finding" -> "Finding: ${gesture.text}"
+            "done" -> "Task Done: ${gesture.text}"
+            else -> gesture.actionType.uppercase()
+        }
+
+        val padding = 20f
+        val textWidth = textPaint.measureText(actionText)
+        val textHeight = textPaint.textSize
+
+        val rectLeft = (width - textWidth) / 2f - padding
+        val rectTop = height - textHeight - padding * 3
+        val rectRight = rectLeft + textWidth + padding * 2
+        val rectBottom = height - padding
+
+        canvas.drawRoundRect(rectLeft, rectTop, rectRight, rectBottom, 15f, 15f, systemActionBackgroundPaint)
+        canvas.drawText(actionText, rectLeft + padding, rectBottom - padding * 1.5f, textPaint)
     }
 }

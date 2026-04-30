@@ -1,17 +1,17 @@
 package edu.illinois.odim
 
-import android.animation.ValueAnimator
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Bitmap.wrapHardwareBuffer
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.os.Bundle
 import android.util.Log
 import android.view.Display.DEFAULT_DISPLAY
 import android.view.Gravity
@@ -19,15 +19,16 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.accessibility.AccessibilityWindowInfo
 import android.view.accessibility.AccessibilityNodeInfo.FOCUS_INPUT
-import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.FrameLayout
 import com.fasterxml.jackson.core.JsonEncoding
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
-import edu.illinois.odim.dataclasses.AgentState
 import com.fasterxml.jackson.databind.ObjectMapper
+import edu.illinois.odim.bridge.BridgeServer
+import edu.illinois.odim.bridge.SettleSignal
+import edu.illinois.odim.dataclasses.AgentState
 import edu.illinois.odim.dataclasses.CaptureStore
 import edu.illinois.odim.dataclasses.CaptureTask
 import edu.illinois.odim.dataclasses.Gesture
@@ -38,21 +39,19 @@ import edu.illinois.odim.utils.LocalStorageOps.listTraces
 import edu.illinois.odim.utils.LocalStorageOps.renameEvent
 import edu.illinois.odim.utils.LocalStorageOps.renameScreenshot
 import edu.illinois.odim.utils.LocalStorageOps.renameVH
+import edu.illinois.odim.utils.LocalStorageOps.saveCapture
 import edu.illinois.odim.utils.LocalStorageOps.saveGesture
 import edu.illinois.odim.utils.LocalStorageOps.saveScreenshot
-import edu.illinois.odim.utils.LocalStorageOps.saveCapture
 import edu.illinois.odim.utils.LocalStorageOps.saveVH
-import edu.illinois.odim.bridge.BridgeServer
-import edu.illinois.odim.bridge.SettleSignal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.coroutineScope
-import android.os.Bundle
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -60,7 +59,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.coroutines.resume
-import kotlin.system.measureTimeMillis
 
 var DELIM = "; "
 
@@ -168,11 +166,8 @@ class MyAccessibilityService : AccessibilityService() {
         val relevantWindows = allWindows.filter { window ->
             val root = try { window.root } catch (e: Exception) { null }
             val pkg = root?.packageName?.toString()
-            val type = window.type
 
-            pkg == rootPackageName ||
-            type == AccessibilityWindowInfo.TYPE_APPLICATION ||
-            type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
+            pkg == rootPackageName
         }
 
         ByteArrayOutputStream().use { baos ->
@@ -339,7 +334,10 @@ class MyAccessibilityService : AccessibilityService() {
         interactionTime: String,
         actionType: String,
         x: Float? = null,
-        y: Float? = null
+        y: Float? = null,
+        scrollDX: Float? = null,
+        scrollDY: Float? = null,
+        text: String? = null
     ) {
         val root = rootInActiveWindow ?: return
         val rootPackageName = root.packageName.toString()
@@ -350,18 +348,44 @@ class MyAccessibilityService : AccessibilityService() {
         }
         val traceLabel = getCurrentTraceLabel(isNewTrace, rootPackageName, tempEventLabel) ?: return
 
-        serviceScope.launch(Dispatchers.Main) {
-            val state = captureAndSaveState(traceLabel, tempEventLabel)
+        // Get screen dimensions for normalization
+        val windowMetrics = windowManager?.currentWindowMetrics
+        val screenWidth = windowMetrics?.bounds?.width()?.toFloat() ?: appContext.resources.displayMetrics.widthPixels.toFloat()
+        val screenHeight = windowMetrics?.bounds?.height()?.toFloat() ?: appContext.resources.displayMetrics.heightPixels.toFloat()
+
+        withContext(Dispatchers.Main) {
+            val pkgToUse = rootPackageName
+            val state = captureAndSaveState(traceLabel, tempEventLabel, pkgToUse)
             if (state != null) {
+                // Normalize coordinates for the Gesture data class (0.0 to 1.0)
+                var normX = if (x != null && x >= 0) x / screenWidth else -1f
+                var normY = if (y != null && y >= 0) y / screenHeight else -1f
+
+                // For actions without specific coordinates, default to center or bottom area
+                if (normX < 0) {
+                    when (actionType) {
+                        "navigate_back", "navigate_home" -> {
+                            normX = 0.5f
+                            normY = (screenHeight - 48f) / screenHeight // Near the bottom navigation area
+                        }
+                        "type", "key", "finding", "done" -> {
+                            normX = 0.5f
+                            normY = 0.5f
+                        }
+                    }
+                }
+
                 val gesture = Gesture(
-                    x ?: -1f,
-                    y ?: -1f,
-                    0f, 0f,
+                    normX,
+                    normY,
+                    (scrollDX ?: 0f) / screenWidth,
+                    (scrollDY ?: 0f) / screenHeight,
                     null,
-                    actionType
+                    actionType,
+                    text
                 )
-                saveGesture(rootPackageName, traceLabel, tempEventLabel, gesture)
-                Log.d("BridgeDebug", "Recorded bridge action: $actionType at $interactionTime")
+                saveGesture(pkgToUse, traceLabel, tempEventLabel, gesture)
+                Log.d("BridgeDebug", "Recorded bridge action: $actionType (text=$text) at $interactionTime")
             }
 
             isNewTrace = false
