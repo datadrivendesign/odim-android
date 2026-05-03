@@ -171,6 +171,10 @@ class BridgeRouter(private val service: MyAccessibilityService) {
             else -> false
         }
 
+        if (success) {
+            SettleSignal.reset()
+        }
+
         return jsonResponse(Response.Status.OK, mapOf("success" to success))
     }
 
@@ -189,6 +193,7 @@ class BridgeRouter(private val service: MyAccessibilityService) {
             }
         }
 
+        SettleSignal.reset()
         return jsonResponse(Response.Status.OK, mapOf("success" to true))
     }
 
@@ -197,8 +202,9 @@ class BridgeRouter(private val service: MyAccessibilityService) {
         val json = objectMapper.readTree(body)
         val quietWindowMs = json.get("quietWindowMs")?.asLong() ?: 250L
         val maxWaitMs = json.get("maxWaitMs")?.asLong() ?: 5000L
+        val minWaitMs = json.get("minWaitMs")?.asLong() ?: 450L
 
-        val result = SettleSignal.awaitQuiet(quietWindowMs, maxWaitMs)
+        val result = SettleSignal.awaitQuiet(quietWindowMs, maxWaitMs, minWaitMs)
         return jsonResponse(Response.Status.OK, mapOf(
             "settled" to result.settled,
             "elapsedMs" to result.elapsedMs
