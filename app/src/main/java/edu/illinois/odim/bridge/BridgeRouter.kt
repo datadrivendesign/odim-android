@@ -185,12 +185,39 @@ class BridgeRouter(private val service: MyAccessibilityService) {
 
         service.performGlobalAction(GLOBAL_ACTION_HOME)
 
-        if (packageName != null) {
-            val intent = service.packageManager.getLaunchIntentForPackage(packageName)
-            if (intent != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                service.startActivity(intent)
-            }
+        // No package: home-only reset. Always succeeds (GLOBAL_ACTION_HOME
+        // cannot fail in a way we can detect here).
+        if (packageName == null) {
+            SettleSignal.reset()
+            return jsonResponse(Response.Status.OK, mapOf("success" to true))
+        }
+
+        // Package launch must be surfaced as success/failure so the host-side
+        // AndroidDriver can fail loudly instead of proceeding against the
+        // launcher. See issue #19. Two failure modes:
+        //   1. getLaunchIntentForPackage returns null — package isn't
+        //      installed, has no launcher activity, or is filtered by
+        //      Android 11+ package-visibility (the manifest's
+        //      QUERY_ALL_PACKAGES permission usually covers this, but not
+        //      always for AccessibilityService contexts).
+        //   2. startActivity throws — typically ActivityNotFoundException,
+        //      or SecurityException for non-exported activities.
+        val intent = service.packageManager.getLaunchIntentForPackage(packageName)
+        if (intent == null) {
+            return jsonResponse(Response.Status.OK, mapOf(
+                "success" to false,
+                "error" to "no launch intent for $packageName"
+            ))
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        try {
+            service.startActivity(intent)
+        } catch (e: Exception) {
+            Log.w("BridgeRouter", "startActivity failed for $packageName", e)
+            return jsonResponse(Response.Status.OK, mapOf(
+                "success" to false,
+                "error" to "startActivity failed for $packageName: ${e.message ?: e.javaClass.simpleName}"
+            ))
         }
 
         SettleSignal.reset()
